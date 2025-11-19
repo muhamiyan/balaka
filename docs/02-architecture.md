@@ -235,66 +235,113 @@ Lines:
 3. Use custom templates in transactions
 4. Or bypass templates with manual journal entry
 
-## Multi-Tenancy Architecture
+## Deployment Architecture: Single-Tenant Instances
 
-### Design Principles
-- Single database, tenant isolation via `tenant_id`
-- Data segregation enforced at application layer
-- Shared system templates, isolated custom templates
-- Per-tenant chart of accounts (can start from templates)
+### Design Philosophy
 
-### Tenant Isolation Strategy
+**Instance-per-Client Approach:**
+- Each company gets its own application instance
+- Each instance connects to its own database
+- Complete isolation at process and data level
+- No multi-tenancy code complexity
+
+### Why Single-Tenant?
+
+**Codebase Simplicity:**
+- No `tenant_id` in every query
+- No tenant context management
+- No risk of cross-tenant data leaks
+- Cleaner, more maintainable code
+
+**Security Benefits:**
+- Complete process isolation
+- Separate databases per company
+- No shared resources
+- Easier compliance for accounting data
+
+**Operational Flexibility:**
+- Can co-locate multiple instances on shared VPS (cost-effective)
+- Can isolate high-value clients on dedicated VPS (premium)
+- Independent updates per client
+- Restart/debug single client without affecting others
+
+### Deployment Options
+
+**Option 1: Co-located Instances (Cost-Optimized)**
 ```
-Every table (except system tables) has:
-- tenant_id (not null)
-- Row-level security enforced in queries
-- Indexed for performance
-
-System tables (no tenant_id):
-- journal_templates (where is_system = true)
-- system_settings
-- currency_definitions
-
-Tenant tables:
-- chart_of_accounts
-- transactions
-- journal_entries
-- journal_templates (where is_system = false)
-- customers
-- vendors
+Shared VPS ($12-24/mo)
+├── PostgreSQL Service
+│   ├── database: company_a
+│   ├── database: company_b
+│   └── database: company_c
+├── MinIO (shared object storage with separate buckets)
+├── Spring Boot Instance 1 (Company A) - Port 8081
+├── Spring Boot Instance 2 (Company B) - Port 8082
+└── Spring Boot Instance 3 (Company C) - Port 8083
 ```
 
-### User Roles
+**Option 2: Dedicated Instance (Premium)**
+```
+Dedicated VPS ($24+/mo)
+├── PostgreSQL (single database)
+├── MinIO (dedicated storage)
+└── Spring Boot Instance (single client)
+```
+
+### No Multi-Tenancy Tables
+
+**Simple database schema without tenant_id:**
+```sql
+-- No tenant_id needed
+transactions
+- id                    UUID PRIMARY KEY
+- transaction_date      DATE NOT NULL
+- description           TEXT NOT NULL
+- total_amount          DECIMAL(15,2) NOT NULL
+
+chart_of_accounts
+- id                    UUID PRIMARY KEY
+- code                  VARCHAR(20) NOT NULL
+- name                  VARCHAR(255) NOT NULL
+- account_type          VARCHAR(20) NOT NULL
+
+-- Clean queries, no tenant filtering
+SELECT * FROM transactions WHERE transaction_date >= '2025-01-01';
+```
+
+### User Roles (Per Instance)
+
+**Note:** Each instance is single-company, so roles are simpler:
+
 1. **Owner** (business owner)
-   - Full access to their company data
-   - Cannot create templates
-   - Read-only view of journal entries
+   - Full administrative access
+   - User management
+   - Subscription/billing access
 
-2. **Operator** (bookkeeper)
-   - Can manage multiple tenants
+2. **Bookkeeper** (day-to-day operations)
    - Create/edit transactions
+   - Generate reports
    - Cannot modify chart of accounts
-   - Cannot create templates
+   - Cannot delete posted transactions
 
-3. **Power Operator** (senior bookkeeper / accountant)
-   - All operator capabilities
-   - Create custom templates
-   - Edit chart of accounts
+3. **Accountant** (senior staff)
+   - All bookkeeper capabilities
+   - Modify chart of accounts
+   - Create custom journal templates
    - Manual journal entries
+   - Period closing
 
-4. **Viewer** (external accountant)
-   - Read-only access
-   - Export reports
+4. **Viewer** (read-only)
+   - View all reports
+   - Export data
    - No data entry
 
-5. **Auditor** (external auditor)
-   - Read-only access to all financial data
-   - View all transactions and supporting documents
-   - Access to complete audit trail
-   - Export capabilities for audit work papers
-   - Time-bound access (temporary, can be revoked)
-   - No ability to modify any data
-   - View document access logs
+5. **Auditor** (temporary access)
+   - Read-only access to all data
+   - View complete audit trail
+   - Download documents
+   - Time-bound access
+   - No modifications allowed
 
 ## Data Flow
 
@@ -352,35 +399,166 @@ def generate_journal_entries(transaction, template):
     return entries
 ```
 
-## Scalability Considerations
+## Current Phase: Manual Deployment
 
-### Performance
-- Index on `tenant_id` for all queries
+### Initial Setup (Own Company)
+1. Provision VPS manually (DigitalOcean, AWS, etc.)
+2. Install Docker and Docker Compose
+3. Configure environment variables
+4. Run docker-compose up
+5. Access application via domain/IP
+
+### Adding New Clients (Early Customers)
+1. Create new database on existing PostgreSQL
+2. Add new service to docker-compose.yml
+3. Configure subdomain and Nginx
+4. Deploy with docker-compose up -d
+
+### Focus: Product Validation
+- Get the core accounting features rock solid
+- Validate with real users (own company + early customers)
+- Iterate on UX and functionality
+- No infrastructure automation yet
+
+## Future Phase: SaaS Automation
+
+**Note:** This phase begins after core product is stable and proven.
+
+### Control Plane Application
+
+**Purpose:** Automate client provisioning and management
+
+**Features:**
+- Client onboarding wizard
+- Subscription and billing management
+- Automated VPS provisioning (via Pulumi)
+- Deployment orchestration
+- Monitoring dashboard
+- Support ticketing
+
+### Infrastructure as Code: Pulumi
+
+**Why Pulumi over Ansible:**
+- Programmatic VPS creation (DigitalOcean, AWS API)
+- Real programming language (TypeScript, Python, Java)
+- Type-safe infrastructure code
+- Built-in state management
+- Can be called from Java admin app via Automation API
+- Better for creating resources (Ansible better for configuring existing)
+
+**Provisioning Flow:**
+```mermaid
+sequenceDiagram
+    participant Admin as Control Plane App
+    participant Pulumi as Pulumi
+    participant Cloud as Cloud Provider
+    participant VPS as New VPS
+
+    Admin->>Pulumi: Trigger stack creation
+    Pulumi->>Cloud: Create VPS + DNS
+    Cloud->>VPS: Provision server
+    Cloud-->>Pulumi: Return IP
+    Pulumi->>VPS: Install Docker
+    Pulumi->>VPS: Deploy app containers
+    Pulumi->>VPS: Setup Nginx + SSL
+    Pulumi-->>Admin: Return outputs
+    Admin->>Admin: Save client metadata
+```
+
+**Pulumi Stack Example:**
+```typescript
+// Programmatic VPS creation
+const droplet = new digitalocean.Droplet(`client-${slug}`, {
+    image: "ubuntu-22-04-x64",
+    region: "sgp1",
+    size: "s-1vcpu-2gb",  // $12/mo
+});
+
+// Configure DNS
+const dns = new digitalocean.DnsRecord(`${slug}-dns`, {
+    domain: "akuntingapp.com",
+    type: "A",
+    name: slug,
+    value: droplet.ipv4Address,
+});
+
+// Deploy via SSH
+const deploy = new command.remote.Command("deploy", {
+    connection: { host: droplet.ipv4Address },
+    create: `docker-compose up -d`,
+});
+```
+
+**Control Plane Database:**
+```sql
+-- Metadata for all clients
+clients
+- id, company_name, slug, status
+- vps_id, database_name, subdomain
+- created_at, trial_end_date
+
+vps_servers
+- id, provider, ip_address, spec
+- max_clients, monthly_cost
+
+subscriptions
+- id, client_id, plan_id, status
+- billing_cycle, amount
+
+deployments
+- id, client_id, version, status
+- pulumi_stack_name, started_at
+```
+
+### Scaling Strategy
+
+**Phase 1 (1-10 clients):**
+- Manual provisioning
+- Co-located on single VPS
+- Learn what customers need
+
+**Phase 2 (10-50 clients):**
+- Build control plane app
+- Automate with Pulumi
+- Multiple shared VPS
+
+**Phase 3 (50+ clients):**
+- Auto-scaling based on load
+- Dedicated VPS for premium tier
+- Geographic distribution (Singapore, Jakarta)
+
+## Current Scalability Considerations
+
+### Performance (Per Instance)
+- Database indexing for common queries
 - Materialized views for complex reports
-- Async report generation for heavy reports
-- Pagination for transaction lists
+- Async report generation for heavy workloads
+- Connection pooling optimization
 
 ### Storage
 - Soft deletes for audit trail
 - Archival strategy for old fiscal years
-- Document storage (receipts) external (S3/GCS)
+- MinIO for document storage
+- Periodic backup to cloud storage
 
-### Reporting
-- Pre-aggregated summary tables
-- Background job for report generation
-- Cache frequently accessed reports
-- Export limits for large datasets
+### Monitoring (Per Instance)
+- Spring Boot Actuator metrics
+- Application logs
+- Database performance monitoring
+- Disk space alerts
 
 ## Security Principles
 
 ### Data Protection
-- Tenant data isolation (no cross-tenant queries)
-- Audit log for all data modifications
+- Instance-level isolation (no shared data)
+- Audit log for all modifications
 - Immutable journal entries (append-only)
 - Role-based access control (RBAC)
+- Encrypted database credentials
 
 ### Compliance
-- Audit trail for tax purposes
-- Data retention policies
+- Complete audit trail for tax purposes
+- 10-year data retention policy
 - Backup and disaster recovery
-- Export capabilities for tax audits
+- Export capabilities for audits
+- Indonesian data residency compliance

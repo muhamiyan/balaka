@@ -30,18 +30,21 @@
 - Template builder UI required for power users
 - Template validation logic needed
 
-### 3. Multi-Tenancy from Day One ✓
-**Decision:** Build multi-tenant architecture from the start
+### 3. Single-Tenant Architecture ✓
+**Decision:** Instance-per-client deployment (not multi-tenant with tenant_id)
 
 **Rationale:**
-- Easier to build correctly from start than retrofit later
-- Core requirement for SaaS model
-- One bookkeeper manages multiple clients efficiently
-- Scales better
+- Simpler codebase (no tenant_id in every query)
+- Complete data and process isolation
+- No risk of cross-tenant data leaks
+- Easier compliance for accounting data
+- Can co-locate multiple instances for cost efficiency
+- Can isolate high-value clients on dedicated VPS
 
 **Trade-offs:**
-- More complex initial development
-- Careful data isolation required
+- Need control plane app for SaaS automation (future phase)
+- More containers/processes to manage
+- Acceptable: Focus on product stability first, automate later with Pulumi
 - More testing scenarios
 
 ### 4. Indonesian Tax Focus ✓
@@ -143,7 +146,7 @@
   - BigDecimal for precise financial calculations
   - Type safety for complex business logic
   - Mature transaction management (ACID)
-  - Virtual threads for efficient multi-tenant handling
+  - Virtual threads for efficient resource utilization (especially when co-locating instances)
   - Large Java talent pool in Indonesia
   - Battle-tested security for financial applications
 
@@ -198,11 +201,11 @@ C. Immutable templates - cannot edit, must create new template
 ---
 
 #### Q2: Template Validation Rules?
-**Question:** Should templates have conditional availability based on tenant configuration?
+**Question:** Should templates have conditional availability based on company configuration?
 
 **Examples:**
-- "Penjualan + PPN" template only available for PKP tenants?
-- "PPh 21" template only for tenants with employees?
+- "Penjualan + PPN" template only available for PKP companies?
+- "PPh 21" template only for companies with employees?
 - Industry-specific templates based on business_type?
 
 **Options:**
@@ -358,11 +361,11 @@ D. Lock after tax filing only
 **Format options:**
 - `TRX-{YYYY}-{seq}` (e.g., TRX-2025-00001)
 - `{TYPE}-{YYYY}{MM}-{seq}` (e.g., EXP-202501-00001)
-- `{TENANT_CODE}-{YYYY}-{seq}` (e.g., ABC-2025-00001)
+- `{COMPANY_CODE}-{YYYY}-{seq}` (e.g., ABC-2025-00001)
 - User-definable format
 
 **Sequence scope:**
-- Global per tenant
+- Global per instance (simple)
 - Per transaction type
 - Per fiscal year
 
@@ -677,7 +680,7 @@ C. Budget workflows (approval, alerts, variance analysis)
 
 4. **File size and format limits:**
    - Maximum file size per upload
-   - Maximum total storage per tenant
+   - Maximum total storage per company instance
    - Supported file formats
    - File format validation
    - OCR capabilities for scanned documents

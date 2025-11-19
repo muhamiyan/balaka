@@ -52,11 +52,11 @@ A modern accounting system that combines ease-of-use with comprehensive Indonesi
 - OCR support for scanned documents
 - Complete audit trail
 
-### 👥 Multi-Client Management
-- One bookkeeper manages multiple client companies
-- Easy switching between tenants
+### 👥 User Management
 - Role-based access: Owner, Operator, Power Operator, Viewer, Auditor
 - Time-bound auditor access
+- Multiple users per company instance
+- User activity audit trail
 
 ### 📈 Analysis & Reporting
 - Laporan Laba Rugi, Neraca, Arus Kas
@@ -84,10 +84,11 @@ flowchart TD
 - Handles simple to complex entries (one-to-many, many-to-many)
 - Automatic tax calculations
 
-### Multi-Tenancy
-- Single database, tenant isolation via `tenant_id`
-- Shared system templates, isolated custom templates
-- Scalable SaaS architecture
+### Single-Tenant Architecture
+- Instance-per-client deployment (one app per company)
+- Complete data and process isolation
+- Flexible deployment: co-located or dedicated VPS
+- No multi-tenancy code complexity
 
 ## Documentation
 
@@ -104,7 +105,7 @@ Comprehensive documentation is available in the `/docs` directory:
 
 1. **Tax Automation** - Automatic Indonesian tax calculations from transactions
 2. **Junior-Friendly** - Guided workflows, no accounting knowledge required
-3. **Multi-Client Efficiency** - One bookkeeper serves many clients
+3. **Simple Deployment** - Instance-per-client architecture for data isolation
 4. **Project-Based Accounting** - Built-in job costing for service businesses
 5. **Multi-Channel Support** - Marketplace and social media sales tracking
 6. **Analysis Focus** - Actionable business insights, not just compliance
@@ -141,7 +142,8 @@ Comprehensive documentation is available in the `/docs` directory:
 - Docker Compose (multi-container orchestration)
 
 **Infrastructure:**
-- Ansible (IaC and deployment automation)
+- Current: Docker Compose + manual provisioning
+- Future: Pulumi (programmatic VPS provisioning for SaaS)
 
 **Testing:**
 - JUnit 5 + Mockito (unit tests)

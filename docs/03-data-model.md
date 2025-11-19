@@ -4,9 +4,9 @@
 
 ```mermaid
 graph TD
-    tenants["tenants"] -->|1:many| coa["chart_of_accounts"]
-    tenants -->|1:many| transactions["transactions"]
-    tenants -->|1:many| jt["journal_templates<br/>(system + custom)"]
+    config["company_config"] -.->|settings| coa["chart_of_accounts"]
+    config -.->|settings| transactions["transactions"]
+    jt["journal_templates<br/>(system + custom)"]
 
     transactions -->|has many| je["journal_entries"]
     coa -->|referenced by| je
@@ -17,10 +17,10 @@ graph TD
 
 ## Core Entities
 
-### 1. Tenants (Multi-tenancy)
+### 1. Company Configuration (Single-Tenant)
 
 ```sql
-tenants
+company_config
 - id                    UUID PRIMARY KEY
 - name                  VARCHAR(255) NOT NULL
 - business_type         VARCHAR(100)           -- 'warung', 'toko', 'jasa', etc.
@@ -30,30 +30,29 @@ tenants
 - timezone              VARCHAR(50) DEFAULT 'Asia/Jakarta'
 - created_at            TIMESTAMP
 - updated_at            TIMESTAMP
-- is_active             BOOLEAN DEFAULT true
 ```
+
+**Note:** Single-tenant architecture - each application instance serves only one company. No `tenant_id` needed in any table.
 
 ### 2. Chart of Accounts
 
 ```sql
 chart_of_accounts
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
-- code                  VARCHAR(20) NOT NULL   -- e.g., "1-1100"
-- name                  VARCHAR(255) NOT NULL  -- e.g., "Kas"
-- name_en               VARCHAR(255)           -- Optional English name
-- account_type          VARCHAR(20) NOT NULL   -- 'asset', 'liability', 'equity', 'revenue', 'expense'
+- code                  VARCHAR(20) UNIQUE NOT NULL   -- e.g., "1-1100"
+- name                  VARCHAR(255) NOT NULL         -- e.g., "Kas"
+- name_en               VARCHAR(255)                  -- Optional English name
+- account_type          VARCHAR(20) NOT NULL          -- 'asset', 'liability', 'equity', 'revenue', 'expense'
 - parent_id             UUID REFERENCES chart_of_accounts(id)
-- level                 INTEGER                -- Hierarchy level (1, 2, 3...)
-- is_header             BOOLEAN DEFAULT false  -- Header vs detail account
+- level                 INTEGER                       -- Hierarchy level (1, 2, 3...)
+- is_header             BOOLEAN DEFAULT false         -- Header vs detail account
 - is_active             BOOLEAN DEFAULT true
 - description           TEXT
 - created_at            TIMESTAMP
 - updated_at            TIMESTAMP
 
-UNIQUE(tenant_id, code)
-INDEX(tenant_id, account_type)
-INDEX(tenant_id, parent_id)
+INDEX(account_type)
+INDEX(parent_id)
 ```
 
 **Account Types:**
@@ -89,17 +88,16 @@ graph TD
 ```sql
 journal_templates
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID REFERENCES tenants(id)  -- NULL for system templates
 - name                  VARCHAR(255) NOT NULL
 - description           TEXT
 - category              VARCHAR(50)            -- 'expense', 'income', 'payment', 'transfer', etc.
-- is_system             BOOLEAN DEFAULT false  -- System vs user-created
+- is_system             BOOLEAN DEFAULT false  -- System (preloaded) vs user-created
 - is_active             BOOLEAN DEFAULT true
 - created_by            UUID REFERENCES users(id)
 - created_at            TIMESTAMP
 - updated_at            TIMESTAMP
 
-INDEX(tenant_id, category)
+INDEX(category, is_active)
 INDEX(is_system, is_active)
 ```
 
@@ -155,9 +153,8 @@ Line 3: Credit | account_id: NULL           | mapping_key: "payment_account"  | 
 ```sql
 transactions
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - template_id           UUID REFERENCES journal_templates(id)
-- transaction_number    VARCHAR(50) NOT NULL   -- Auto-generated: TRX-2025-00001
+- transaction_number    VARCHAR(50) UNIQUE NOT NULL   -- Auto-generated: TRX-2025-00001
 - transaction_date      DATE NOT NULL
 - description           TEXT NOT NULL
 - reference_no          VARCHAR(100)           -- External reference (invoice no, etc.)
@@ -173,9 +170,8 @@ transactions
 - created_at            TIMESTAMP
 - updated_at            TIMESTAMP
 
-UNIQUE(tenant_id, transaction_number)
-INDEX(tenant_id, transaction_date)
-INDEX(tenant_id, status)
+INDEX(transaction_date, status)
+INDEX(status)
 INDEX(template_id)
 ```
 
@@ -226,7 +222,6 @@ Mappings:
 ```sql
 journal_entries
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - transaction_id        UUID REFERENCES transactions(id) ON DELETE RESTRICT
 - entry_date            DATE NOT NULL
 - account_id            UUID NOT NULL REFERENCES chart_of_accounts(id)
@@ -236,8 +231,8 @@ journal_entries
 - created_at            TIMESTAMP
 - updated_at            TIMESTAMP
 
-INDEX(tenant_id, entry_date)
-INDEX(tenant_id, account_id, entry_date)
+INDEX(entry_date)
+INDEX(account_id, entry_date)
 INDEX(transaction_id)
 
 CONSTRAINT check_debit_or_credit CHECK (
@@ -260,7 +255,6 @@ Entry 3: account_id: [1-1200], debit:         0, credit: 1,110,000, description:
 ```sql
 account_balances
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - account_id            UUID NOT NULL REFERENCES chart_of_accounts(id)
 - period_year           INTEGER NOT NULL
 - period_month          INTEGER NOT NULL       -- 1-12
@@ -270,8 +264,8 @@ account_balances
 - ending_balance        DECIMAL(15,2) DEFAULT 0
 - updated_at            TIMESTAMP
 
-UNIQUE(tenant_id, account_id, period_year, period_month)
-INDEX(tenant_id, period_year, period_month)
+UNIQUE(account_id, period_year, period_month)
+INDEX(period_year, period_month)
 ```
 
 **Purpose:** Pre-aggregated balances for fast report generation
@@ -299,35 +293,29 @@ users
 - last_login_at         TIMESTAMP
 ```
 
-### 10. User Tenant Access
+### 10. User Roles (Simplified for Single-Tenant)
+
+**Note:** In single-tenant architecture, role management is simplified. Each application instance has its own user base.
+
+User roles are stored directly in the `users` table. For time-bound access (auditors), additional fields are included:
 
 ```sql
-user_tenant_access
-- id                    UUID PRIMARY KEY
-- user_id               UUID NOT NULL REFERENCES users(id)
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
-- role                  VARCHAR(50) NOT NULL   -- 'owner', 'operator', 'power_operator', 'viewer', 'auditor'
-- is_active             BOOLEAN DEFAULT true
+-- Additional fields in users table for time-bound access
+users (additional fields)
 - access_start_date     DATE                   -- For time-bound access (auditor)
 - access_end_date       DATE                   -- For time-bound access (auditor)
 - granted_by            UUID REFERENCES users(id)
-- granted_at            TIMESTAMP
-- revoked_at            TIMESTAMP
 
-UNIQUE(user_id, tenant_id)
-INDEX(user_id)
-INDEX(tenant_id)
 INDEX(access_end_date) WHERE role = 'auditor'
 ```
 
-**Purpose:** Multi-client access for bookkeepers
+**Purpose:** Simple role-based access within the single company instance
 
 ### 11. Audit Log
 
 ```sql
 audit_logs
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - user_id               UUID REFERENCES users(id)
 - entity_type           VARCHAR(100) NOT NULL  -- 'transaction', 'journal_entry', etc.
 - entity_id             UUID NOT NULL
@@ -338,7 +326,7 @@ audit_logs
 - user_agent            TEXT
 - created_at            TIMESTAMP
 
-INDEX(tenant_id, created_at DESC)
+INDEX(created_at DESC)
 INDEX(entity_type, entity_id)
 INDEX(user_id, created_at DESC)
 ```
@@ -348,7 +336,6 @@ INDEX(user_id, created_at DESC)
 ```sql
 documents
 - id                    UUID PRIMARY KEY
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - transaction_id        UUID REFERENCES transactions(id) ON DELETE SET NULL
 - document_type         VARCHAR(50) NOT NULL   -- 'receipt', 'invoice', 'contract', 'other'
 - file_name             VARCHAR(255) NOT NULL
@@ -364,10 +351,10 @@ documents
 - archived_at           TIMESTAMP
 - metadata              JSONB                  -- OCR text, dimensions, etc.
 
-INDEX(tenant_id, uploaded_at DESC)
+INDEX(uploaded_at DESC)
 INDEX(transaction_id)
-INDEX(tenant_id, document_type)
-INDEX(tenant_id, is_archived)
+INDEX(document_type)
+INDEX(is_archived)
 ```
 
 **Purpose:** Store supporting documents for transactions (receipts, invoices, contracts)
@@ -376,18 +363,18 @@ INDEX(tenant_id, is_archived)
 ```mermaid
 graph TD
     A["bucket/"]
-    B["{tenant_id}/"]
-    C["{year}/"]
-    D["{month}/"]
-    E["{document_id}.{ext}"]
-    F["{document_id}_thumb.jpg"]
+    B["{year}/"]
+    C["{month}/"]
+    D["{document_id}.{ext}"]
+    E["{document_id}_thumb.jpg"]
 
     A --> B
     B --> C
     C --> D
-    D --> E
-    D --> F
+    C --> E
 ```
+
+**Note:** In single-tenant architecture, each instance has its own storage bucket, so no need for tenant_id in path.
 
 ### 13. Document Access Log
 
@@ -396,7 +383,6 @@ document_access_logs
 - id                    UUID PRIMARY KEY
 - document_id           UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE
 - user_id               UUID NOT NULL REFERENCES users(id)
-- tenant_id             UUID NOT NULL REFERENCES tenants(id)
 - access_type           VARCHAR(50) NOT NULL   -- 'view', 'download', 'share'
 - ip_address            VARCHAR(45)
 - user_agent            TEXT
@@ -404,7 +390,7 @@ document_access_logs
 
 INDEX(document_id, accessed_at DESC)
 INDEX(user_id, accessed_at DESC)
-INDEX(tenant_id, accessed_at DESC)
+INDEX(accessed_at DESC)
 ```
 
 **Purpose:** Audit trail for document access (who viewed/downloaded what, when)
@@ -412,14 +398,14 @@ INDEX(tenant_id, accessed_at DESC)
 ## Data Validation Rules
 
 ### Chart of Accounts
-- `code` must be unique per tenant
+- `code` must be unique
 - `account_type` must be one of defined types
-- `parent_id` must be same tenant
+- `parent_id` must reference valid account in same instance
 - Header accounts cannot have transactions (enforced in app)
 
 ### Journal Templates
-- System templates: `tenant_id` must be NULL
-- Custom templates: `tenant_id` must NOT be NULL
+- System templates: `is_system` = true (preloaded templates)
+- Custom templates: `is_system` = false (user-created)
 - Template lines must balance (total debit % = total credit %)
 
 ### Transactions
@@ -444,29 +430,29 @@ INDEX(tenant_id, accessed_at DESC)
 ### High-frequency queries
 ```sql
 -- Transaction listing
-INDEX(tenant_id, transaction_date DESC, status)
+INDEX(transaction_date DESC, status)
 
 -- Account activity
-INDEX(tenant_id, account_id, entry_date)
+INDEX(account_id, entry_date)
 
 -- Template selection
-INDEX(tenant_id, category, is_active) WHERE is_system = false
-INDEX(category, is_active) WHERE is_system = true
+INDEX(category, is_active)
+INDEX(is_system, is_active)
 
--- User access
-INDEX(user_id, tenant_id) WHERE is_active = true
+-- User authentication
+INDEX(email) WHERE is_active = true
 ```
 
 ### Composite indexes for reports
 ```sql
 -- Balance sheet / Income statement
-INDEX(tenant_id, account_type, entry_date)
+INDEX(account_type, entry_date)
 
 -- Trial balance
-INDEX(tenant_id, entry_date, account_id)
+INDEX(entry_date, account_id)
 
 -- Tax reports
-INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
+INDEX(entry_date, account_id)
 ```
 
 ## Data Integrity
@@ -493,9 +479,9 @@ INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
 1. **User selects template:**
    ```sql
    SELECT * FROM journal_templates
-   WHERE (tenant_id = :tenant_id OR is_system = true)
-     AND category = 'expense'
+   WHERE category = 'expense'
      AND is_active = true
+   ORDER BY is_system DESC, name
    ```
 
 2. **Load template lines:**
@@ -508,8 +494,8 @@ INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
 3. **User fills form, system creates transaction:**
    ```sql
    INSERT INTO transactions
-   (tenant_id, template_id, transaction_date, description, total_amount, status)
-   VALUES (:tenant_id, :template_id, :date, :desc, :amount, 'draft')
+   (template_id, transaction_date, description, total_amount, status, created_by)
+   VALUES (:template_id, :date, :desc, :amount, 'draft', :user_id)
    ```
 
 4. **Save account mappings:**
@@ -525,11 +511,11 @@ INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
    ```sql
    -- For each template line, resolve account and amount
    INSERT INTO journal_entries
-   (tenant_id, transaction_id, entry_date, account_id, debit, credit, description)
+   (transaction_id, entry_date, account_id, debit, credit, description)
    VALUES
-   (:tenant_id, :txn_id, :date, :expense_acct, :amount, 0, :desc),
-   (:tenant_id, :txn_id, :date, :ppn_acct, :ppn_amount, 0, 'PPN Masukan'),
-   (:tenant_id, :txn_id, :date, :bank_acct, 0, :total, :desc)
+   (:txn_id, :date, :expense_acct, :amount, 0, :desc),
+   (:txn_id, :date, :ppn_acct, :ppn_amount, 0, 'PPN Masukan'),
+   (:txn_id, :date, :bank_acct, 0, :total, :desc)
    ```
 
 6. **Post transaction:**
@@ -547,8 +533,7 @@ INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
    SET debit_total = debit_total + :debit,
        credit_total = credit_total + :credit,
        ending_balance = /* recalculate */
-   WHERE tenant_id = :tenant_id
-     AND account_id = :account_id
+   WHERE account_id = :account_id
      AND period_year = :year
      AND period_month = :month
    ```
@@ -556,15 +541,19 @@ INDEX(tenant_id, entry_date) WHERE account_id IN (ppn_accounts)
 ## Migration Strategy
 
 ### Initial Setup
-1. Create tenants table
-2. Create users and user_tenant_access
-3. Create chart_of_accounts with default templates
+1. Create company_config table
+2. Create users table
+3. Create chart_of_accounts with default structure
 4. Load system journal templates
 5. Create transaction tables
 6. Create journal_entries and balances
+7. Create documents and audit tables
 
 ### Seed Data
+- Company configuration (loaded from environment/setup wizard)
 - Default chart of accounts by business type
 - System journal templates (common Indonesian scenarios)
 - Indonesian tax accounts (PPN, PPh, etc.)
-- Sample transactions for demo
+- Initial admin user
+
+**Note:** Each application instance is initialized independently with its own database schema.

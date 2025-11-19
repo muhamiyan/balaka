@@ -188,10 +188,10 @@ graph TD
 - Critical for double-entry bookkeeping integrity
 - Rollback support for failed journal postings
 
-**Multi-Tenancy:**
-- Well-documented patterns in Spring ecosystem
-- Hibernate filters for tenant isolation
-- Proven in production at scale
+**Instance Management:**
+- Simple single-tenant architecture (one instance per company)
+- No complex multi-tenancy code overhead
+- Proven deployment patterns in Spring ecosystem
 
 **Indonesian Market:**
 - Java widely taught in Indonesian universities
@@ -233,9 +233,9 @@ graph TD
 - Document structure for tax forms
 
 **Performance:**
-- Efficient indexing for tenant-based queries
+- Efficient indexing for common queries
 - Materialized views for reports
-- Partitioning support for multi-tenant scale
+- Partitioning support for large datasets
 
 **Ecosystem:**
 - Excellent Spring Data JPA support
@@ -249,9 +249,10 @@ graph TD
 ### Why Java 25?
 
 **Virtual Threads:**
-- Lightweight concurrency for handling many tenant requests
+- Lightweight concurrency for handling concurrent requests
 - Better resource utilization than traditional threads
 - Ideal for I/O-heavy operations (database queries, file uploads)
+- Efficient resource usage when co-locating multiple instances
 
 **Long-Term Support:**
 - LTS release with extended support timeline
@@ -331,17 +332,27 @@ graph TD
 
 ### Infrastructure as Code
 
-**Ansible:**
-- Server provisioning and configuration
-- Idempotent deployment scripts
-- Inventory management for multiple environments
-- Playbooks for database setup, application deployment
+**Current Phase: Manual + Docker Compose**
+- Manual VPS provisioning (DigitalOcean, AWS)
+- Docker Compose for container orchestration
+- Simple bash scripts for common tasks
+- Focus on product stability, not automation
 
-**Why Ansible over Terraform:**
-- Better for configuration management
-- Simpler for small-to-medium deployments
-- Agent-less (SSH-based)
-- Easier for team without dedicated DevOps
+**Future Phase: Pulumi (SaaS Automation)**
+- Programmatic VPS creation (DigitalOcean, AWS API)
+- Infrastructure in TypeScript/Python/Java
+- Type-safe, testable infrastructure code
+- State management built-in
+- Called from control plane app via Automation API
+- Automated client provisioning and deployment
+
+**Why Pulumi (future) over Ansible:**
+- Better for creating cloud resources (VPS, DNS, storage)
+- Real programming language (not YAML)
+- Automation API for programmatic control
+- Built-in state tracking
+- Easier rollback and destruction
+- Ansible better for configuring existing servers, Pulumi better for provisioning
 
 ### Testing Strategy
 
@@ -505,8 +516,9 @@ graph LR
 6. Large talent pool in Indonesia
 7. Cost-optimized storage strategy (MinIO → Indonesian cloud)
 8. Complete DevSecOps pipeline with open-source tools
-9. Virtual threads for efficient multi-tenant handling (Java 25 + Spring Boot 4.0)
-10. Can evolve to API architecture if needed
+9. Single-tenant architecture (no multi-tenancy complexity)
+10. Virtual threads for efficient resource utilization (Java 25 + Spring Boot 4.0)
+11. Can evolve to API architecture if needed
 
 **Trade-offs Accepted:**
 - Less flashy UI than SPA (acceptable for target users)
