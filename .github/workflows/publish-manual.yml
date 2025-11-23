@@ -7,8 +7,9 @@ on:
       - main
       - master
     paths:
-      - 'user-manual/**'
+      - 'docs/user-manual/**'
       - 'src/main/resources/templates/**'
+      - 'src/test/java/**/manual/**'
       - '.github/workflows/publish-manual.yml'
 
   # Allow manual trigger
@@ -61,30 +62,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: user-manual/package-lock.json
-
-      - name: Install user-manual dependencies
-        working-directory: user-manual
-        run: npm ci || npm install
+      - name: Build application
+        run: ./mvnw clean compile test-compile -DskipTests
 
       - name: Install Playwright browsers
-        working-directory: user-manual
-        run: npx playwright install --with-deps chromium
+        run: ./mvnw exec:java -Dexec.mainClass="com.microsoft.playwright.CLI" -Dexec.classpathScope=test -Dexec.args="install --with-deps chromium"
 
-      - name: Build Spring Boot application
-        run: ./mvnw clean package -DskipTests
-
-      - name: Start application
+      - name: Start application for screenshots
         if: ${{ github.event.inputs.skip_screenshots != 'true' }}
         run: |
-          java -jar target/accounting-finance-*.jar &
+          ./mvnw spring-boot:run &
           echo "Waiting for application to start..."
-          timeout 120 bash -c 'until curl -s http://localhost:8080/login > /dev/null; do sleep 2; done'
+          timeout 180 bash -c 'until curl -s http://localhost:8080/login > /dev/null; do sleep 2; done'
           echo "Application started!"
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/akunting
@@ -93,19 +82,17 @@ jobs:
 
       - name: Capture screenshots
         if: ${{ github.event.inputs.skip_screenshots != 'true' }}
-        working-directory: user-manual
-        run: npm run capture
+        run: ./mvnw exec:java -Dexec.mainClass="com.artivisi.accountingfinance.manual.ScreenshotCapture" -Dexec.classpathScope=test
         env:
           APP_URL: http://localhost:8080
 
       - name: Generate user manual
-        working-directory: user-manual
-        run: npm run generate
+        run: ./mvnw exec:java -Dexec.mainClass="com.artivisi.accountingfinance.manual.UserManualGenerator" -Dexec.classpathScope=test
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: user-manual/dist
+          path: target/user-manual
 
   deploy:
     environment:
