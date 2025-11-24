@@ -67,25 +67,25 @@ Recommend: Keep current design but add manual entry support for adjustments.
 - [x] Pagination (functional)
 - [x] Search filter (functional)
 
-### 4. Create Journal Entry
+### 4. Create Journal Entry ✅
 
-- [ ] Navigate to create form via "Tambah Jurnal" button
-- [ ] Display form header fields (date, reference, description)
-- [ ] Display journal lines table (dynamic rows)
-- [ ] Add line button
-- [ ] Remove line button
-- [ ] Account dropdown (active accounts only)
-- [ ] Debit input field
-- [ ] Credit input field
-- [ ] Line description field
-- [ ] Display running total (debit/credit)
-- [ ] Display balance indicator (balanced/unbalanced)
-- [ ] Save as draft button
-- [ ] Save and post button
-- [ ] Validation: at least 2 lines required
-- [ ] Validation: debit = credit before posting
-- [ ] Validation: date is required
-- [ ] Success message after save
+- [x] Navigate to create form via "Tambah Jurnal" button
+- [x] Display form header fields (date, reference, description)
+- [x] Display journal lines table (dynamic rows)
+- [x] Add line button
+- [x] Remove line button (disabled when only 2 lines)
+- [x] Account dropdown (active accounts only)
+- [x] Debit input field
+- [x] Credit input field
+- [x] Line description field
+- [x] Display running total (debit/credit)
+- [x] Display balance indicator (balanced/unbalanced)
+- [x] Save as draft button
+- [x] Save and post button (disabled when unbalanced)
+- [x] Validation: at least 2 lines required
+- [x] Validation: debit = credit before posting
+- [x] Validation: date is required
+- [ ] Success message after save (deferred - redirect to detail page)
 
 ### 5. Edit Journal Entry
 
@@ -137,13 +137,13 @@ Recommend: Keep current design but add manual entry support for adjustments.
 - [ ] Cannot change account type if has journal entries
 - [ ] Cannot delete account if has journal entries
 
-### 10. Balance Validation
+### 10. Balance Validation ✅
 
-- [ ] Real-time balance check on form
-- [ ] Visual indicator when balanced (green)
-- [ ] Visual indicator when unbalanced (red)
-- [ ] Cannot post if unbalanced
-- [ ] Error message shows difference amount
+- [x] Real-time balance check on form
+- [x] Visual indicator when balanced (green)
+- [x] Visual indicator when unbalanced (red)
+- [x] Cannot post if unbalanced (Save & Post button disabled)
+- [x] Error message shows difference amount
 
 ---
 
@@ -151,11 +151,12 @@ Recommend: Keep current design but add manual entry support for adjustments.
 
 1. `JournalEntryListTest.java` - List display and filtering ✅ (20 tests)
 2. `JournalListPage.java` - Page object for list tests ✅
-3. `JournalEntryCreateTest.java` - Create entry scenarios (TODO)
-4. `JournalEntryEditTest.java` - Edit draft scenarios (TODO)
-5. `JournalEntryPostTest.java` - Post and validation scenarios (TODO)
-6. `JournalEntryVoidTest.java` - Void scenarios (TODO)
-7. `JournalEntryValidationTest.java` - Balance and field validation (TODO)
+3. `JournalEntryCreateTest.java` - Create entry scenarios ✅ (10 tests)
+4. `JournalFormPage.java` - Page object for form tests ✅
+5. `JournalEntryEditTest.java` - Edit draft scenarios (TODO)
+6. `JournalEntryPostTest.java` - Post and validation scenarios (TODO)
+7. `JournalEntryVoidTest.java` - Void scenarios (TODO)
+8. `JournalEntryValidationTest.java` - Balance and field validation (TODO)
 
 ---
 
