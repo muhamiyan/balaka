@@ -114,14 +114,14 @@ Already implemented at `/journals` (Buku Besar):
 - [x] Contra-asset handling (Accumulated Depreciation)
 - [x] Playwright tests (BalanceSheetTest.java - 28 tests)
 
-### 4. Income Statement (Laporan Laba Rugi)
+### 4. Income Statement (Laporan Laba Rugi) ✅
 
-- [ ] IncomeStatementService.generateIncomeStatement(startDate, endDate)
-- [ ] Group accounts by type: Revenue, Expense
-- [ ] Calculate Net Income = Revenue - Expense
-- [ ] Income Statement UI page (`/reports/income-statement`)
-- [ ] Date range filter
-- [ ] Hierarchical account display
+- [x] IncomeStatementService.generateIncomeStatement(startDate, endDate) - already implemented
+- [x] Group accounts by type: Revenue, Expense
+- [x] Calculate Net Income = Revenue - Expense
+- [x] Income Statement UI page (`/reports/income-statement`) - updated with dynamic data
+- [x] Date range filter
+- [x] Playwright tests (IncomeStatementTest.java - 26 tests)
 
 ### 5. Export Features
 
