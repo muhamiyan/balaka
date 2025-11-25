@@ -1,5 +1,8 @@
 package com.artivisi.accountingfinance.controller;
 
+import com.artivisi.accountingfinance.service.ClientService;
+import com.artivisi.accountingfinance.service.ProjectProfitabilityService;
+import com.artivisi.accountingfinance.service.ProjectService;
 import com.artivisi.accountingfinance.service.ReportExportService;
 import com.artivisi.accountingfinance.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/reports")
@@ -23,6 +27,9 @@ public class ReportController {
 
     private final ReportService reportService;
     private final ReportExportService reportExportService;
+    private final ProjectProfitabilityService profitabilityService;
+    private final ProjectService projectService;
+    private final ClientService clientService;
 
     private static final DateTimeFormatter FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -218,5 +225,100 @@ public class ReportController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
+    }
+
+    // ==================== PROFITABILITY REPORTS ====================
+
+    @GetMapping("/project-profitability")
+    public String projectProfitability(
+            @RequestParam(required = false) UUID projectId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            Model model) {
+        model.addAttribute("currentPage", "reports");
+        model.addAttribute("reportType", "project-profitability");
+        model.addAttribute("projects", projectService.findActiveProjects());
+
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        model.addAttribute("startDate", start);
+        model.addAttribute("endDate", end);
+        model.addAttribute("selectedProjectId", projectId);
+
+        if (projectId != null) {
+            model.addAttribute("report", profitabilityService.calculateProjectProfitability(projectId, start, end));
+            model.addAttribute("costOverrun", profitabilityService.calculateCostOverrun(projectId));
+        }
+
+        return "reports/project-profitability";
+    }
+
+    @GetMapping("/client-profitability")
+    public String clientProfitability(
+            @RequestParam(required = false) UUID clientId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            Model model) {
+        model.addAttribute("currentPage", "reports");
+        model.addAttribute("reportType", "client-profitability");
+        model.addAttribute("clients", clientService.findActiveClients());
+
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        model.addAttribute("startDate", start);
+        model.addAttribute("endDate", end);
+        model.addAttribute("selectedClientId", clientId);
+
+        if (clientId != null) {
+            model.addAttribute("report", profitabilityService.calculateClientProfitability(clientId, start, end));
+        }
+
+        return "reports/client-profitability";
+    }
+
+    @GetMapping("/client-ranking")
+    public String clientRanking(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "10") int limit,
+            Model model) {
+        model.addAttribute("currentPage", "reports");
+        model.addAttribute("reportType", "client-ranking");
+
+        LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfYear(1);
+        LocalDate end = endDate != null ? endDate : LocalDate.now();
+        model.addAttribute("startDate", start);
+        model.addAttribute("endDate", end);
+        model.addAttribute("limit", limit);
+
+        model.addAttribute("rankings", profitabilityService.getClientRanking(start, end, limit));
+
+        return "reports/client-ranking";
+    }
+
+    // REST API Endpoints for profitability
+    @GetMapping("/api/project-profitability")
+    @ResponseBody
+    public ResponseEntity<ProjectProfitabilityService.ProjectProfitabilityReport> apiProjectProfitability(
+            @RequestParam UUID projectId,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        return ResponseEntity.ok(profitabilityService.calculateProjectProfitability(projectId, startDate, endDate));
+    }
+
+    @GetMapping("/api/client-profitability")
+    @ResponseBody
+    public ResponseEntity<ProjectProfitabilityService.ClientProfitabilityReport> apiClientProfitability(
+            @RequestParam UUID clientId,
+            @RequestParam LocalDate startDate,
+            @RequestParam LocalDate endDate) {
+        return ResponseEntity.ok(profitabilityService.calculateClientProfitability(clientId, startDate, endDate));
+    }
+
+    @GetMapping("/api/cost-overrun")
+    @ResponseBody
+    public ResponseEntity<ProjectProfitabilityService.CostOverrunReport> apiCostOverrun(
+            @RequestParam UUID projectId) {
+        return ResponseEntity.ok(profitabilityService.calculateCostOverrun(projectId));
     }
 }

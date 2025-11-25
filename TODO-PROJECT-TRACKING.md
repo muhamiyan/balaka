@@ -218,31 +218,32 @@ Track profitability per project/job for service businesses. Simple tagging appro
 
 ---
 
-### Phase 7: Profitability Reports ⏳
+### Phase 7: Profitability Reports ✅
 
 #### 7.1 ProjectProfitabilityService
-- [ ] `calculateProjectProfitability(projectId, dateRange)` - single project
-- [ ] `calculateClientProfitability(clientId, dateRange)` - all client projects
-- [ ] `getTopClients(dateRange, limit)` - client ranking by revenue
+- [x] `calculateProjectProfitability(projectId, dateRange)` - single project
+- [x] `calculateClientProfitability(clientId, dateRange)` - all client projects
+- [x] `getClientRanking(dateRange, limit)` - client ranking by revenue
 
 #### 7.2 Cost Overrun Detection
-- [ ] `calculateCostOverrunRisk(projectId)` - % spent vs % complete
-- [ ] Return: budget, spent, progress, projected final cost, projected loss
+- [x] `calculateCostOverrun(projectId)` - % spent vs % complete
+- [x] Return: budget, spent, progress, projected final cost, projected loss, risk level
 
 #### 7.3 Report Controller
-- [ ] `GET /reports/project-profitability` - project profitability report
-- [ ] `GET /reports/client-profitability` - client profitability report
-- [ ] `GET /reports/client-ranking` - top clients by revenue
+- [x] `GET /reports/project-profitability` - project profitability report
+- [x] `GET /reports/client-profitability` - client profitability report
+- [x] `GET /reports/client-ranking` - top clients by revenue
 
 #### 7.4 Report Templates
-- [ ] `reports/project-profitability.html` - single project P&L
-- [ ] `reports/client-profitability.html` - client aggregate
-- [ ] `reports/client-ranking.html` - client ranking
+- [x] `reports/project-profitability.html` - single project P&L with cost status
+- [x] `reports/client-profitability.html` - client aggregate with project breakdown
+- [x] `reports/client-ranking.html` - client ranking with progress bars
 
 #### 7.5 Report Functional Tests
-- [ ] Generate project profitability report
-- [ ] Generate client profitability report
-- [ ] Verify cost overrun detection
+- [x] Generate project profitability report (11 tests)
+- [x] Generate client profitability report (10 tests)
+- [x] Client ranking report with limits (5 tests)
+- [x] Verify cost overrun detection with risk levels
 
 ---
 
@@ -256,7 +257,7 @@ Track profitability per project/job for service businesses. Simple tagging appro
 | 4 | Milestone Management | ✅ Complete |
 | 5 | Payment Terms & Invoices | ✅ Complete |
 | 6 | Transaction-Project Linking | ✅ Complete |
-| 7 | Profitability Reports | ⏳ Not Started |
+| 7 | Profitability Reports | ✅ Complete |
 
 ---
 
@@ -267,8 +268,8 @@ Track profitability per project/job for service businesses. Simple tagging appro
 3. ✅ User can link transactions to projects
 4. ⏳ Milestone completion triggers revenue recognition
 5. ✅ Invoice generation from payment terms works
-6. ⏳ Project profitability report shows revenue - costs
-7. ⏳ Client profitability report aggregates all client projects
-8. ⏳ Cost overrun detection calculates % spent vs % complete
+6. ✅ Project profitability report shows revenue - costs
+7. ✅ Client profitability report aggregates all client projects
+8. ✅ Cost overrun detection calculates % spent vs % complete with risk levels
 9. ✅ HTMX partial updates work for all list pages
-10. ✅ All functionality verified by Playwright tests
+10. ✅ All functionality verified by Playwright tests (26 profitability tests passing)

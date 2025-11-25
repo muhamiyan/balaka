@@ -117,4 +117,23 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, UUID
     @Query(value = "SELECT MAX(CAST(SUBSTRING(journal_number, 9, 4) AS INTEGER)) FROM journal_entries " +
            "WHERE journal_number LIKE :prefix", nativeQuery = true)
     Integer findMaxSequenceByPrefix(@Param("prefix") String prefix);
+
+    // Project profitability queries
+    @Query("SELECT COALESCE(SUM(j.debitAmount), 0) FROM JournalEntry j " +
+           "WHERE j.project.id = :projectId AND j.account.id = :accountId AND j.status = 'POSTED' AND " +
+           "j.journalDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumDebitByProjectAndAccountAndDateRange(
+            @Param("projectId") UUID projectId,
+            @Param("accountId") UUID accountId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT COALESCE(SUM(j.creditAmount), 0) FROM JournalEntry j " +
+           "WHERE j.project.id = :projectId AND j.account.id = :accountId AND j.status = 'POSTED' AND " +
+           "j.journalDate BETWEEN :startDate AND :endDate")
+    BigDecimal sumCreditByProjectAndAccountAndDateRange(
+            @Param("projectId") UUID projectId,
+            @Param("accountId") UUID accountId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }
