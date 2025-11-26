@@ -23,3 +23,21 @@ java_heap_max: "1024m"
 # SSL Configuration
 ssl_enabled: true
 ssl_email: "admin@artivisi.com"
+
+# Backup Configuration
+backup_cron_enabled: true
+backup_cron_hour: "2"
+backup_cron_minute: "0"
+backup_retention_count: 7
+
+# Remote Backup (optional)
+backup_remote_enabled: false
+# backup_remote_user: "backup"
+# backup_remote_host: "backup.example.com"
+# backup_remote_path: "/backups/accounting"
+# backup_remote_cron_hour: "3"
+# backup_remote_cron_minute: "0"
+
+# Backup Notification (optional - webhook URL)
+backup_notification_enabled: false
+# backup_notification_url: "https://hooks.example.com/backup"

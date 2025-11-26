@@ -1,0 +1,83 @@
+---
+- name: Create scripts directory
+  ansible.builtin.file:
+    path: "/opt/{{ app_name }}/scripts"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Create backup directory
+  ansible.builtin.file:
+    path: "/opt/{{ app_name }}/backup"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Create documents directory
+  ansible.builtin.file:
+    path: "/opt/{{ app_name }}/documents"
+    state: directory
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Deploy backup script
+  ansible.builtin.template:
+    src: backup.sh.j2
+    dest: "/opt/{{ app_name }}/scripts/backup.sh"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0755"
+
+- name: Deploy restore script
+  ansible.builtin.template:
+    src: restore.sh.j2
+    dest: "/opt/{{ app_name }}/scripts/restore.sh"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure backup cron job
+  ansible.builtin.cron:
+    name: "{{ app_name }} daily backup"
+    user: "{{ app_user }}"
+    hour: "{{ backup_cron_hour | default('2') }}"
+    minute: "{{ backup_cron_minute | default('0') }}"
+    job: "/opt/{{ app_name }}/scripts/backup.sh >> /var/log/{{ app_name }}/backup.log 2>&1"
+    state: "{{ 'present' if backup_cron_enabled | default(true) else 'absent' }}"
+
+- name: Configure weekly remote sync cron job
+  ansible.builtin.cron:
+    name: "{{ app_name }} weekly remote backup sync"
+    user: "{{ app_user }}"
+    weekday: "0"
+    hour: "{{ backup_remote_cron_hour | default('3') }}"
+    minute: "{{ backup_remote_cron_minute | default('0') }}"
+    job: "rsync -avz /opt/{{ app_name }}/backup/ {{ backup_remote_user }}@{{ backup_remote_host }}:{{ backup_remote_path }}/ >> /var/log/{{ app_name }}/backup.log 2>&1"
+    state: "{{ 'present' if backup_remote_enabled | default(false) else 'absent' }}"
+  when: backup_remote_enabled | default(false)
+
+- name: Create .pgpass file for passwordless pg_dump
+  ansible.builtin.copy:
+    dest: "/home/{{ app_user }}/.pgpass"
+    content: "localhost:5432:{{ db_name }}:{{ db_user }}:{{ db_password }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  when: app_user != 'accounting'
+
+- name: Create .pgpass file for system user (no home directory)
+  ansible.builtin.copy:
+    dest: "/opt/{{ app_name }}/.pgpass"
+    content: "localhost:5432:{{ db_name }}:{{ db_user }}:{{ db_password }}"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+
+- name: Set PGPASSFILE environment variable in backup script
+  ansible.builtin.lineinfile:
+    path: "/opt/{{ app_name }}/scripts/backup.sh"
+    insertafter: "^set -e"
+    line: "export PGPASSFILE=\"/opt/{{ app_name }}/.pgpass\""
