@@ -225,6 +225,7 @@
         .notes-content {
             font-size: 10pt;
             color: #78350f;
+            white-space: pre-line;
         }
 
         /* Bank Account Section */
@@ -403,8 +404,8 @@
                 <div class="company-details">
                     <span th:if="${company.companyAddress}" th:text="${company.companyAddress}">Alamat Perusahaan</span><br th:if="${company.companyAddress}">
                     <span th:if="${company.companyPhone}">Tel: <span th:text="${company.companyPhone}">021-xxx</span></span>
-                    <span th:if="${company.companyPhone and company.companyEmail}"> | </span>
-                    <span th:if="${company.companyEmail}">Email: <span th:text="${company.companyEmail}">email@company.com</span></span><br th:if="${company.companyPhone or company.companyEmail}">
+                    <span th:if="${company.companyPhone != null and company.companyEmail != null}"> | </span>
+                    <span th:if="${company.companyEmail}">Email: <span th:text="${company.companyEmail}">email@company.com</span></span><br th:if="${company.companyPhone != null or company.companyEmail != null}">
                     <span th:if="${company.taxId}">NPWP: <span th:text="${company.taxId}">00.000.000.0-000.000</span></span>
                 </div>
             </div>
@@ -430,7 +431,7 @@
                     <span th:if="${invoice.client.contactPerson}" th:text="${invoice.client.contactPerson}">Contact Person</span><br th:if="${invoice.client.contactPerson}">
                     <span th:if="${invoice.client.address}" th:text="${invoice.client.address}">Alamat Klien</span><br th:if="${invoice.client.address}">
                     <span th:if="${invoice.client.phone}">Tel: <span th:text="${invoice.client.phone}">021-xxx</span></span>
-                    <span th:if="${invoice.client.phone and invoice.client.email}"> | </span>
+                    <span th:if="${invoice.client.phone != null and invoice.client.email != null}"> | </span>
                     <span th:if="${invoice.client.email}" th:text="${invoice.client.email}">email@client.com</span>
                 </div>
             </div>
@@ -510,7 +511,7 @@
             Dokumen ini dicetak secara elektronik dan sah tanpa tanda tangan basah.<br>
             <span th:text="${company.companyName}">Nama Perusahaan</span> |
             <span th:if="${company.companyPhone}" th:text="${company.companyPhone}">021-xxx</span>
-            <span th:if="${company.companyPhone and company.companyEmail}"> | </span>
+            <span th:if="${company.companyPhone != null and company.companyEmail != null}"> | </span>
             <span th:if="${company.companyEmail}" th:text="${company.companyEmail}">email@company.com</span>
         </div>
     </div>

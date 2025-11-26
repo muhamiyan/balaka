@@ -357,8 +357,8 @@
                 <div class="company-details">
                     <span th:if="${company.companyAddress}" th:text="${company.companyAddress}">Alamat</span><br th:if="${company.companyAddress}">
                     <span th:if="${company.companyPhone}">Tel: <span th:text="${company.companyPhone}">021-xxx</span></span>
-                    <span th:if="${company.companyPhone and company.companyEmail}"> | </span>
-                    <span th:if="${company.companyEmail}" th:text="${company.companyEmail}">email@company.com</span><br th:if="${company.companyPhone or company.companyEmail}">
+                    <span th:if="${company.companyPhone != null and company.companyEmail != null}"> | </span>
+                    <span th:if="${company.companyEmail}" th:text="${company.companyEmail}">email@company.com</span><br th:if="${company.companyPhone != null or company.companyEmail != null}">
                     <span th:if="${company.taxId}">NPWP: <span th:text="${company.taxId}">00.000.000.0-000.000</span></span>
                 </div>
             </div>

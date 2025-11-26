@@ -77,8 +77,8 @@
                 <div class="company-details">
                     <span th:if="${company.companyAddress}" th:text="${company.companyAddress}">Alamat</span><br th:if="${company.companyAddress}">
                     <span th:if="${company.companyPhone}">Tel: [[${company.companyPhone}]]</span>
-                    <span th:if="${company.companyPhone and company.companyEmail}"> | </span>
-                    <span th:if="${company.companyEmail}" th:text="${company.companyEmail}">email</span><br th:if="${company.companyPhone or company.companyEmail}">
+                    <span th:if="${company.companyPhone != null and company.companyEmail != null}"> | </span>
+                    <span th:if="${company.companyEmail}" th:text="${company.companyEmail}">email</span><br th:if="${company.companyPhone != null or company.companyEmail != null}">
                     <span th:if="${company.taxId}">NPWP: [[${company.taxId}]]</span>
                 </div>
             </div>
@@ -104,8 +104,8 @@
                     <tr th:each="item : ${report.items}">
                         <td class="account-code" th:text="${item.account.accountCode}">1000</td>
                         <td th:text="${item.account.accountName}">Nama Akun</td>
-                        <td class="text-right" th:text="${item.debit.compareTo(T(java.math.BigDecimal).ZERO) != 0} ? ${#numbers.formatDecimal(item.debit, 1, 'POINT', 0, 'COMMA')} : '-'">0</td>
-                        <td class="text-right" th:text="${item.credit.compareTo(T(java.math.BigDecimal).ZERO) != 0} ? ${#numbers.formatDecimal(item.credit, 1, 'POINT', 0, 'COMMA')} : '-'">0</td>
+                        <td class="text-right" th:text="${item.debitBalance != null and item.debitBalance.compareTo(T(java.math.BigDecimal).ZERO) != 0} ? ${#numbers.formatDecimal(item.debitBalance, 1, 'POINT', 0, 'COMMA')} : '-'">0</td>
+                        <td class="text-right" th:text="${item.creditBalance != null and item.creditBalance.compareTo(T(java.math.BigDecimal).ZERO) != 0} ? ${#numbers.formatDecimal(item.creditBalance, 1, 'POINT', 0, 'COMMA')} : '-'">0</td>
                     </tr>
                 </th:block>
                 <tr th:if="${report == null or report.items.isEmpty()}">
