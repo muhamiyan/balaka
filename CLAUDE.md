@@ -27,7 +27,9 @@ Indonesian accounting application for small businesses. Spring Boot 4.0 + Thymel
   - 2.1 Document Attachment: ✅ Complete
   - 2.2 Telegram Receipt Import: ✅ Complete
   - 2.3-2.5 Tax Accounts/Templates: ✅ Complete
-  - 2.6 Tax Reports: ⏳ Next
+  - 2.6 Tax Reports: ✅ Complete
+  - 2.7 Fiscal Period Management: ⏳ Next
+  - 2.9 Backup & Restore: ✅ Complete
   - See `docs/06-implementation-plan.md` for full plan
 
 ## Key Files
@@ -93,6 +95,8 @@ Phase 1 (Core Accounting MVP) is complete. All features implemented:
 Phase 2 (Tax Compliance) in progress:
 - Document Attachment, Telegram Receipt Import complete
 - Tax Accounts and Templates (PPN, PPh) complete
-- Next: Tax Reports (2.6)
+- Tax Reports (PPN Summary, PPh 23, Coretax Export) complete
+- Backup & Restore utility complete
+- Next: Fiscal Period Management (2.7)
 
 See `docs/06-implementation-plan.md` for full plan

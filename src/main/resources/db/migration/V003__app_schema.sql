@@ -726,3 +726,30 @@ CREATE INDEX idx_tax_details_faktur ON tax_transaction_details(faktur_number);
 CREATE INDEX idx_tax_details_bupot ON tax_transaction_details(bupot_number);
 CREATE INDEX idx_tax_details_type ON tax_transaction_details(tax_type);
 CREATE INDEX idx_tax_details_faktur_date ON tax_transaction_details(faktur_date);
+
+-- ============================================
+-- Fiscal Periods (Phase 2.7)
+-- ============================================
+
+CREATE TABLE fiscal_periods (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    month_closed_at TIMESTAMP,
+    month_closed_by VARCHAR(100),
+    tax_filed_at TIMESTAMP,
+    tax_filed_by VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uk_fiscal_period_year_month UNIQUE (year, month),
+    CONSTRAINT chk_fiscal_year CHECK (year BETWEEN 2000 AND 2100),
+    CONSTRAINT chk_fiscal_month CHECK (month BETWEEN 1 AND 12),
+    CONSTRAINT chk_fiscal_status CHECK (status IN ('OPEN', 'MONTH_CLOSED', 'TAX_FILED'))
+);
+
+CREATE INDEX idx_fiscal_periods_year ON fiscal_periods(year);
+CREATE INDEX idx_fiscal_periods_status ON fiscal_periods(status);
+CREATE INDEX idx_fiscal_periods_year_month ON fiscal_periods(year, month);
