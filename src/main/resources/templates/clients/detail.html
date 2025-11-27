@@ -14,7 +14,7 @@
         <div class="flex items-start justify-between">
             <div>
                 <h2 class="text-xl font-semibold text-gray-900" th:text="${client.name}">PT ABC</h2>
-                <p class="text-sm text-gray-500 font-mono" th:text="${client.code}">CLT-001</p>
+                <p class="text-sm text-gray-500 font-mono" data-testid="client-code" th:text="${client.code}">CLT-001</p>
             </div>
             <div class="flex items-center gap-2">
                 <span th:if="${client.active}" class="px-3 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">Aktif</span>
@@ -54,7 +54,7 @@
         </div>
 
         <!-- Tax Information Card -->
-        <div class="bg-white rounded-lg shadow p-6" th:if="${client.npwp != null || client.nitku != null || client.nik != null}">
+        <div class="bg-white rounded-lg shadow p-6" th:if="${not #strings.isEmpty(client.npwp) or not #strings.isEmpty(client.nitku) or not #strings.isEmpty(client.nik)}">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Informasi Pajak (Coretax)</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>

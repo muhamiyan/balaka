@@ -11,7 +11,7 @@ public class ClientDetailPage {
     private static final String PAGE_TITLE = "#page-title";
     private static final String CLIENT_DETAIL = "[data-testid='client-detail']";
     private static final String CLIENT_NAME = "[data-testid='client-detail'] h2";
-    private static final String CLIENT_CODE = "[data-testid='client-detail'] p.font-mono";
+    private static final String CLIENT_CODE = "[data-testid='client-code']";
     private static final String DEACTIVATE_BUTTON = "button:has-text('Nonaktifkan')";
     private static final String ACTIVATE_BUTTON = "button:has-text('Aktifkan')";
 
