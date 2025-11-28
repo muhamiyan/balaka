@@ -49,53 +49,75 @@ public class UserManualGenerator {
             List<String> screenshots
     ) {}
 
-    public static List<Section> getSections() {
+    /**
+     * Section group for collapsible sidebar navigation
+     */
+    public record SectionGroup(
+            String id,
+            String title,
+            String icon,
+            List<Section> sections
+    ) {}
+
+    public static List<SectionGroup> getSectionGroups() {
         return List.of(
-            // Pengantar
-            new Section("pendahuluan", "Pendahuluan", "00-pendahuluan.md", List.of()),
-            new Section("konsep-dasar", "Konsep Dasar Akuntansi", "01-konsep-dasar.md", List.of()),
-
-            // Bagian I: Operasi Harian
-            new Section("mencatat-pendapatan", "Mencatat Pendapatan", "10-mencatat-pendapatan.md", List.of("transactions-form", "transactions-detail")),
-            new Section("mencatat-pengeluaran", "Mencatat Pengeluaran", "11-mencatat-pengeluaran.md", List.of("transactions-list", "transactions-form")),
-            new Section("transfer-antar-akun", "Transfer Antar Akun", "12-transfer-antar-akun.md", List.of("transactions-form")),
-            new Section("telegram-receipt", "Telegram Receipt", "13-telegram-receipt.md", List.of()),
-
-            // Bagian II: Pelaporan
-            new Section("laporan-harian", "Laporan Harian", "20-laporan-harian.md", List.of("dashboard", "transactions-list", "journals-list")),
-            new Section("laporan-bulanan", "Laporan Bulanan", "21-laporan-bulanan.md", List.of("reports-trial-balance", "reports-balance-sheet", "reports-income-statement")),
-            new Section("laporan-tahunan", "Laporan Tahunan", "22-laporan-tahunan.md", List.of("reports-income-statement", "reports-balance-sheet")),
-
-            // Bagian III: Perpajakan
-            new Section("transaksi-ppn", "Transaksi PPN", "30-transaksi-ppn.md", List.of("transactions-form", "reports-ppn-summary")),
-            new Section("transaksi-pph", "Transaksi PPh", "31-transaksi-pph.md", List.of("transactions-form", "reports-pph23-withholding")),
-            new Section("laporan-pajak", "Laporan Pajak", "32-laporan-pajak.md", List.of("reports-ppn-summary", "reports-pph23-withholding", "reports-tax-summary")),
-
-            // Bagian IV: Manajemen Proyek
-            new Section("setup-proyek", "Setup Proyek", "40-setup-proyek.md", List.of("projects-form", "clients-list")),
-            new Section("tracking-proyek", "Tracking Proyek", "41-tracking-proyek.md", List.of("projects-detail", "projects-list")),
-            new Section("invoice-penagihan", "Invoice & Penagihan", "42-invoice-penagihan.md", List.of("invoices-list")),
-            new Section("analisis-profitabilitas", "Analisis Profitabilitas", "43-analisis-profitabilitas.md", List.of("reports-project-profitability", "reports-client-profitability")),
-
-            // Bagian V: Konfigurasi
-            new Section("setup-awal", "Setup Awal", "50-setup-awal.md", List.of("accounts-list", "accounts-form")),
-            new Section("kelola-template", "Kelola Template", "51-kelola-template.md", List.of("templates-list", "templates-detail", "templates-form")),
-            new Section("kelola-klien", "Kelola Klien", "52-kelola-klien.md", List.of("clients-list", "clients-detail", "clients-form")),
-            new Section("jadwal-amortisasi", "Jadwal Amortisasi", "53-jadwal-amortisasi.md", List.of("amortization-list", "amortization-form")),
-            new Section("kelola-periode-fiskal", "Kelola Periode Fiskal", "54-kelola-periode-fiskal.md", List.of()),
-
-            // Bagian VI: Penggajian (Payroll)
-            new Section("kelola-karyawan", "Kelola Karyawan", "60-kelola-karyawan.md", List.of("employees-list", "employees-form")),
-            new Section("komponen-gaji", "Komponen Gaji", "61-komponen-gaji.md", List.of()),
-            new Section("kalkulator-bpjs", "Kalkulator BPJS", "62-kalkulator-bpjs.md", List.of()),
-            new Section("kalkulator-pph21", "Kalkulator PPh 21", "63-kalkulator-pph21.md", List.of()),
-            new Section("payroll-processing", "Proses Penggajian", "64-payroll-processing.md", List.of("payroll-list", "payroll-detail", "payroll-form")),
-
-            // Lampiran
-            new Section("glosarium", "Glosarium", "90-glosarium.md", List.of()),
-            new Section("referensi-akun", "Referensi Akun", "91-referensi-akun.md", List.of("accounts-list")),
-            new Section("referensi-template", "Referensi Template", "92-referensi-template.md", List.of("templates-list"))
+            new SectionGroup("pengantar", "Pengantar", "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253", List.of(
+                new Section("pendahuluan", "Pendahuluan", "00-pendahuluan.md", List.of()),
+                new Section("konsep-dasar", "Konsep Dasar Akuntansi", "01-konsep-dasar.md", List.of())
+            )),
+            new SectionGroup("operasi-harian", "Operasi Harian", "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01", List.of(
+                new Section("mencatat-pendapatan", "Mencatat Pendapatan", "10-mencatat-pendapatan.md", List.of("transactions-form", "transactions-detail")),
+                new Section("mencatat-pengeluaran", "Mencatat Pengeluaran", "11-mencatat-pengeluaran.md", List.of("transactions-list", "transactions-form")),
+                new Section("transfer-antar-akun", "Transfer Antar Akun", "12-transfer-antar-akun.md", List.of("transactions-form")),
+                new Section("telegram-receipt", "Telegram Receipt", "13-telegram-receipt.md", List.of())
+            )),
+            new SectionGroup("pelaporan", "Pelaporan", "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", List.of(
+                new Section("laporan-harian", "Laporan Harian", "20-laporan-harian.md", List.of("dashboard", "transactions-list", "journals-list")),
+                new Section("laporan-bulanan", "Laporan Bulanan", "21-laporan-bulanan.md", List.of("reports-trial-balance", "reports-balance-sheet", "reports-income-statement")),
+                new Section("laporan-tahunan", "Laporan Tahunan", "22-laporan-tahunan.md", List.of("reports-income-statement", "reports-balance-sheet"))
+            )),
+            new SectionGroup("perpajakan", "Perpajakan", "M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z", List.of(
+                new Section("transaksi-ppn", "Transaksi PPN", "30-transaksi-ppn.md", List.of("transactions-form", "reports-ppn-summary")),
+                new Section("transaksi-pph", "Transaksi PPh", "31-transaksi-pph.md", List.of("transactions-form", "reports-pph23-withholding")),
+                new Section("laporan-pajak", "Laporan Pajak", "32-laporan-pajak.md", List.of("reports-ppn-summary", "reports-pph23-withholding", "reports-tax-summary")),
+                new Section("kalender-pajak", "Kalender Pajak", "33-kalender-pajak.md", List.of())
+            )),
+            new SectionGroup("manajemen-proyek", "Manajemen Proyek", "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", List.of(
+                new Section("setup-proyek", "Setup Proyek", "40-setup-proyek.md", List.of("projects-form", "clients-list")),
+                new Section("tracking-proyek", "Tracking Proyek", "41-tracking-proyek.md", List.of("projects-detail", "projects-list")),
+                new Section("invoice-penagihan", "Invoice & Penagihan", "42-invoice-penagihan.md", List.of("invoices-list")),
+                new Section("analisis-profitabilitas", "Analisis Profitabilitas", "43-analisis-profitabilitas.md", List.of("reports-project-profitability", "reports-client-profitability"))
+            )),
+            new SectionGroup("konfigurasi", "Konfigurasi", "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z", List.of(
+                new Section("setup-awal", "Setup Awal", "50-setup-awal.md", List.of("accounts-list", "accounts-form")),
+                new Section("kelola-template", "Kelola Template", "51-kelola-template.md", List.of("templates-list", "templates-detail", "templates-form")),
+                new Section("kelola-klien", "Kelola Klien", "52-kelola-klien.md", List.of("clients-list", "clients-detail", "clients-form")),
+                new Section("jadwal-amortisasi", "Jadwal Amortisasi", "53-jadwal-amortisasi.md", List.of("amortization-list", "amortization-form")),
+                new Section("kelola-periode-fiskal", "Kelola Periode Fiskal", "54-kelola-periode-fiskal.md", List.of()),
+                new Section("setup-telegram", "Setup Telegram Bot", "55-setup-telegram.md", List.of())
+            )),
+            new SectionGroup("penggajian", "Penggajian", "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z", List.of(
+                new Section("kelola-karyawan", "Kelola Karyawan", "60-kelola-karyawan.md", List.of("employees-list", "employees-form")),
+                new Section("komponen-gaji", "Komponen Gaji", "61-komponen-gaji.md", List.of()),
+                new Section("kalkulator-bpjs", "Kalkulator BPJS", "62-kalkulator-bpjs.md", List.of()),
+                new Section("kalkulator-pph21", "Kalkulator PPh 21", "63-kalkulator-pph21.md", List.of()),
+                new Section("payroll-processing", "Proses Penggajian", "64-payroll-processing.md", List.of("payroll-list", "payroll-detail", "payroll-form"))
+            )),
+            new SectionGroup("lampiran", "Lampiran", "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", List.of(
+                new Section("glosarium", "Glosarium", "90-glosarium.md", List.of()),
+                new Section("referensi-akun", "Referensi Akun", "91-referensi-akun.md", List.of("accounts-list")),
+                new Section("referensi-template", "Referensi Template", "92-referensi-template.md", List.of("templates-list"))
+            ))
         );
+    }
+
+    /**
+     * Get all sections (flattened from groups) for backward compatibility
+     */
+    public static List<Section> getSections() {
+        return getSectionGroups().stream()
+                .flatMap(g -> g.sections().stream())
+                .toList();
     }
 
     /**
@@ -134,44 +156,76 @@ public class UserManualGenerator {
         StringBuilder sectionsHtml = new StringBuilder();
         StringBuilder tocHtml = new StringBuilder();
 
-        int index = 1;
-        for (Section section : getSections()) {
-            // Build table of contents
+        int groupIndex = 0;
+        int globalIndex = 0;
+        for (SectionGroup group : getSectionGroups()) {
+            groupIndex++;
+
+            // Build collapsible group header for TOC
             tocHtml.append(String.format("""
-                <li>
-                    <a href="#%s" class="flex items-center text-sm text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors">
-                        <span class="w-6 h-6 flex items-center justify-center bg-primary-100 text-primary-700 rounded-full text-xs font-medium mr-2">%d</span>
-                        %s
-                    </a>
-                </li>
-                """, section.id(), index, section.title()));
-
-            // Parse markdown content
-            String markdownContent = readMarkdownFile(section.markdownFile());
-            String contentHtml = convertMarkdownToHtml(markdownContent);
-
-            // Build screenshots HTML
-            String screenshotsHtml = buildScreenshotsHtml(section.screenshots());
-
-            // Build section HTML
-            sectionsHtml.append(String.format("""
-                <section id="%s" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8 overflow-hidden">
-                    <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
+                <li class="mb-1">
+                    <button onclick="toggleGroup('%s')" class="w-full flex items-center justify-between text-sm font-medium text-gray-800 hover:text-primary-600 hover:bg-primary-50 px-3 py-2 rounded-lg transition-colors">
                         <div class="flex items-center">
-                            <span class="w-10 h-10 flex items-center justify-center bg-white/20 text-white rounded-full text-lg font-bold mr-4">%d</span>
-                            <h2 class="text-xl font-bold text-white">%s</h2>
+                            <svg class="w-5 h-5 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="%s"/>
+                            </svg>
+                            <span>%s</span>
                         </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="prose max-w-none">
+                        <svg id="chevron-%s" class="w-4 h-4 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    <ul id="group-%s" class="ml-4 mt-1 space-y-1 overflow-hidden transition-all duration-200" style="max-height: 0;">
+                """, group.id(), group.icon(), group.title(), group.id(), group.id()));
+
+            // Build sections within group
+            int sectionIndex = 0;
+            for (Section section : group.sections()) {
+                globalIndex++;
+                sectionIndex++;
+                String sectionNumber = groupIndex + "." + sectionIndex;
+
+                // Add section link to TOC
+                tocHtml.append(String.format("""
+                        <li>
+                            <a href="#%s" class="flex items-center text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 px-3 py-1.5 rounded-lg transition-colors">
+                                <span class="w-5 h-5 flex items-center justify-center text-xs text-gray-400 mr-2">%s</span>
+                                <span class="truncate">%s</span>
+                            </a>
+                        </li>
+                    """, section.id(), sectionNumber, section.title()));
+
+                // Parse markdown content
+                String markdownContent = readMarkdownFile(section.markdownFile());
+                String contentHtml = convertMarkdownToHtml(markdownContent);
+
+                // Build screenshots HTML
+                String screenshotsHtml = buildScreenshotsHtml(section.screenshots());
+
+                // Build section HTML
+                sectionsHtml.append(String.format("""
+                    <section id="%s" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8 overflow-hidden">
+                        <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
+                            <div class="flex items-center">
+                                <span class="w-10 h-10 flex items-center justify-center bg-white/20 text-white rounded-full text-lg font-bold mr-4">%s</span>
+                                <h2 class="text-xl font-bold text-white">%s</h2>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="prose max-w-none">
+                                %s
+                            </div>
                             %s
                         </div>
-                        %s
-                    </div>
-                </section>
-                """, section.id(), index, section.title(), contentHtml, screenshotsHtml));
+                    </section>
+                    """, section.id(), sectionNumber, section.title(), contentHtml, screenshotsHtml));
+            }
 
-            index++;
+            // Close group list
+            tocHtml.append("""
+                    </ul>
+                </li>
+                """);
         }
 
         // Read and fill template
@@ -350,11 +404,45 @@ public class UserManualGenerator {
                 </div>
 
                 <script>
+                    // Toggle group expand/collapse
+                    function toggleGroup(groupId) {
+                        const group = document.getElementById('group-' + groupId);
+                        const chevron = document.getElementById('chevron-' + groupId);
+                        const isOpen = group.style.maxHeight !== '0px';
+
+                        if (isOpen) {
+                            group.style.maxHeight = '0';
+                            chevron.classList.remove('rotate-180');
+                        } else {
+                            group.style.maxHeight = group.scrollHeight + 'px';
+                            chevron.classList.add('rotate-180');
+                        }
+                    }
+
+                    // Expand all groups on page load for better UX
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Expand first group (Pengantar) by default
+                        toggleGroup('pengantar');
+                    });
+
+                    // Smooth scroll for anchor links
                     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                         anchor.addEventListener('click', function (e) {
                             e.preventDefault();
-                            const target = document.querySelector(this.getAttribute('href'));
-                            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            const targetId = this.getAttribute('href').substring(1);
+                            const target = document.getElementById(targetId);
+                            if (target) {
+                                // Find and expand the parent group if collapsed
+                                const groups = document.querySelectorAll('[id^="group-"]');
+                                groups.forEach(group => {
+                                    const links = group.querySelectorAll('a[href="#' + targetId + '"]');
+                                    if (links.length > 0 && group.style.maxHeight === '0px') {
+                                        const groupId = group.id.replace('group-', '');
+                                        toggleGroup(groupId);
+                                    }
+                                });
+                                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
                         });
                     });
                 </script>
