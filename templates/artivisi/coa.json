@@ -1,6 +1,6 @@
 {
   "name": "Artivisi - IT Services",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Chart of Accounts untuk PT Artivisi Intermedia - perusahaan jasa IT (konsultasi, development, training) sesuai SAK EMKM",
   "accounts": [
     {
@@ -284,6 +284,16 @@
       "parentCode": "2.1",
       "isHeader": false,
       "isPermanent": true
+    },
+    {
+      "code": "2.1.13",
+      "name": "Hutang BPJS",
+      "type": "LIABILITY",
+      "normalBalance": "CREDIT",
+      "parentCode": "2.1",
+      "isHeader": false,
+      "isPermanent": true,
+      "description": "Total hutang BPJS (perusahaan + karyawan) yang harus disetor"
     },
     {
       "code": "2.1.15",

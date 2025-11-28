@@ -1,6 +1,6 @@
 {
   "name": "Artivisi Journal Templates",
-  "version": "1.0",
+  "version": "2.0",
   "description": "Template jurnal untuk PT Artivisi Intermedia - perusahaan jasa IT (konsultasi, development, training, remittance)",
   "templates": [
     {
@@ -926,6 +926,93 @@
           "position": "DEBIT",
           "formula": "amount",
           "description": "Beban Pajak"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Post Gaji Bulanan",
+      "category": "EXPENSE",
+      "cashFlowCategory": "OPERATING",
+      "description": "Template sistem untuk posting payroll bulanan. Menggunakan variabel: grossSalary, companyBpjs, netPay, totalBpjs, pph21",
+      "tags": ["payroll", "gaji", "sistem"],
+      "lines": [
+        {
+          "accountCode": "5.1.01",
+          "position": "DEBIT",
+          "formula": "grossSalary",
+          "description": "Beban gaji karyawan (gross)"
+        },
+        {
+          "accountCode": "5.1.02",
+          "position": "DEBIT",
+          "formula": "companyBpjs * 0.8",
+          "description": "Beban BPJS Kesehatan perusahaan"
+        },
+        {
+          "accountCode": "5.1.03",
+          "position": "DEBIT",
+          "formula": "companyBpjs * 0.2",
+          "description": "Beban BPJS Ketenagakerjaan perusahaan"
+        },
+        {
+          "accountCode": "2.1.10",
+          "position": "CREDIT",
+          "formula": "netPay",
+          "description": "Hutang gaji karyawan (net pay)"
+        },
+        {
+          "accountCode": "2.1.13",
+          "position": "CREDIT",
+          "formula": "totalBpjs",
+          "description": "Hutang BPJS (perusahaan + karyawan)"
+        },
+        {
+          "accountCode": "2.1.20",
+          "position": "CREDIT",
+          "formula": "pph21",
+          "description": "Hutang PPh 21"
+        }
+      ]
+    },
+    {
+      "name": "Bayar Hutang Gaji",
+      "category": "PAYMENT",
+      "cashFlowCategory": "OPERATING",
+      "description": "Pembayaran hutang gaji ke karyawan (transfer gaji bulanan)",
+      "tags": ["payroll", "gaji", "pembayaran"],
+      "lines": [
+        {
+          "accountCode": "2.1.10",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Pelunasan hutang gaji"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Bayar Hutang BPJS",
+      "category": "PAYMENT",
+      "cashFlowCategory": "OPERATING",
+      "description": "Penyetoran BPJS ke BPJS Kesehatan dan Ketenagakerjaan",
+      "tags": ["payroll", "bpjs", "pembayaran"],
+      "lines": [
+        {
+          "accountCode": "2.1.13",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Pelunasan hutang BPJS"
         },
         {
           "accountCode": "1.1.02",
