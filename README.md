@@ -102,7 +102,7 @@ Comprehensive documentation is available in the `/docs` directory:
 - **[Data Model](docs/03-data-model.md)** - Complete database schema and entity relationships
 - **[Tax Compliance](docs/04-tax-compliance.md)** - Indonesian tax handling and regulations
 - **[Technology Stack](docs/05-technology-stack.md)** - Technology selection and justification
-- **[Decisions & Questions](docs/99-decisions-and-questions.md)** - Design decisions, open questions, and research items
+- **[Architecture Decisions (ADR)](docs/adr/README.md)** - Design decisions, technical choices, and architecture records
 
 ## Competitive Differentiators
 
