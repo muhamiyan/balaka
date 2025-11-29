@@ -1,6 +1,6 @@
 {
   "name": "Artivisi Journal Templates",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Template jurnal untuk PT Artivisi Intermedia - perusahaan jasa IT (konsultasi, development, training, remittance)",
   "templates": [
     {
@@ -703,7 +703,7 @@
           "description": "Bank BCA (neto setelah potong PPh 23)"
         },
         {
-          "accountCode": "1.1.25",
+          "accountCode": "1.1.26",
           "position": "DEBIT",
           "formula": "amount * 0.02",
           "description": "Kredit pajak PPh 23 (pengurang pajak terutang)"
@@ -730,7 +730,7 @@
           "description": "Bank BCA (DPP+PPN dikurangi PPh 23)"
         },
         {
-          "accountCode": "1.1.25",
+          "accountCode": "1.1.26",
           "position": "DEBIT",
           "formula": "(amount / 1.11) * 0.02",
           "description": "Kredit pajak PPh 23 (2% dari DPP)"
@@ -1019,6 +1019,333 @@
           "position": "CREDIT",
           "formula": "amount",
           "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Pembelian Peralatan",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Pembelian aset tetap (komputer, laptop, peralatan kantor)",
+      "tags": ["aset", "investasi", "peralatan"],
+      "lines": [
+        {
+          "accountCode": "1.2.01",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Peralatan"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Penjualan Aset Tetap (Laba)",
+      "category": "INCOME",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan aset dengan laba. Variables: hargaJual, nilaiPerolehan, akumPenyusutan",
+      "tags": ["aset", "penjualan", "laba"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hargaJual",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "1.2.02",
+          "position": "DEBIT",
+          "formula": "akumPenyusutan",
+          "description": "Akumulasi penyusutan (dihapus)"
+        },
+        {
+          "accountCode": "1.2.01",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Peralatan (nilai perolehan)"
+        },
+        {
+          "accountCode": "4.2.02",
+          "position": "CREDIT",
+          "formula": "hargaJual - (nilaiPerolehan - akumPenyusutan)",
+          "description": "Keuntungan penjualan aset"
+        }
+      ]
+    },
+    {
+      "name": "Penjualan Aset Tetap (Rugi)",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan aset dengan rugi. Variables: hargaJual, nilaiPerolehan, akumPenyusutan",
+      "tags": ["aset", "penjualan", "rugi"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hargaJual",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "1.2.02",
+          "position": "DEBIT",
+          "formula": "akumPenyusutan",
+          "description": "Akumulasi penyusutan (dihapus)"
+        },
+        {
+          "accountCode": "5.2.02",
+          "position": "DEBIT",
+          "formula": "(nilaiPerolehan - akumPenyusutan) - hargaJual",
+          "description": "Kerugian penjualan aset"
+        },
+        {
+          "accountCode": "1.2.01",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Peralatan (nilai perolehan)"
+        }
+      ]
+    },
+    {
+      "name": "Bayar Bonus Karyawan",
+      "category": "PAYMENT",
+      "cashFlowCategory": "OPERATING",
+      "description": "Pembayaran bonus dari hutang bonus yang sudah diakrual",
+      "tags": ["payroll", "bonus", "pembayaran"],
+      "lines": [
+        {
+          "accountCode": "2.1.12",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Pelunasan Hutang Bonus"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Accrual Bonus Karyawan",
+      "category": "EXPENSE",
+      "cashFlowCategory": "OPERATING",
+      "description": "Akrual bonus karyawan (diakui sebagai beban, belum dibayar)",
+      "tags": ["payroll", "bonus", "akrual"],
+      "lines": [
+        {
+          "accountCode": "5.1.01",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Beban Gaji (termasuk bonus)"
+        },
+        {
+          "accountCode": "2.1.12",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Hutang Bonus"
+        }
+      ]
+    },
+    {
+      "name": "Beli Deposito",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penempatan deposito berjangka di bank",
+      "tags": ["investasi", "deposito"],
+      "lines": [
+        {
+          "accountCode": "1.1.20",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Deposito"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Cairkan Deposito",
+      "category": "INCOME",
+      "cashFlowCategory": "INVESTING",
+      "description": "Pencairan deposito dengan bunga. Variables: pokok, bunga",
+      "tags": ["investasi", "deposito", "bunga"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "pokok + bunga",
+          "description": "Bank BCA (pokok + bunga)"
+        },
+        {
+          "accountCode": "1.1.20",
+          "position": "CREDIT",
+          "formula": "pokok",
+          "description": "Deposito (nilai pokok)"
+        },
+        {
+          "accountCode": "4.2.01",
+          "position": "CREDIT",
+          "formula": "bunga",
+          "description": "Pendapatan Bunga"
+        }
+      ]
+    },
+    {
+      "name": "Beli Logam Mulia",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Pembelian emas batangan (Antam, UBS, dll)",
+      "tags": ["investasi", "emas", "logam-mulia"],
+      "lines": [
+        {
+          "accountCode": "1.1.21",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Logam Mulia"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Jual Logam Mulia (Laba)",
+      "category": "INCOME",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan emas dengan laba. Variables: hasilPenjualan, nilaiPerolehan",
+      "tags": ["investasi", "emas", "logam-mulia", "laba"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hasilPenjualan",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "1.1.21",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Logam Mulia (nilai perolehan)"
+        },
+        {
+          "accountCode": "4.2.02",
+          "position": "CREDIT",
+          "formula": "hasilPenjualan - nilaiPerolehan",
+          "description": "Keuntungan penjualan logam mulia"
+        }
+      ]
+    },
+    {
+      "name": "Jual Logam Mulia (Rugi)",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan emas dengan rugi. Variables: hasilPenjualan, nilaiPerolehan",
+      "tags": ["investasi", "emas", "logam-mulia", "rugi"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hasilPenjualan",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "5.2.02",
+          "position": "DEBIT",
+          "formula": "nilaiPerolehan - hasilPenjualan",
+          "description": "Kerugian penjualan logam mulia"
+        },
+        {
+          "accountCode": "1.1.21",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Logam Mulia (nilai perolehan)"
+        }
+      ]
+    },
+    {
+      "name": "Beli Dinar/Dirham",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Pembelian koin emas dinar atau perak dirham",
+      "tags": ["investasi", "dinar", "dirham"],
+      "lines": [
+        {
+          "accountCode": "1.1.22",
+          "position": "DEBIT",
+          "formula": "amount",
+          "description": "Dinar/Dirham"
+        },
+        {
+          "accountCode": "1.1.02",
+          "position": "CREDIT",
+          "formula": "amount",
+          "description": "Bank BCA"
+        }
+      ]
+    },
+    {
+      "name": "Jual Dinar/Dirham (Laba)",
+      "category": "INCOME",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan dinar/dirham dengan laba. Variables: hasilPenjualan, nilaiPerolehan",
+      "tags": ["investasi", "dinar", "dirham", "laba"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hasilPenjualan",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "1.1.22",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Dinar/Dirham (nilai perolehan)"
+        },
+        {
+          "accountCode": "4.2.02",
+          "position": "CREDIT",
+          "formula": "hasilPenjualan - nilaiPerolehan",
+          "description": "Keuntungan penjualan dinar/dirham"
+        }
+      ]
+    },
+    {
+      "name": "Jual Dinar/Dirham (Rugi)",
+      "category": "EXPENSE",
+      "cashFlowCategory": "INVESTING",
+      "description": "Penjualan dinar/dirham dengan rugi. Variables: hasilPenjualan, nilaiPerolehan",
+      "tags": ["investasi", "dinar", "dirham", "rugi"],
+      "lines": [
+        {
+          "accountCode": "1.1.02",
+          "position": "DEBIT",
+          "formula": "hasilPenjualan",
+          "description": "Bank BCA (hasil penjualan)"
+        },
+        {
+          "accountCode": "5.2.02",
+          "position": "DEBIT",
+          "formula": "nilaiPerolehan - hasilPenjualan",
+          "description": "Kerugian penjualan dinar/dirham"
+        },
+        {
+          "accountCode": "1.1.22",
+          "position": "CREDIT",
+          "formula": "nilaiPerolehan",
+          "description": "Dinar/Dirham (nilai perolehan)"
         }
       ]
     }

@@ -1,6 +1,6 @@
 {
   "name": "Artivisi - IT Services",
-  "version": "2.0",
+  "version": "2.1",
   "description": "Chart of Accounts untuk PT Artivisi Intermedia - perusahaan jasa IT (konsultasi, development, training) sesuai SAK EMKM",
   "accounts": [
     {
@@ -123,13 +123,33 @@
     },
     {
       "code": "1.1.20",
-      "name": "Investasi Jangka Pendek",
+      "name": "Deposito",
       "type": "ASSET",
       "normalBalance": "DEBIT",
       "parentCode": "1.1",
       "isHeader": false,
       "isPermanent": true,
-      "description": "Emas batangan, deposito, dll"
+      "description": "Deposito berjangka di bank"
+    },
+    {
+      "code": "1.1.21",
+      "name": "Logam Mulia",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "1.1",
+      "isHeader": false,
+      "isPermanent": true,
+      "description": "Emas batangan Antam, UBS, dll"
+    },
+    {
+      "code": "1.1.22",
+      "name": "Dinar/Dirham",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "1.1",
+      "isHeader": false,
+      "isPermanent": true,
+      "description": "Koin emas dinar dan perak dirham"
     },
     {
       "code": "1.1.25",
@@ -140,6 +160,16 @@
       "isHeader": false,
       "isPermanent": true,
       "description": "PPN yang dapat dikreditkan dari pembelian"
+    },
+    {
+      "code": "1.1.26",
+      "name": "Kredit Pajak PPh 23",
+      "type": "ASSET",
+      "normalBalance": "DEBIT",
+      "parentCode": "1.1",
+      "isHeader": false,
+      "isPermanent": true,
+      "description": "PPh 23 yang dipotong pihak lain sebagai kredit pajak penghasilan"
     },
     {
       "code": "1.2",
@@ -480,6 +510,16 @@
       "isPermanent": false
     },
     {
+      "code": "4.2.02",
+      "name": "Keuntungan Penjualan Aset",
+      "type": "REVENUE",
+      "normalBalance": "CREDIT",
+      "parentCode": "4.2",
+      "isHeader": false,
+      "isPermanent": false,
+      "description": "Laba dari penjualan aset tetap atau investasi"
+    },
+    {
       "code": "5",
       "name": "BEBAN",
       "type": "EXPENSE",
@@ -720,6 +760,16 @@
       "parentCode": "5.2",
       "isHeader": false,
       "isPermanent": false
+    },
+    {
+      "code": "5.2.02",
+      "name": "Kerugian Penjualan Aset",
+      "type": "EXPENSE",
+      "normalBalance": "DEBIT",
+      "parentCode": "5.2",
+      "isHeader": false,
+      "isPermanent": false,
+      "description": "Rugi dari penjualan aset tetap atau investasi"
     }
   ]
 }
