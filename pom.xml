@@ -260,6 +260,7 @@
 					</formats>
 					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
 					<suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+					<ossIndexEnabled>false</ossIndexEnabled>
 				</configuration>
 			</plugin>
 			<!-- SpotBugs with FindSecBugs for static security analysis
