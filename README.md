@@ -172,6 +172,46 @@ Comprehensive documentation is available in the `/docs` directory:
 
 See [Technology Stack Documentation](docs/05-technology-stack.md) for detailed justification and DevSecOps pipeline.
 
+## Getting Started
+
+### Setting Up Initial Account Balances
+
+For existing businesses moving to this accounting system, you'll need to set up opening balances for your Chart of Accounts. The system uses **dynamic balance calculation** from journal entries, so initial balances are created through a single opening balance journal entry.
+
+#### How to Create Opening Balances
+
+**Create ONE journal entry with multiple journal items (one per account):**
+
+1. **Journal Entry Header:**
+   - **Date:** Your fiscal year start (e.g., 2025-01-01)
+   - **Description:** "Saldo Awal per 1 Januari 2025"
+   - **Reference:** "SALDO_AWAL_2025"
+
+2. **Journal Items (one per account with balance):**
+
+| Account Code | Account Name | Debit | Credit |
+|--------------|--------------|--------|--------|
+| 1.1.01 | Kas | 50,000,000 | |
+| 1.1.02 | Bank BCA | 75,000,000 | |
+| 1.3.01 | Piutang Usaha | 30,000,000 | |
+| 2.1.01 | Hutang Usaha | | 20,000,000 |
+| 2.1.02 | PPN Masukan | | 5,000,000 |
+| 3.1.01 | Modal Disetor | | 120,000,000 |
+| 3.1.02 | Laba Ditahan | | 10,000,000 |
+| **TOTAL** | | **155,000,000** | **155,000,000** |
+
+3. **Key Requirements:**
+   - **Balanced Entry:** Total Debit must equal Total Credit
+   - **Normal Balance Rules:**
+     - Asset accounts (1.x.x) → Debit balances
+     - Liability accounts (2.x.x) → Credit balances
+     - Equity accounts (3.x.x) → Credit balances
+     - Revenue accounts (4.x.x) → Credit balances (usually zero for opening)
+     - Expense accounts (5.x.x) → Debit balances (usually zero for opening)
+   - **Skip Zero-Balance Accounts:** Only include accounts with actual balances
+
+The system's balance calculation will automatically use these opening balances as the starting point for all subsequent transactions and reports.
+
 ## Prerequisites
 
 - **Java 25**
