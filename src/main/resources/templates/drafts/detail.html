@@ -20,9 +20,97 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="space-y-6">
+            <!-- Top Section: Receipt Image and Review Form Side by Side -->
+            <div th:if="${draft.status.name() == 'PENDING'}" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Receipt Image -->
+                <div th:if="${draft.document != null}" class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar Struk</h2>
+                    <a th:href="@{/documents/{id}/download(id=${draft.document.id})}" target="_blank">
+                        <img th:src="@{/documents/{id}/download(id=${draft.document.id})}"
+                             alt="Receipt"
+                             class="w-full rounded-lg border border-gray-200 hover:opacity-90 transition-opacity">
+                    </a>
+                </div>
+
+                <!-- Review Form -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Review Draft</h2>
+
+                    <!-- Approve Form -->
+                    <form th:action="@{/drafts/{id}/approve(id=${draft.id})}" method="post" class="space-y-4">
+                        <div>
+                            <label for="templateId" class="block text-sm font-medium text-gray-700 mb-1">Template Jurnal</label>
+                            <select id="templateId" name="templateId" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                                <option value="">Pilih Template</option>
+                                <option th:each="tpl : ${templates}"
+                                        th:value="${tpl.id}"
+                                        th:text="${tpl.templateName}"
+                                        th:selected="${draft.suggestedTemplate != null && draft.suggestedTemplate.id == tpl.id}">Template</option>
+                            </select>
+                            <p th:if="${draft.suggestedTemplate != null}" class="mt-1 text-xs text-gray-500">
+                                Suggested: <span th:text="${draft.suggestedTemplate.templateName}">Template</span>
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
+                            <input type="text" id="description" name="description"
+                                   th:value="${draft.merchantName}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                        </div>
+
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Jumlah</label>
+                            <input type="number" id="amount" name="amount" step="0.01"
+                                   th:value="${draft.amount}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                        </div>
+
+                        <button type="submit"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Approve & Buat Transaksi
+                        </button>
+                    </form>
+
+                    <div class="my-4 border-t border-gray-200"></div>
+
+                    <!-- Reject Form -->
+                    <form th:action="@{/drafts/{id}/reject(id=${draft.id})}" method="post" class="space-y-4">
+                        <div>
+                            <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Alasan Penolakan</label>
+                            <textarea id="reason" name="reason" rows="2" required
+                                      placeholder="Masukkan alasan penolakan..."
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"></textarea>
+                        </div>
+
+                        <button type="submit"
+                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Tolak Draft
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- For Approved/Rejected drafts, show image only -->
+            <div th:if="${draft.status.name() != 'PENDING' && draft.document != null}" class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar Struk</h2>
+                <a th:href="@{/documents/{id}/download(id=${draft.document.id})}" target="_blank" class="block max-w-2xl">
+                    <img th:src="@{/documents/{id}/download(id=${draft.document.id})}"
+                         alt="Receipt"
+                         class="w-full rounded-lg border border-gray-200 hover:opacity-90 transition-opacity">
+                </a>
+            </div>
+
             <!-- Main Content -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="space-y-6">
                 <!-- Draft Info Card -->
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center justify-between mb-4">
@@ -152,84 +240,6 @@
                 <div th:if="${draft.rawOcrText != null}" class="bg-white rounded-lg shadow p-6">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Teks OCR</h2>
                     <pre class="bg-gray-50 p-4 rounded-lg text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap font-mono max-h-64 overflow-y-auto" th:text="${draft.rawOcrText}">OCR text here...</pre>
-                </div>
-            </div>
-
-            <!-- Sidebar - Actions -->
-            <div class="space-y-6">
-                <!-- Receipt Image -->
-                <div th:if="${draft.document != null}" class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar Struk</h2>
-                    <a th:href="@{/documents/{id}/download(id=${draft.document.id})}" target="_blank">
-                        <img th:src="@{/documents/{id}/download(id=${draft.document.id})}"
-                             alt="Receipt"
-                             class="w-full rounded-lg border border-gray-200 hover:opacity-90 transition-opacity">
-                    </a>
-                </div>
-
-                <!-- Approve/Reject Form -->
-                <div th:if="${draft.status.name() == 'PENDING'}" class="bg-white rounded-lg shadow p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Review Draft</h2>
-
-                    <!-- Approve Form -->
-                    <form th:action="@{/drafts/{id}/approve(id=${draft.id})}" method="post" class="space-y-4">
-                        <div>
-                            <label for="templateId" class="block text-sm font-medium text-gray-700">Template Jurnal</label>
-                            <select id="templateId" name="templateId" required
-                                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                                <option value="">Pilih Template</option>
-                                <option th:each="tpl : ${templates}"
-                                        th:value="${tpl.id}"
-                                        th:text="${tpl.templateName}"
-                                        th:selected="${draft.suggestedTemplate != null && draft.suggestedTemplate.id == tpl.id}">Template</option>
-                            </select>
-                            <p th:if="${draft.suggestedTemplate != null}" class="mt-1 text-xs text-gray-500">
-                                Suggested: <span th:text="${draft.suggestedTemplate.templateName}">Template</span>
-                            </p>
-                        </div>
-
-                        <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700">Deskripsi</label>
-                            <input type="text" id="description" name="description"
-                                   th:value="${draft.merchantName}"
-                                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                        </div>
-
-                        <div>
-                            <label for="amount" class="block text-sm font-medium text-gray-700">Jumlah</label>
-                            <input type="number" id="amount" name="amount" step="0.01"
-                                   th:value="${draft.amount}"
-                                   class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
-                        </div>
-
-                        <button type="submit"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            Approve & Buat Transaksi
-                        </button>
-                    </form>
-
-                    <div class="my-4 border-t border-gray-200"></div>
-
-                    <!-- Reject Form -->
-                    <form th:action="@{/drafts/{id}/reject(id=${draft.id})}" method="post" class="space-y-4">
-                        <div>
-                            <label for="reason" class="block text-sm font-medium text-gray-700">Alasan Penolakan</label>
-                            <textarea id="reason" name="reason" rows="2" required
-                                      placeholder="Masukkan alasan penolakan..."
-                                      class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"></textarea>
-                        </div>
-
-                        <button type="submit"
-                                class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
-                            Tolak Draft
-                        </button>
-                    </form>
                 </div>
 
                 <!-- Suggested Template Info -->

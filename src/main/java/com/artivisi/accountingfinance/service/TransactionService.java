@@ -336,6 +336,13 @@ public class TransactionService {
         transaction.setCreatedBy(createdBy);
 
         journalTemplateService.recordUsage(template.getId());
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        
+        // Link the document from draft to transaction
+        if (draft.getDocument() != null) {
+            draft.getDocument().setTransaction(saved);
+        }
+        
+        return saved;
     }
 }

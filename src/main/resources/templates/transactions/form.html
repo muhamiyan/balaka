@@ -101,16 +101,19 @@
                 </div>
 
                 <form id="form-transaksi" th:action="@{/transactions}" method="post"
+                      th:data-amount="${prefillAmount != null ? prefillAmount : (initialAmount != null ? initialAmount : 0)}"
+                      th:data-description="${prefillDescription != null ? prefillDescription : (initialDescription != null ? initialDescription : '')}"
                       x-data="{
-                          amount: /*[[${prefillAmount != null ? prefillAmount : (isEdit and transaction != null ? transaction.amount : 0)}]]*/ 0,
-                          description: /*[[${prefillDescription != null ? prefillDescription : (isEdit and transaction != null ? transaction.description : '')}]]*/ '',
+                          amount: parseInt($el.dataset.amount) || 0,
+                          description: $el.dataset.description || '',
                           formatCurrency(value) {
                               return new Intl.NumberFormat('id-ID').format(value);
                           },
                           parseCurrency(str) {
                               return parseInt(str.replace(/\D/g, '')) || 0;
                           }
-                      }">
+                      }"
+                      x-init="console.log('Alpine initialized - amount:', amount, 'description:', description)">
                     <!-- Hidden fields -->
                     <input type="hidden" name="templateId" th:value="${selectedTemplate?.id ?: transaction?.journalTemplate?.id}">
                     <input type="hidden" name="id" th:if="${isEdit}" th:value="${transaction?.id}">
@@ -168,6 +171,7 @@
                                     Akun Sumber <span class="text-red-500">*</span>
                                 </label>
                                 <select id="sourceAccount" name="sourceAccountId"
+                                        @change="$dispatch('account-changed')"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                                         required>
                                     <option value="">Pilih akun</option>
@@ -195,7 +199,6 @@
                                 </label>
                                 <input type="text" id="description" name="description"
                                        x-model="description"
-                                       th:value="${prefillDescription != null ? prefillDescription : (isEdit ? transaction.description : '')}"
                                        placeholder="Contoh: Jasa Konsultasi PT. ABC - Invoice INV-2025-001"
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                                        required>
@@ -258,25 +261,13 @@
                                 <div class="col-span-3 text-right">Kredit</div>
                             </div>
 
-                            <!-- Journal Lines from Template - Dynamic Preview -->
+                            <!-- Journal Lines Preview (works for both new and edit mode) -->
                             <div id="preview-content" 
                                  th:if="${selectedTemplate != null}"
                                  hx-get="/transactions/preview"
                                  th:hx-vals="${'{&quot;templateId&quot;: &quot;' + selectedTemplate.id + '&quot;}'}"
-                                 hx-trigger="load, amount-changed from:body"
-                                 hx-include="[name='amount']">
-                                <div class="p-8 text-center text-gray-500">
-                                    <div class="animate-pulse">Memuat preview...</div>
-                                </div>
-                            </div>
-
-                            <!-- Journal Lines for Edit Mode -->
-                            <div id="preview-content" 
-                                 th:if="${isEdit and transaction != null and transaction.journalTemplate != null}"
-                                 hx-get="/transactions/preview"
-                                 th:hx-vals="${'{&quot;templateId&quot;: &quot;' + transaction.journalTemplate.id + '&quot;}'}"
-                                 hx-trigger="load, amount-changed from:body"
-                                 hx-include="[name='amount']">
+                                 hx-trigger="load, amount-changed from:body, account-changed from:body"
+                                 hx-include="[name='amount'], [name='sourceAccountId']">
                                 <div class="p-8 text-center text-gray-500">
                                     <div class="animate-pulse">Memuat preview...</div>
                                 </div>

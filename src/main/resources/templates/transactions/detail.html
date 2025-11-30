@@ -214,6 +214,28 @@
 
                     <!-- Journal Lines -->
                     <div class="divide-y divide-gray-100">
+                        <!-- Empty state for draft transactions -->
+                        <div th:if="${transaction.journalEntries.isEmpty()}" class="px-6 py-12 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">Jurnal belum dibuat</h3>
+                            <p class="mt-1 text-sm text-gray-500">Jurnal entry akan dibuat otomatis saat transaksi di-posting</p>
+                            <div class="mt-6">
+                                <button th:if="${transaction.status.name() == 'DRAFT'}"
+                                        hx-post="/transactions/api/{id}/post"
+                                        th:hx-post="@{/transactions/api/{id}/post(id=${transaction.id})}"
+                                        hx-target="#transaction-detail"
+                                        hx-swap="outerHTML"
+                                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Posting Transaksi
+                                </button>
+                            </div>
+                        </div>
+                        
                         <div th:each="entry : ${transaction.journalEntries}"
                              th:classappend="${transaction.status.name() == 'VOID'} ? 'opacity-50'"
                              class="grid grid-cols-12 gap-4 px-6 py-4 items-center">
@@ -237,7 +259,7 @@
                     </div>
 
                     <!-- Journal Totals -->
-                    <div class="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <div th:if="${!transaction.journalEntries.isEmpty()}" class="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
                         <div class="col-span-6 text-sm font-semibold text-gray-700">Total</div>
                         <div class="col-span-3 text-right text-sm font-mono font-semibold text-gray-900"
                              th:text="'Rp ' + ${#numbers.formatDecimal(totalDebit, 0, 'POINT', 0, 'COMMA')}">Rp 0</div>

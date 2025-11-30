@@ -83,7 +83,8 @@ public class DraftTransactionController {
         if ("true".equals(hxRequest)) {
             return "redirect:/drafts";
         }
-        return "redirect:/transactions/" + approvedDraft.getTransaction().getId();
+        // Redirect to edit page to show journal preview
+        return "redirect:/transactions/" + approvedDraft.getTransaction().getId() + "/edit";
     }
 
     @PostMapping("/{id}/reject")

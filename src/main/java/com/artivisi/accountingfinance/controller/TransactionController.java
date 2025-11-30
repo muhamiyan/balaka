@@ -2,6 +2,7 @@ package com.artivisi.accountingfinance.controller;
 
 import com.artivisi.accountingfinance.dto.TransactionDto;
 import com.artivisi.accountingfinance.dto.VoidTransactionDto;
+import com.artivisi.accountingfinance.entity.ChartOfAccount;
 import com.artivisi.accountingfinance.entity.Invoice;
 import com.artivisi.accountingfinance.entity.JournalTemplate;
 import com.artivisi.accountingfinance.entity.Project;
@@ -169,12 +170,21 @@ public class TransactionController {
             return "redirect:/transactions/" + id;
         }
 
+        // Load the template with lines for preview
+        JournalTemplate template = journalTemplateService.findByIdWithLines(transaction.getJournalTemplate().getId());
+
         model.addAttribute("currentPage", "transactions");
         model.addAttribute("isEdit", true);
         model.addAttribute("transaction", transaction);
+        model.addAttribute("selectedTemplate", template); // Add this for form to work properly
         model.addAttribute("templates", journalTemplateService.findAll());
         model.addAttribute("accounts", chartOfAccountService.findTransactableAccounts());
         model.addAttribute("projects", projectService.findActiveProjects());
+        
+        // Add initial values for Alpine.js
+        model.addAttribute("initialAmount", transaction.getAmount() != null ? transaction.getAmount() : BigDecimal.ZERO);
+        model.addAttribute("initialDescription", transaction.getDescription() != null ? transaction.getDescription() : "");
+        
         return "transactions/form";
     }
 
@@ -239,6 +249,7 @@ public class TransactionController {
     public String preview(
             @RequestParam UUID templateId,
             @RequestParam BigDecimal amount,
+            @RequestParam(required = false) UUID sourceAccountId,
             Model model) {
         JournalTemplate template = journalTemplateService.findByIdWithLines(templateId);
         
@@ -249,6 +260,19 @@ public class TransactionController {
         );
         
         var previewResult = templateExecutionEngine.preview(template, context);
+        
+        // Apply account override if provided
+        if (sourceAccountId != null) {
+            ChartOfAccount overrideAccount = chartOfAccountService.findById(sourceAccountId);
+            // Find the first line that should use the source account and override it
+            for (var entry : previewResult.entries()) {
+                // Override the first credit entry (usually the source account in expense/payment templates)
+                if (entry.getCreditAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    entry.setAccount(overrideAccount);
+                    break;
+                }
+            }
+        }
         
         model.addAttribute("entries", previewResult.entries());
         model.addAttribute("totalDebit", previewResult.totalDebit());
