@@ -96,10 +96,13 @@ public class JournalEntryController {
                 .toList();
     }
 
-    @GetMapping("/{id}")
-    public String detail(@PathVariable UUID id, Model model) {
-        JournalEntry entry = journalEntryService.findById(id);
-        List<JournalEntry> entries = journalEntryService.findAllByJournalNumberWithAccount(entry.getJournalNumber());
+    @GetMapping("/{journalNumber}")
+    public String detail(@PathVariable String journalNumber, Model model) {
+        List<JournalEntry> entries = journalEntryService.findAllByJournalNumberWithAccount(journalNumber);
+        if (entries.isEmpty()) {
+            throw new IllegalArgumentException("Journal not found: " + journalNumber);
+        }
+        JournalEntry entry = entries.get(0);
 
         // Calculate totals
         BigDecimal totalDebit = entries.stream()

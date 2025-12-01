@@ -31,7 +31,7 @@
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-center">
                         <a th:if="${entry.journalEntryId != null}"
-                           th:href="@{/journals/{id}(id=${entry.journalEntryId})}"
+                           th:href="@{/journals/{journalNumber}(journalNumber=${entry.journalNumber})}"
                            class="text-primary-600 hover:text-primary-900 text-sm">
                             Lihat
                         </a>

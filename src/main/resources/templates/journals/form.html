@@ -339,7 +339,7 @@
                             }
 
                             const result = await response.json();
-                            window.location.href = '/journals/' + result.id;
+                            window.location.href = '/journals/' + result.journalNumber;
                         } catch (error) {
                             this.errorMessage = error.message;
                         } finally {
