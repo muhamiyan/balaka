@@ -149,6 +149,46 @@ class JournalTemplateTest extends PlaywrightTestBase {
             templateExecutePage.assertBalanceStatusVisible();
             templateExecutePage.assertBalanced();
         }
+
+        @Test
+        @DisplayName("Should display account codes in preview table")
+        void shouldDisplayAccountCodesInPreview() {
+            templateExecutePage.navigate(INCOME_CONSULTING_TEMPLATE_ID);
+
+            templateExecutePage.fillTransactionDate("2025-06-30");
+            templateExecutePage.fillAmount("10000000");
+            templateExecutePage.fillDescription("Konsultasi Project XYZ");
+            templateExecutePage.clickPreviewButton();
+
+            int rowCount = templateExecutePage.getPreviewRowCount();
+            assertThat(rowCount).isGreaterThan(0);
+
+            // Verify each row has account code displayed
+            for (int i = 0; i < rowCount; i++) {
+                templateExecutePage.assertAccountCodeVisible(i);
+                templateExecutePage.assertAccountCodeNotEmpty(i);
+            }
+        }
+
+        @Test
+        @DisplayName("Should display account names in preview table")
+        void shouldDisplayAccountNamesInPreview() {
+            templateExecutePage.navigate(INCOME_CONSULTING_TEMPLATE_ID);
+
+            templateExecutePage.fillTransactionDate("2025-06-30");
+            templateExecutePage.fillAmount("10000000");
+            templateExecutePage.fillDescription("Konsultasi Project XYZ");
+            templateExecutePage.clickPreviewButton();
+
+            int rowCount = templateExecutePage.getPreviewRowCount();
+            assertThat(rowCount).isGreaterThan(0);
+
+            // Verify each row has account name displayed
+            for (int i = 0; i < rowCount; i++) {
+                templateExecutePage.assertAccountNameVisible(i);
+                templateExecutePage.assertAccountNameNotEmpty(i);
+            }
+        }
     }
 
     @Nested

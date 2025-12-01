@@ -3,6 +3,7 @@ package com.artivisi.accountingfinance.functional.page;
 import com.microsoft.playwright.Page;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TemplateExecutePage {
     private final Page page;
@@ -82,7 +83,7 @@ public class TemplateExecutePage {
 
     public void clickPreviewButton() {
         page.click(PREVIEW_BUTTON);
-        page.waitForTimeout(1000); // Wait for Alpine.js to process
+        page.waitForTimeout(1500); // Wait for Alpine.js to process and fetch data
     }
 
     public void clickExecuteButton() {
@@ -139,5 +140,35 @@ public class TemplateExecutePage {
         // Wait for Alpine.js to render the preview table rows
         page.waitForTimeout(500);
         return page.locator(PREVIEW_TABLE + " tbody tr.preview-row").count();
+    }
+
+    public void assertAccountCodeVisible(int rowIndex) {
+        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-child(" + (rowIndex + 1) + ") .account-code";
+        assertThat(page.locator(selector)).isVisible();
+    }
+
+    public void assertAccountNameVisible(int rowIndex) {
+        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-child(" + (rowIndex + 1) + ") .account-name";
+        assertThat(page.locator(selector)).isVisible();
+    }
+
+    public String getAccountCode(int rowIndex) {
+        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-child(" + (rowIndex + 1) + ") .account-code";
+        return page.locator(selector).textContent().trim();
+    }
+
+    public String getAccountName(int rowIndex) {
+        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-child(" + (rowIndex + 1) + ") .account-name";
+        return page.locator(selector).textContent().trim();
+    }
+
+    public void assertAccountCodeNotEmpty(int rowIndex) {
+        String accountCode = getAccountCode(rowIndex);
+        assertThat(accountCode).isNotEmpty();
+    }
+
+    public void assertAccountNameNotEmpty(int rowIndex) {
+        String accountName = getAccountName(rowIndex);
+        assertThat(accountName).isNotEmpty();
     }
 }
