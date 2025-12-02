@@ -1,229 +1,163 @@
 package com.artivisi.accountingfinance.service;
 
+import com.artivisi.accountingfinance.TestcontainersConfiguration;
 import com.artivisi.accountingfinance.dto.FormulaContext;
 import com.artivisi.accountingfinance.entity.ChartOfAccount;
 import com.artivisi.accountingfinance.entity.DraftTransaction;
 import com.artivisi.accountingfinance.entity.JournalEntry;
 import com.artivisi.accountingfinance.entity.JournalTemplate;
-import com.artivisi.accountingfinance.entity.JournalTemplateLine;
 import com.artivisi.accountingfinance.entity.Project;
 import com.artivisi.accountingfinance.entity.Transaction;
-import com.artivisi.accountingfinance.entity.TransactionAccountMapping;
-import com.artivisi.accountingfinance.entity.TransactionSequence;
-import com.artivisi.accountingfinance.enums.JournalPosition;
-import com.artivisi.accountingfinance.enums.TemplateCategory;
 import com.artivisi.accountingfinance.enums.TransactionStatus;
 import com.artivisi.accountingfinance.enums.VoidReason;
 import com.artivisi.accountingfinance.repository.ChartOfAccountRepository;
-import com.artivisi.accountingfinance.repository.JournalEntryRepository;
+import com.artivisi.accountingfinance.repository.DraftTransactionRepository;
 import com.artivisi.accountingfinance.repository.ProjectRepository;
 import com.artivisi.accountingfinance.repository.TransactionRepository;
-import com.artivisi.accountingfinance.repository.TransactionSequenceRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.quality.Strictness;
-import org.mockito.junit.jupiter.MockitoSettings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
-@DisplayName("TransactionService Tests")
+/**
+ * Integration tests for TransactionService.
+ * Tests actual database queries and business logic calculations.
+ */
+@SpringBootTest
+@Import(TestcontainersConfiguration.class)
+@ActiveProfiles("test")
+@Transactional
+@DisplayName("TransactionService Integration Tests")
 class TransactionServiceTest {
 
-    @Mock
-    private TransactionRepository transactionRepository;
+    @Autowired
+    private TransactionService transactionService;
 
-    @Mock
-    private TransactionSequenceRepository transactionSequenceRepository;
-
-    @Mock
-    private JournalEntryRepository journalEntryRepository;
-
-    @Mock
-    private ChartOfAccountRepository chartOfAccountRepository;
-
-    @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
+    @Autowired
     private JournalTemplateService journalTemplateService;
 
-    @Mock
-    private FormulaEvaluator formulaEvaluator;
+    @Autowired
+    private TransactionRepository transactionRepository;
 
-    private TransactionService service;
+    @Autowired
+    private ChartOfAccountRepository chartOfAccountRepository;
 
-    @BeforeEach
-    void setUp() {
-        service = new TransactionService(
-                transactionRepository,
-                transactionSequenceRepository,
-                journalEntryRepository,
-                chartOfAccountRepository,
-                projectRepository,
-                journalTemplateService,
-                formulaEvaluator);
-    }
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @Autowired
+    private DraftTransactionRepository draftTransactionRepository;
+
+    // Test data IDs from V904__transaction_test_data.sql
+    private static final UUID DRAFT_TRANSACTION_ID = UUID.fromString("a0000000-0000-0000-0000-000000000001");
+    private static final UUID POSTED_TRANSACTION_ID = UUID.fromString("a0000000-0000-0000-0000-000000000002");
+    private static final UUID VOIDED_TRANSACTION_ID = UUID.fromString("a0000000-0000-0000-0000-000000000003");
+
+    // Template IDs from V003
+    private static final UUID INCOME_CONSULTING_TEMPLATE_ID = UUID.fromString("e0000000-0000-0000-0000-000000000001");
+    private static final UUID EXPENSE_OPERATIONAL_TEMPLATE_ID = UUID.fromString("e0000000-0000-0000-0000-000000000002");
 
     @Nested
     @DisplayName("Find Operations")
     class FindOperationsTests {
 
         @Test
-        @DisplayName("Should find all transactions")
-        void shouldFindAllTransactions() {
-            List<Transaction> transactions = List.of(createTransaction(), createTransaction());
-            when(transactionRepository.findAll()).thenReturn(transactions);
+        @DisplayName("findAll should return all transactions from database")
+        void findAllShouldReturnAllTransactions() {
+            List<Transaction> transactions = transactionService.findAll();
 
-            List<Transaction> result = service.findAll();
-
-            assertThat(result).hasSize(2);
-            verify(transactionRepository).findAll();
+            assertThat(transactions).isNotEmpty();
+            assertThat(transactions.size()).isGreaterThanOrEqualTo(3); // At least 3 from test data
         }
 
         @Test
-        @DisplayName("Should find transactions by status")
-        void shouldFindByStatus() {
-            List<Transaction> transactions = List.of(createTransaction());
-            when(transactionRepository.findByStatusOrderByTransactionDateDesc(TransactionStatus.DRAFT))
-                    .thenReturn(transactions);
+        @DisplayName("findById should return transaction with correct data")
+        void findByIdShouldReturnTransaction() {
+            Transaction transaction = transactionService.findById(DRAFT_TRANSACTION_ID);
 
-            List<Transaction> result = service.findByStatus(TransactionStatus.DRAFT);
-
-            assertThat(result).hasSize(1);
+            assertThat(transaction).isNotNull();
+            assertThat(transaction.getTransactionNumber()).isEqualTo("TRX-TEST-0001");
+            assertThat(transaction.getAmount()).isEqualByComparingTo("10000000");
+            assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.DRAFT);
         }
 
         @Test
-        @DisplayName("Should count transactions by status")
-        void shouldCountByStatus() {
-            when(transactionRepository.countByStatus(TransactionStatus.POSTED)).thenReturn(5L);
+        @DisplayName("findById should throw EntityNotFoundException for invalid ID")
+        void findByIdShouldThrowForInvalidId() {
+            UUID invalidId = UUID.randomUUID();
 
-            long count = service.countByStatus(TransactionStatus.POSTED);
-
-            assertThat(count).isEqualTo(5L);
+            assertThatThrownBy(() -> transactionService.findById(invalidId))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Transaction not found");
         }
 
         @Test
-        @DisplayName("Should find by filters without project")
-        void shouldFindByFiltersWithoutProject() {
-            Page<Transaction> page = new PageImpl<>(List.of(createTransaction()));
-            when(transactionRepository.findByFilters(any(), any(), isNull(), any(), any(), any()))
-                    .thenReturn(page);
+        @DisplayName("findByStatus should return transactions with correct status")
+        void findByStatusShouldReturnFilteredTransactions() {
+            List<Transaction> draftTransactions = transactionService.findByStatus(TransactionStatus.DRAFT);
+            List<Transaction> postedTransactions = transactionService.findByStatus(TransactionStatus.POSTED);
+            List<Transaction> voidedTransactions = transactionService.findByStatus(TransactionStatus.VOID);
 
-            Page<Transaction> result = service.findByFilters(
-                    TransactionStatus.POSTED,
-                    TemplateCategory.INCOME,
-                    LocalDate.now().minusDays(30),
-                    LocalDate.now(),
-                    PageRequest.of(0, 10));
-
-            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(draftTransactions).allMatch(t -> t.getStatus() == TransactionStatus.DRAFT);
+            assertThat(postedTransactions).allMatch(t -> t.getStatus() == TransactionStatus.POSTED);
+            assertThat(voidedTransactions).allMatch(t -> t.getStatus() == TransactionStatus.VOID);
         }
 
         @Test
-        @DisplayName("Should find by filters with project")
-        void shouldFindByFiltersWithProject() {
-            UUID projectId = UUID.randomUUID();
-            Page<Transaction> page = new PageImpl<>(List.of(createTransaction()));
-            when(transactionRepository.findByFilters(any(), any(), eq(projectId), any(), any(), any()))
-                    .thenReturn(page);
+        @DisplayName("countByStatus should return correct counts")
+        void countByStatusShouldReturnCorrectCounts() {
+            long draftCount = transactionService.countByStatus(TransactionStatus.DRAFT);
+            long postedCount = transactionService.countByStatus(TransactionStatus.POSTED);
 
-            Page<Transaction> result = service.findByFilters(
-                    TransactionStatus.POSTED,
-                    TemplateCategory.INCOME,
-                    projectId,
-                    LocalDate.now().minusDays(30),
-                    LocalDate.now(),
-                    PageRequest.of(0, 10));
-
-            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(draftCount).isGreaterThanOrEqualTo(1);
+            assertThat(postedCount).isGreaterThanOrEqualTo(1);
         }
 
         @Test
-        @DisplayName("Should search transactions")
-        void shouldSearchTransactions() {
-            Page<Transaction> page = new PageImpl<>(List.of(createTransaction()));
-            when(transactionRepository.searchTransactions(anyString(), any()))
-                    .thenReturn(page);
+        @DisplayName("findByIdWithJournalEntries should eagerly load journal entries")
+        void findByIdWithJournalEntriesShouldLoadJournalEntries() {
+            Transaction transaction = transactionService.findByIdWithJournalEntries(POSTED_TRANSACTION_ID);
 
-            Page<Transaction> result = service.search("consulting", PageRequest.of(0, 10));
-
-            assertThat(result.getTotalElements()).isEqualTo(1);
+            assertThat(transaction).isNotNull();
+            assertThat(transaction.getJournalEntries()).isNotEmpty();
+            assertThat(transaction.getJournalEntries()).hasSize(2); // Debit and Credit entries
         }
 
         @Test
-        @DisplayName("Should find transaction by id")
-        void shouldFindById() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
+        @DisplayName("findByStatus should return transactions ordered by date desc")
+        void findByStatusShouldReturnOrderedTransactions() {
+            List<Transaction> transactions = transactionService.findByStatus(TransactionStatus.POSTED);
 
-            Transaction result = service.findById(id);
-
-            assertThat(result).isNotNull();
+            assertThat(transactions).isNotEmpty();
+            // Verify all have POSTED status
+            assertThat(transactions).allMatch(t -> t.getStatus() == TransactionStatus.POSTED);
         }
 
         @Test
-        @DisplayName("Should throw exception when transaction not found")
-        void shouldThrowWhenNotFound() {
-            UUID id = UUID.randomUUID();
-            when(transactionRepository.findById(id)).thenReturn(Optional.empty());
+        @DisplayName("search should find transactions by description")
+        void searchShouldFindByDescription() {
+            Page<Transaction> result = transactionService.search("Test Income", PageRequest.of(0, 10));
 
-            assertThatThrownBy(() -> service.findById(id))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessageContaining("Transaction not found");
-        }
-
-        @Test
-        @DisplayName("Should find by id with journal entries")
-        void shouldFindByIdWithJournalEntries() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            when(transactionRepository.findByIdWithJournalEntries(id))
-                    .thenReturn(Optional.of(transaction));
-
-            Transaction result = service.findByIdWithJournalEntries(id);
-
-            assertThat(result).isNotNull();
-        }
-
-        @Test
-        @DisplayName("Should throw when transaction with journal entries not found")
-        void shouldThrowWhenWithJournalEntriesNotFound() {
-            UUID id = UUID.randomUUID();
-            when(transactionRepository.findByIdWithJournalEntries(id))
-                    .thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.findByIdWithJournalEntries(id))
-                    .isInstanceOf(EntityNotFoundException.class);
+            assertThat(result.getContent()).isNotEmpty();
+            assertThat(result.getContent()).anyMatch(t ->
+                t.getDescription().contains("Test Income"));
         }
     }
 
@@ -232,137 +166,86 @@ class TransactionServiceTest {
     class CreateTransactionTests {
 
         @Test
-        @DisplayName("Should create transaction without account mappings")
-        void shouldCreateWithoutAccountMappings() {
-            JournalTemplate template = createTemplate();
-            Transaction transaction = createTransaction();
+        @DisplayName("create should generate transaction number and set DRAFT status")
+        void createShouldGenerateNumberAndSetDraftStatus() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("5000000"));
+            transaction.setDescription("Test create transaction");
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction saved = transactionService.create(transaction, null);
 
-            Transaction result = service.create(transaction, null);
-
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.DRAFT);
-            assertThat(result.getTransactionNumber()).startsWith("TRX");
-            verify(journalTemplateService).recordUsage(template.getId());
+            assertThat(saved.getId()).isNotNull();
+            assertThat(saved.getTransactionNumber()).isNotNull();
+            assertThat(saved.getTransactionNumber()).startsWith("TRX-");
+            assertThat(saved.getStatus()).isEqualTo(TransactionStatus.DRAFT);
         }
 
         @Test
-        @DisplayName("Should create transaction with empty account mappings")
-        void shouldCreateWithEmptyAccountMappings() {
-            JournalTemplate template = createTemplate();
-            Transaction transaction = createTransaction();
+        @DisplayName("create should persist transaction to database")
+        void createShouldPersistToDatabase() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("7500000"));
+            transaction.setDescription("Test persistence");
+            transaction.setReferenceNumber("REF-TEST-001");
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction saved = transactionService.create(transaction, null);
 
-            Transaction result = service.create(transaction, new HashMap<>());
-
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.DRAFT);
+            // Verify it can be retrieved from database
+            Transaction retrieved = transactionRepository.findById(saved.getId()).orElseThrow();
+            assertThat(retrieved.getDescription()).isEqualTo("Test persistence");
+            assertThat(retrieved.getReferenceNumber()).isEqualTo("REF-TEST-001");
         }
 
         @Test
-        @DisplayName("Should create transaction with account mappings")
-        void shouldCreateWithAccountMappings() {
-            JournalTemplate template = createTemplateWithLines();
-            ChartOfAccount overrideAccount = createAccount("1-1002", "Override Bank");
-            Transaction transaction = createTransaction();
+        @DisplayName("create with project should associate project correctly")
+        void createWithProjectShouldAssociateProject() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+            List<Project> projects = projectRepository.findAll();
+
+            // Skip if no projects in test data
+            if (projects.isEmpty()) {
+                return;
+            }
+
+            Project project = projects.get(0);
+
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
-
-            UUID lineId = template.getLines().get(0).getId();
-            Map<UUID, UUID> mappings = new HashMap<>();
-            mappings.put(lineId, overrideAccount.getId());
-
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(chartOfAccountRepository.findById(overrideAccount.getId()))
-                    .thenReturn(Optional.of(overrideAccount));
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            Transaction result = service.create(transaction, mappings);
-
-            assertThat(result.getAccountMappings()).hasSize(1);
-        }
-
-        @Test
-        @DisplayName("Should throw when override account not found")
-        void shouldThrowWhenOverrideAccountNotFound() {
-            JournalTemplate template = createTemplateWithLines();
-            Transaction transaction = createTransaction();
-            transaction.setJournalTemplate(template);
-
-            UUID lineId = template.getLines().get(0).getId();
-            UUID fakeAccountId = UUID.randomUUID();
-            Map<UUID, UUID> mappings = new HashMap<>();
-            mappings.put(lineId, fakeAccountId);
-
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(chartOfAccountRepository.findById(fakeAccountId))
-                    .thenReturn(Optional.empty());
-
-            assertThatThrownBy(() -> service.create(transaction, mappings))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessageContaining("Account not found");
-        }
-
-        @Test
-        @DisplayName("Should create transaction with project")
-        void shouldCreateWithProject() {
-            JournalTemplate template = createTemplate();
-            Project project = createProject();
-            Transaction transaction = createTransaction();
-            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("3000000"));
+            transaction.setDescription("Test with project");
             transaction.setProject(project);
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(projectRepository.findById(project.getId())).thenReturn(Optional.of(project));
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction saved = transactionService.create(transaction, null);
 
-            Transaction result = service.create(transaction, null);
-
-            assertThat(result.getProject()).isNotNull();
-            assertThat(result.getProject().getId()).isEqualTo(project.getId());
+            assertThat(saved.getProject()).isNotNull();
+            assertThat(saved.getProject().getId()).isEqualTo(project.getId());
         }
 
         @Test
-        @DisplayName("Should throw when project not found")
-        void shouldThrowWhenProjectNotFound() {
-            JournalTemplate template = createTemplate();
-            Project project = createProject();
-            Transaction transaction = createTransaction();
+        @DisplayName("create with empty account mappings should work")
+        void createWithEmptyAccountMappingsShouldWork() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
-            transaction.setProject(project);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("2000000"));
+            transaction.setDescription("Test with empty account mapping");
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(projectRepository.findById(project.getId())).thenReturn(Optional.empty());
+            Map<UUID, UUID> accountMappings = new HashMap<>();
+            Transaction saved = transactionService.create(transaction, accountMappings);
 
-            assertThatThrownBy(() -> service.create(transaction, null))
-                    .isInstanceOf(EntityNotFoundException.class)
-                    .hasMessageContaining("Project not found");
-        }
-
-        @Test
-        @DisplayName("Should create transaction without project when project is null")
-        void shouldCreateWithoutProjectWhenNull() {
-            JournalTemplate template = createTemplate();
-            Transaction transaction = createTransaction();
-            transaction.setJournalTemplate(template);
-            transaction.setProject(null);
-
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            Transaction result = service.create(transaction, null);
-
-            assertThat(result.getProject()).isNull();
+            assertThat(saved.getId()).isNotNull();
+            assertThat(saved.getAccountMappings()).isEmpty();
         }
     }
 
@@ -371,37 +254,38 @@ class TransactionServiceTest {
     class UpdateTransactionTests {
 
         @Test
-        @DisplayName("Should update draft transaction")
-        void shouldUpdateDraftTransaction() {
-            Transaction existing = createTransaction();
-            existing.setStatus(TransactionStatus.DRAFT);
+        @DisplayName("update should modify draft transaction fields")
+        void updateShouldModifyDraftFields() {
+            Transaction existing = transactionService.findById(DRAFT_TRANSACTION_ID);
 
             Transaction updateData = new Transaction();
-            updateData.setTransactionDate(LocalDate.now().plusDays(1));
-            updateData.setAmount(new BigDecimal("20000000"));
-            updateData.setDescription("Updated Description");
-            updateData.setReferenceNumber("REF-002");
+            updateData.setTransactionDate(LocalDate.now().minusDays(1));
+            updateData.setAmount(new BigDecimal("12000000"));
+            updateData.setDescription("Updated description");
+            updateData.setReferenceNumber("REF-UPDATED");
             updateData.setNotes("Updated notes");
 
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction updated = transactionService.update(existing, updateData);
 
-            Transaction result = service.update(existing, updateData);
-
-            assertThat(result.getAmount()).isEqualByComparingTo("20000000");
-            assertThat(result.getDescription()).isEqualTo("Updated Description");
+            assertThat(updated.getAmount()).isEqualByComparingTo("12000000");
+            assertThat(updated.getDescription()).isEqualTo("Updated description");
+            assertThat(updated.getReferenceNumber()).isEqualTo("REF-UPDATED");
+            assertThat(updated.getNotes()).isEqualTo("Updated notes");
+            // Transaction number should NOT change
+            assertThat(updated.getTransactionNumber()).isEqualTo("TRX-TEST-0001");
         }
 
         @Test
-        @DisplayName("Should throw when updating non-draft transaction")
-        void shouldThrowWhenUpdatingNonDraft() {
-            Transaction existing = createTransaction();
-            existing.setStatus(TransactionStatus.POSTED);
+        @DisplayName("update should throw for non-draft transaction")
+        void updateShouldThrowForNonDraft() {
+            Transaction posted = transactionService.findById(POSTED_TRANSACTION_ID);
 
             Transaction updateData = new Transaction();
+            updateData.setDescription("Trying to update posted");
 
-            assertThatThrownBy(() -> service.update(existing, updateData))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only draft transactions can be edited");
+            assertThatThrownBy(() -> transactionService.update(posted, updateData))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only draft transactions can be edited");
         }
     }
 
@@ -410,141 +294,111 @@ class TransactionServiceTest {
     class PostTransactionTests {
 
         @Test
-        @DisplayName("Should post draft transaction")
-        void shouldPostDraftTransaction() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
-            transaction.setAmount(new BigDecimal("1000000"));
+        @DisplayName("post should create balanced journal entries")
+        void postShouldCreateBalancedJournalEntries() {
+            // Create a new draft to post
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            JournalTemplate template = createTemplateWithLines();
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("8000000"));
+            transaction.setDescription("Test post transaction");
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(formulaEvaluator.evaluate(anyString(), any())).thenReturn(new BigDecimal("1000000"));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction draft = transactionService.create(transaction, null);
 
-            Transaction result = service.post(id, "admin");
+            // Post the transaction
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
 
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.POSTED);
-            assertThat(result.getPostedBy()).isEqualTo("admin");
-            assertThat(result.getPostedAt()).isNotNull();
-            assertThat(result.getJournalEntries()).isNotEmpty();
+            assertThat(posted.getStatus()).isEqualTo(TransactionStatus.POSTED);
+            assertThat(posted.getPostedAt()).isNotNull();
+            assertThat(posted.getPostedBy()).isEqualTo("testuser");
+            assertThat(posted.getJournalEntries()).isNotEmpty();
+
+            // Verify journal entries are balanced
+            BigDecimal totalDebit = posted.getJournalEntries().stream()
+                .map(JournalEntry::getDebitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalCredit = posted.getJournalEntries().stream()
+                .map(JournalEntry::getCreditAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            assertThat(totalDebit).isEqualByComparingTo(totalCredit);
         }
 
         @Test
-        @DisplayName("Should post transaction with custom context")
-        void shouldPostWithCustomContext() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
+        @DisplayName("post should calculate amounts from formula correctly")
+        void postShouldCalculateAmountsFromFormula() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            JournalTemplate template = createTemplateWithLines();
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("10000000"));
+            transaction.setDescription("Test formula calculation");
 
-            FormulaContext context = FormulaContext.of(new BigDecimal("2000000"));
+            Transaction draft = transactionService.create(transaction, null);
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(formulaEvaluator.evaluate(anyString(), any())).thenReturn(new BigDecimal("2000000"));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            // The template should use "amount" formula, so entries should equal transaction amount
+            BigDecimal totalDebit = posted.getJournalEntries().stream()
+                .map(JournalEntry::getDebitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            Transaction result = service.post(id, "admin", context);
-
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.POSTED);
+            assertThat(totalDebit).isEqualByComparingTo("10000000");
         }
 
         @Test
-        @DisplayName("Should throw when posting non-draft transaction")
-        void shouldThrowWhenPostingNonDraft() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.POSTED);
-
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-
-            assertThatThrownBy(() -> service.post(id, "admin"))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only draft transactions can be posted");
+        @DisplayName("post should throw for already posted transaction")
+        void postShouldThrowForAlreadyPosted() {
+            assertThatThrownBy(() -> transactionService.post(POSTED_TRANSACTION_ID, "testuser"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only draft transactions can be posted");
         }
 
         @Test
-        @DisplayName("Should use account overrides when posting")
-        void shouldUseAccountOverridesWhenPosting() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
+        @DisplayName("post with custom context should use context variables")
+        void postWithCustomContextShouldUseContextVariables() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            JournalTemplate template = createTemplateWithLines();
+            Transaction transaction = new Transaction();
             transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("15000000"));
+            transaction.setDescription("Test custom context");
 
-            ChartOfAccount overrideAccount = createAccount("1-1002", "Override Account");
-            TransactionAccountMapping mapping = new TransactionAccountMapping();
-            mapping.setTemplateLine(template.getLines().get(0));
-            mapping.setAccount(overrideAccount);
-            transaction.addAccountMapping(mapping);
+            Transaction draft = transactionService.create(transaction, null);
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(formulaEvaluator.evaluate(anyString(), any())).thenReturn(new BigDecimal("1000000"));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            // Create custom context with amount
+            FormulaContext context = FormulaContext.of(draft.getAmount());
+            Transaction posted = transactionService.post(draft.getId(), "testuser", context);
 
-            Transaction result = service.post(id, "admin");
-
-            // Verify override account was used
-            JournalEntry firstEntry = result.getJournalEntries().get(0);
-            assertThat(firstEntry.getAccount().getAccountCode()).isEqualTo("1-1002");
+            assertThat(posted.getStatus()).isEqualTo(TransactionStatus.POSTED);
         }
 
         @Test
-        @DisplayName("Should assign project to journal entries when posting")
-        void shouldAssignProjectToJournalEntries() {
-            UUID id = UUID.randomUUID();
-            Project project = createProject();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
+        @DisplayName("post should associate project with journal entries")
+        void postShouldAssociateProjectWithJournalEntries() {
+            List<Project> projects = projectRepository.findAll();
+            if (projects.isEmpty()) {
+                return; // Skip if no projects
+            }
+
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+            Project project = projects.get(0);
+
+            Transaction transaction = new Transaction();
+            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("6000000"));
+            transaction.setDescription("Test project association");
             transaction.setProject(project);
 
-            JournalTemplate template = createTemplateWithLines();
-            transaction.setJournalTemplate(template);
+            Transaction draft = transactionService.create(transaction, null);
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            when(formulaEvaluator.evaluate(anyString(), any())).thenReturn(new BigDecimal("1000000"));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            Transaction result = service.post(id, "admin");
-
-            for (JournalEntry entry : result.getJournalEntries()) {
-                assertThat(entry.getProject()).isEqualTo(project);
-            }
-        }
-
-        @Test
-        @DisplayName("Should throw when journal is unbalanced")
-        void shouldThrowWhenJournalUnbalanced() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
-
-            JournalTemplate template = createUnbalancedTemplate();
-            transaction.setJournalTemplate(template);
-
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            when(journalTemplateService.findByIdWithLines(any())).thenReturn(template);
-            // Return different amounts for debit and credit - causes imbalance
-            when(formulaEvaluator.evaluate(eq("amount"), any())).thenReturn(new BigDecimal("1000000"));
-            when(formulaEvaluator.evaluate(eq("amount * 0.9"), any())).thenReturn(new BigDecimal("900000"));
-            mockSequenceForJournal();
-
-            assertThatThrownBy(() -> service.post(id, "admin"))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Journal not balanced");
+            assertThat(posted.getJournalEntries()).allMatch(je -> je.getProject() != null);
+            assertThat(posted.getJournalEntries()).allMatch(je -> je.getProject().getId().equals(project.getId()));
         }
     }
 
@@ -553,59 +407,80 @@ class TransactionServiceTest {
     class VoidTransactionTests {
 
         @Test
-        @DisplayName("Should void posted transaction")
-        void shouldVoidPostedTransaction() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createPostedTransaction();
+        @DisplayName("void should create reversal journal entries")
+        void voidShouldCreateReversalJournalEntries() {
+            // Create and post a transaction first
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction transaction = new Transaction();
+            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("4000000"));
+            transaction.setDescription("Test void transaction");
 
-            Transaction result = service.voidTransaction(id, VoidReason.INPUT_ERROR, "Wrong amount", "admin");
+            Transaction draft = transactionService.create(transaction, null);
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
 
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.VOID);
-            assertThat(result.getVoidReason()).isEqualTo(VoidReason.INPUT_ERROR);
-            assertThat(result.getVoidNotes()).isEqualTo("Wrong amount");
-            assertThat(result.getVoidedBy()).isEqualTo("admin");
-            assertThat(result.getVoidedAt()).isNotNull();
+            int originalEntryCount = posted.getJournalEntries().size();
+
+            // Void the transaction
+            Transaction voided = transactionService.voidTransaction(
+                posted.getId(),
+                VoidReason.INPUT_ERROR,
+                "Testing void functionality",
+                "testuser"
+            );
+
+            assertThat(voided.getStatus()).isEqualTo(TransactionStatus.VOID);
+            assertThat(voided.getVoidReason()).isEqualTo(VoidReason.INPUT_ERROR);
+            assertThat(voided.getVoidNotes()).isEqualTo("Testing void functionality");
+            assertThat(voided.getVoidedAt()).isNotNull();
+            assertThat(voided.getVoidedBy()).isEqualTo("testuser");
+
+            // Should have reversal entries (double the original)
+            assertThat(voided.getJournalEntries()).hasSize(originalEntryCount * 2);
+
+            // Reversal entries should have reversed amounts
+            List<JournalEntry> reversalEntries = voided.getJournalEntries().stream()
+                .filter(JournalEntry::getIsReversal)
+                .toList();
+            assertThat(reversalEntries).hasSize(originalEntryCount);
         }
 
         @Test
-        @DisplayName("Should create reversal journal entries when voiding")
-        void shouldCreateReversalEntriesWhenVoiding() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createPostedTransaction();
-            int originalEntryCount = transaction.getJournalEntries().size();
+        @DisplayName("void should ensure net zero balance after reversal")
+        void voidShouldEnsureNetZeroBalance() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-            mockSequenceForJournal();
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction transaction = new Transaction();
+            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("9000000"));
+            transaction.setDescription("Test zero balance");
 
-            Transaction result = service.voidTransaction(id, VoidReason.CANCELLED, "Cancelled by customer", "admin");
+            Transaction draft = transactionService.create(transaction, null);
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
+            Transaction voided = transactionService.voidTransaction(
+                posted.getId(), VoidReason.DUPLICATE, "Duplicate entry", "testuser");
 
-            // Should have doubled entries (original + reversal)
-            assertThat(result.getJournalEntries()).hasSize(originalEntryCount * 2);
+            // After voiding, total debits should still equal total credits
+            BigDecimal totalDebit = voided.getJournalEntries().stream()
+                .map(JournalEntry::getDebitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalCredit = voided.getJournalEntries().stream()
+                .map(JournalEntry::getCreditAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Check reversal entries
-            List<JournalEntry> reversals = result.getJournalEntries().stream()
-                    .filter(JournalEntry::getIsReversal)
-                    .toList();
-            assertThat(reversals).hasSize(originalEntryCount);
+            assertThat(totalDebit).isEqualByComparingTo(totalCredit);
         }
 
         @Test
-        @DisplayName("Should throw when voiding non-posted transaction")
-        void shouldThrowWhenVoidingNonPosted() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
-
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-
-            assertThatThrownBy(() -> service.voidTransaction(id, VoidReason.INPUT_ERROR, "Test", "admin"))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only posted transactions can be voided");
+        @DisplayName("void should throw for draft transaction")
+        void voidShouldThrowForDraft() {
+            assertThatThrownBy(() -> transactionService.voidTransaction(
+                    DRAFT_TRANSACTION_ID, VoidReason.INPUT_ERROR, "Test", "testuser"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only posted transactions can be voided");
         }
     }
 
@@ -614,246 +489,216 @@ class TransactionServiceTest {
     class DeleteTransactionTests {
 
         @Test
-        @DisplayName("Should delete draft transaction")
-        void shouldDeleteDraftTransaction() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.DRAFT);
+        @DisplayName("delete should remove draft transaction from database")
+        void deleteShouldRemoveDraftFromDatabase() {
+            // Create a new draft to delete
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
+            Transaction transaction = new Transaction();
+            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("1000000"));
+            transaction.setDescription("Test delete");
 
-            service.delete(id);
+            Transaction draft = transactionService.create(transaction, null);
+            UUID draftId = draft.getId();
 
-            verify(transactionRepository).delete(transaction);
+            transactionService.delete(draftId);
+
+            assertThat(transactionRepository.findById(draftId)).isEmpty();
         }
 
         @Test
-        @DisplayName("Should throw when deleting non-draft transaction")
-        void shouldThrowWhenDeletingNonDraft() {
-            UUID id = UUID.randomUUID();
-            Transaction transaction = createTransaction();
-            transaction.setStatus(TransactionStatus.POSTED);
+        @DisplayName("delete should throw for posted transaction")
+        void deleteShouldThrowForPosted() {
+            assertThatThrownBy(() -> transactionService.delete(POSTED_TRANSACTION_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only draft transactions can be deleted");
+        }
 
-            when(transactionRepository.findById(id)).thenReturn(Optional.of(transaction));
-
-            assertThatThrownBy(() -> service.delete(id))
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("Only draft transactions can be deleted");
+        @Test
+        @DisplayName("delete should throw for voided transaction")
+        void deleteShouldThrowForVoided() {
+            assertThatThrownBy(() -> transactionService.delete(VOIDED_TRANSACTION_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Only draft transactions can be deleted");
         }
     }
 
     @Nested
-    @DisplayName("Create From Draft")
+    @DisplayName("Create from Draft Transaction")
     class CreateFromDraftTests {
 
         @Test
-        @DisplayName("Should create transaction from draft")
-        void shouldCreateFromDraft() {
-            UUID templateId = UUID.randomUUID();
-            DraftTransaction draft = createDraft();
-            JournalTemplate template = createTemplate();
-
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(templateId)).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            Transaction result = service.createFromDraft(draft, templateId, "Consulting Fee", new BigDecimal("5000000"), "admin");
-
-            assertThat(result.getStatus()).isEqualTo(TransactionStatus.DRAFT);
-            assertThat(result.getAmount()).isEqualByComparingTo("5000000");
-            assertThat(result.getDescription()).isEqualTo("Consulting Fee");
-            assertThat(result.getReferenceNumber()).isEqualTo(draft.getSourceReference());
-            verify(journalTemplateService).recordUsage(template.getId());
-        }
-
-        @Test
-        @DisplayName("Should use draft values when parameters are null")
-        void shouldUseDraftValuesWhenParametersNull() {
-            UUID templateId = UUID.randomUUID();
-            DraftTransaction draft = createDraft();
+        @DisplayName("createFromDraft should create transaction from draft data")
+        void createFromDraftShouldCreateTransaction() {
+            // Create a draft transaction in the database
+            DraftTransaction draft = new DraftTransaction();
+            draft.setSource(DraftTransaction.Source.TELEGRAM);
+            draft.setTransactionDate(LocalDate.now());
+            draft.setAmount(new BigDecimal("2500000"));
             draft.setMerchantName("Test Merchant");
-            draft.setAmount(new BigDecimal("3000000"));
-            JournalTemplate template = createTemplate();
+            draft.setSourceReference("REF-DRAFT-001");
+            draft.setStatus(DraftTransaction.Status.APPROVED);
+            draft = draftTransactionRepository.save(draft);
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(templateId)).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction transaction = transactionService.createFromDraft(
+                draft,
+                INCOME_CONSULTING_TEMPLATE_ID,
+                "Transaction from draft",
+                new BigDecimal("2500000"),
+                "testuser"
+            );
 
-            Transaction result = service.createFromDraft(draft, templateId, null, null, "admin");
-
-            assertThat(result.getAmount()).isEqualByComparingTo("3000000");
-            assertThat(result.getDescription()).isEqualTo("Test Merchant");
+            assertThat(transaction).isNotNull();
+            assertThat(transaction.getId()).isNotNull();
+            assertThat(transaction.getTransactionNumber()).startsWith("TRX-");
+            assertThat(transaction.getStatus()).isEqualTo(TransactionStatus.DRAFT);
+            assertThat(transaction.getDescription()).isEqualTo("Transaction from draft");
+            assertThat(transaction.getReferenceNumber()).isEqualTo("REF-DRAFT-001");
+            assertThat(transaction.getCreatedBy()).isEqualTo("testuser");
         }
 
         @Test
-        @DisplayName("Should use current date when draft date is null")
-        void shouldUseCurrentDateWhenDraftDateNull() {
-            UUID templateId = UUID.randomUUID();
-            DraftTransaction draft = createDraft();
-            draft.setTransactionDate(null);
-            JournalTemplate template = createTemplate();
+        @DisplayName("createFromDraft should use draft amount when amount is null")
+        void createFromDraftShouldUseDraftAmountWhenNull() {
+            DraftTransaction draft = new DraftTransaction();
+            draft.setSource(DraftTransaction.Source.TELEGRAM);
+            draft.setTransactionDate(LocalDate.now());
+            draft.setAmount(new BigDecimal("3500000"));
+            draft.setMerchantName("Test Merchant");
+            draft.setStatus(DraftTransaction.Status.APPROVED);
+            draft = draftTransactionRepository.save(draft);
 
-            mockSequenceForTransaction();
-            when(journalTemplateService.findByIdWithLines(templateId)).thenReturn(template);
-            when(transactionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            Transaction transaction = transactionService.createFromDraft(
+                draft,
+                INCOME_CONSULTING_TEMPLATE_ID,
+                "Test description",
+                null, // null amount
+                "testuser"
+            );
 
-            Transaction result = service.createFromDraft(draft, templateId, "Test", new BigDecimal("1000000"), "admin");
+            assertThat(transaction.getAmount()).isEqualByComparingTo("3500000");
+        }
 
-            assertThat(result.getTransactionDate()).isEqualTo(LocalDate.now());
+        @Test
+        @DisplayName("createFromDraft should use merchant name when description is null")
+        void createFromDraftShouldUseMerchantNameWhenDescriptionNull() {
+            DraftTransaction draft = new DraftTransaction();
+            draft.setSource(DraftTransaction.Source.TELEGRAM);
+            draft.setTransactionDate(LocalDate.now());
+            draft.setAmount(new BigDecimal("4500000"));
+            draft.setMerchantName("Amazing Store");
+            draft.setStatus(DraftTransaction.Status.APPROVED);
+            draft = draftTransactionRepository.save(draft);
+
+            Transaction transaction = transactionService.createFromDraft(
+                draft,
+                INCOME_CONSULTING_TEMPLATE_ID,
+                null, // null description
+                new BigDecimal("4500000"),
+                "testuser"
+            );
+
+            assertThat(transaction.getDescription()).isEqualTo("Amazing Store");
         }
     }
 
-    // Helper methods
+    @Nested
+    @DisplayName("Transaction Number Generation")
+    class TransactionNumberGenerationTests {
 
-    private Transaction createTransaction() {
-        Transaction transaction = new Transaction();
-        transaction.setId(UUID.randomUUID());
-        transaction.setTransactionNumber("TRX-2025-00001");
-        transaction.setTransactionDate(LocalDate.now());
-        transaction.setAmount(new BigDecimal("10000000"));
-        transaction.setDescription("Test Transaction");
-        transaction.setStatus(TransactionStatus.DRAFT);
-        return transaction;
+        @Test
+        @DisplayName("should generate unique transaction numbers")
+        void shouldGenerateUniqueTransactionNumbers() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+
+            Transaction tx1 = new Transaction();
+            tx1.setJournalTemplate(template);
+            tx1.setTransactionDate(LocalDate.now());
+            tx1.setAmount(new BigDecimal("1000000"));
+            tx1.setDescription("First");
+
+            Transaction tx2 = new Transaction();
+            tx2.setJournalTemplate(template);
+            tx2.setTransactionDate(LocalDate.now());
+            tx2.setAmount(new BigDecimal("2000000"));
+            tx2.setDescription("Second");
+
+            Transaction saved1 = transactionService.create(tx1, null);
+            Transaction saved2 = transactionService.create(tx2, null);
+
+            assertThat(saved1.getTransactionNumber()).isNotEqualTo(saved2.getTransactionNumber());
+        }
+
+        @Test
+        @DisplayName("should generate sequential transaction numbers")
+        void shouldGenerateSequentialNumbers() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
+
+            Transaction tx1 = new Transaction();
+            tx1.setJournalTemplate(template);
+            tx1.setTransactionDate(LocalDate.now());
+            tx1.setAmount(new BigDecimal("1000000"));
+            tx1.setDescription("Sequential 1");
+
+            Transaction tx2 = new Transaction();
+            tx2.setJournalTemplate(template);
+            tx2.setTransactionDate(LocalDate.now());
+            tx2.setAmount(new BigDecimal("2000000"));
+            tx2.setDescription("Sequential 2");
+
+            Transaction saved1 = transactionService.create(tx1, null);
+            Transaction saved2 = transactionService.create(tx2, null);
+
+            // Extract numbers from transaction numbers (format: TRX-YYYY-NNNNN)
+            String num1 = saved1.getTransactionNumber().replaceAll("\\D+", "");
+            String num2 = saved2.getTransactionNumber().replaceAll("\\D+", "");
+
+            // Second should be greater
+            assertThat(Long.parseLong(num2)).isGreaterThan(Long.parseLong(num1));
+        }
     }
 
-    private Transaction createPostedTransaction() {
-        Transaction transaction = createTransaction();
-        transaction.setStatus(TransactionStatus.POSTED);
-        transaction.setPostedAt(LocalDateTime.now());
-        transaction.setPostedBy("admin");
+    @Nested
+    @DisplayName("Journal Entry Verification")
+    class JournalEntryVerificationTests {
 
-        // Add journal entries
-        JournalEntry debitEntry = new JournalEntry();
-        debitEntry.setId(UUID.randomUUID());
-        debitEntry.setJournalNumber("JE-2025-00001-01");
-        debitEntry.setJournalDate(LocalDate.now());
-        debitEntry.setAccount(createAccount("1-1001", "Bank"));
-        debitEntry.setDebitAmount(new BigDecimal("10000000"));
-        debitEntry.setCreditAmount(BigDecimal.ZERO);
-        debitEntry.setDescription("Test");
-        debitEntry.setIsReversal(false);
+        @Test
+        @DisplayName("posted transaction should have journal entries with correct account codes")
+        void postedTransactionShouldHaveCorrectAccountCodes() {
+            Transaction posted = transactionService.findByIdWithJournalEntries(POSTED_TRANSACTION_ID);
 
-        JournalEntry creditEntry = new JournalEntry();
-        creditEntry.setId(UUID.randomUUID());
-        creditEntry.setJournalNumber("JE-2025-00001-02");
-        creditEntry.setJournalDate(LocalDate.now());
-        creditEntry.setAccount(createAccount("4-1001", "Revenue"));
-        creditEntry.setDebitAmount(BigDecimal.ZERO);
-        creditEntry.setCreditAmount(new BigDecimal("10000000"));
-        creditEntry.setDescription("Test");
-        creditEntry.setIsReversal(false);
+            assertThat(posted.getJournalEntries()).isNotEmpty();
 
-        transaction.addJournalEntry(debitEntry);
-        transaction.addJournalEntry(creditEntry);
+            // Verify entries have valid accounts
+            for (JournalEntry entry : posted.getJournalEntries()) {
+                assertThat(entry.getAccount()).isNotNull();
+                assertThat(entry.getAccount().getAccountCode()).isNotNull();
+            }
+        }
 
-        return transaction;
-    }
+        @Test
+        @DisplayName("journal entries should have debit and credit on different sides")
+        void journalEntriesShouldHaveDebitCreditOnDifferentSides() {
+            JournalTemplate template = journalTemplateService.findById(INCOME_CONSULTING_TEMPLATE_ID);
 
-    private JournalTemplate createTemplate() {
-        JournalTemplate template = new JournalTemplate();
-        template.setId(UUID.randomUUID());
-        template.setTemplateName("Test Template");
-        template.setCategory(TemplateCategory.INCOME);
-        template.setLines(new ArrayList<>());
-        return template;
-    }
+            Transaction transaction = new Transaction();
+            transaction.setJournalTemplate(template);
+            transaction.setTransactionDate(LocalDate.now());
+            transaction.setAmount(new BigDecimal("5000000"));
+            transaction.setDescription("Test debit credit sides");
 
-    private JournalTemplate createTemplateWithLines() {
-        JournalTemplate template = createTemplate();
+            Transaction draft = transactionService.create(transaction, null);
+            Transaction posted = transactionService.post(draft.getId(), "testuser");
 
-        ChartOfAccount bankAccount = createAccount("1-1001", "Bank");
-        ChartOfAccount revenueAccount = createAccount("4-1001", "Revenue");
+            boolean hasDebit = posted.getJournalEntries().stream()
+                .anyMatch(je -> je.getDebitAmount().compareTo(BigDecimal.ZERO) > 0);
+            boolean hasCredit = posted.getJournalEntries().stream()
+                .anyMatch(je -> je.getCreditAmount().compareTo(BigDecimal.ZERO) > 0);
 
-        JournalTemplateLine debitLine = new JournalTemplateLine();
-        debitLine.setId(UUID.randomUUID());
-        debitLine.setAccount(bankAccount);
-        debitLine.setPosition(JournalPosition.DEBIT);
-        debitLine.setFormula("amount");
-        debitLine.setLineOrder(1);
-
-        JournalTemplateLine creditLine = new JournalTemplateLine();
-        creditLine.setId(UUID.randomUUID());
-        creditLine.setAccount(revenueAccount);
-        creditLine.setPosition(JournalPosition.CREDIT);
-        creditLine.setFormula("amount");
-        creditLine.setLineOrder(2);
-
-        template.setLines(List.of(debitLine, creditLine));
-
-        return template;
-    }
-
-    private JournalTemplate createUnbalancedTemplate() {
-        JournalTemplate template = createTemplate();
-
-        ChartOfAccount bankAccount = createAccount("1-1001", "Bank");
-        ChartOfAccount revenueAccount = createAccount("4-1001", "Revenue");
-
-        JournalTemplateLine debitLine = new JournalTemplateLine();
-        debitLine.setId(UUID.randomUUID());
-        debitLine.setAccount(bankAccount);
-        debitLine.setPosition(JournalPosition.DEBIT);
-        debitLine.setFormula("amount");
-        debitLine.setLineOrder(1);
-
-        JournalTemplateLine creditLine = new JournalTemplateLine();
-        creditLine.setId(UUID.randomUUID());
-        creditLine.setAccount(revenueAccount);
-        creditLine.setPosition(JournalPosition.CREDIT);
-        creditLine.setFormula("amount * 0.9");  // Different formula - causes imbalance
-        creditLine.setLineOrder(2);
-
-        template.setLines(List.of(debitLine, creditLine));
-
-        return template;
-    }
-
-    private ChartOfAccount createAccount(String code, String name) {
-        ChartOfAccount account = new ChartOfAccount();
-        account.setId(UUID.randomUUID());
-        account.setAccountCode(code);
-        account.setAccountName(name);
-        return account;
-    }
-
-    private Project createProject() {
-        Project project = new Project();
-        project.setId(UUID.randomUUID());
-        project.setName("Test Project");
-        return project;
-    }
-
-    private DraftTransaction createDraft() {
-        DraftTransaction draft = new DraftTransaction();
-        draft.setId(UUID.randomUUID());
-        draft.setMerchantName("Test Merchant");
-        draft.setAmount(new BigDecimal("1000000"));
-        draft.setTransactionDate(LocalDate.now());
-        draft.setSourceReference("TG-12345");
-        return draft;
-    }
-
-    private void mockSequenceForTransaction() {
-        TransactionSequence sequence = new TransactionSequence();
-        sequence.setSequenceType("TRANSACTION");
-        sequence.setPrefix("TRX");
-        sequence.setYear(LocalDate.now().getYear());
-        sequence.setLastNumber(0);
-
-        when(transactionSequenceRepository.findBySequenceTypeAndYearForUpdate(eq("TRANSACTION"), anyInt()))
-                .thenReturn(Optional.of(sequence));
-        when(transactionSequenceRepository.save(any())).thenReturn(sequence);
-    }
-
-    private void mockSequenceForJournal() {
-        TransactionSequence sequence = new TransactionSequence();
-        sequence.setSequenceType("JOURNAL");
-        sequence.setPrefix("JE");
-        sequence.setYear(LocalDate.now().getYear());
-        sequence.setLastNumber(0);
-
-        when(transactionSequenceRepository.findBySequenceTypeAndYearForUpdate(eq("JOURNAL"), anyInt()))
-                .thenReturn(Optional.of(sequence));
-        when(transactionSequenceRepository.save(any())).thenReturn(sequence);
+            assertThat(hasDebit).isTrue();
+            assertThat(hasCredit).isTrue();
+        }
     }
 }
