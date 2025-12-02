@@ -21,8 +21,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * Service for importing all data from a ZIP archive exported by DataExportService.
- * Implements full replace: truncates all tables then loads from CSV files.
+ * Service for importing data from a ZIP archive exported by DataExportService.
+ * Only truncates and replaces tables that have actual data in the CSV files.
+ * Tables with empty CSV (header only) are left untouched, preserving existing data.
  * Uses Map pre-load strategy for O(1) reference lookups.
  */
 @Service
@@ -87,12 +88,13 @@ public class DataImportService {
     private Map<String, ProjectMilestone> milestoneMap;
 
     /**
-     * Import all data from a ZIP archive.
-     * This is a full replace operation - all existing data will be deleted.
+     * Import data from a ZIP archive.
+     * Only truncates and replaces tables that have actual data in the CSV files.
+     * Tables with empty CSV (header only) are left untouched.
      */
     @Transactional
     public ImportResult importAllData(byte[] zipData) throws IOException {
-        log.info("Starting full data import");
+        log.info("Starting data import");
         long startTime = System.currentTimeMillis();
 
         // Extract ZIP contents
@@ -100,15 +102,23 @@ public class DataImportService {
         Map<String, byte[]> documentFiles = new HashMap<>();
         extractZip(zipData, csvFiles, documentFiles);
 
-        // Truncate all tables in reverse dependency order
-        truncateAllTables();
+        // Determine which files have actual data (more than just header)
+        Set<String> filesWithData = csvFiles.entrySet().stream()
+                .filter(e -> hasData(e.getValue()))
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toSet());
 
-        // Initialize reference maps
-        initializeMaps();
+        log.info("Files with data: {}", filesWithData);
+
+        // Truncate only tables that will be imported
+        truncateTablesForFiles(filesWithData);
+
+        // Initialize reference maps with existing data
+        initializeMapsFromDatabase();
 
         // Import in filename order (dependency order)
         int totalRecords = 0;
-        List<String> sortedFiles = csvFiles.keySet().stream().sorted().toList();
+        List<String> sortedFiles = filesWithData.stream().sorted().toList();
 
         for (String filename : sortedFiles) {
             String content = csvFiles.get(filename);
@@ -122,9 +132,25 @@ public class DataImportService {
         log.info("Imported {} document files", documentCount);
 
         long duration = System.currentTimeMillis() - startTime;
-        log.info("Full data import completed in {}ms, {} total records", duration, totalRecords);
+        log.info("Data import completed in {}ms, {} total records", duration, totalRecords);
 
         return new ImportResult(totalRecords, documentCount, duration);
+    }
+
+    /**
+     * Check if CSV content has actual data rows (not just header).
+     */
+    private boolean hasData(String csvContent) {
+        if (csvContent == null || csvContent.isBlank()) return false;
+        // Count non-empty lines after header
+        String[] lines = csvContent.split("\n");
+        int dataLines = 0;
+        for (int i = 1; i < lines.length; i++) {
+            if (!lines[i].trim().isEmpty()) {
+                dataLines++;
+            }
+        }
+        return dataLines > 0;
     }
 
     private void extractZip(byte[] zipData, Map<String, String> csvFiles, Map<String, byte[]> documentFiles) throws IOException {
@@ -148,31 +174,51 @@ public class DataImportService {
         }
     }
 
-    private void truncateAllTables() {
-        log.info("Truncating all tables");
+    // Mapping from CSV filename to table name(s) that should be truncated
+    // Includes dependent tables that would have broken references
+    private static final Map<String, List<String>> FILE_TO_TABLES = Map.ofEntries(
+            Map.entry("01_company_config.csv", List.of("company_config")),
+            // COA change invalidates all journal entries and transactions
+            Map.entry("02_chart_of_accounts.csv", List.of(
+                    "journal_entries", "transaction_account_mappings", "tax_transaction_details",
+                    "transactions", "amortization_entries", "amortization_schedules",
+                    "documents", "chart_of_accounts")),
+            Map.entry("03_salary_components.csv", List.of("employee_salary_components", "salary_components")),
+            // Template change invalidates transactions, merchant mappings, payment terms
+            Map.entry("04_journal_templates.csv", List.of(
+                    "journal_entries", "transaction_account_mappings", "tax_transaction_details",
+                    "transactions", "merchant_mappings", "project_payment_terms",
+                    "user_template_preferences", "journal_template_tags", "journal_template_lines", "journal_templates")),
+            Map.entry("07_clients.csv", List.of("invoices", "projects", "clients")),
+            Map.entry("08_projects.csv", List.of("project_payment_terms", "project_milestones", "projects")),
+            Map.entry("11_fiscal_periods.csv", List.of("fiscal_periods")),
+            Map.entry("12_tax_deadlines.csv", List.of("tax_deadline_completions", "tax_deadlines")),
+            Map.entry("13_company_bank_accounts.csv", List.of("company_bank_accounts")),
+            Map.entry("14_merchant_mappings.csv", List.of("merchant_mappings")),
+            Map.entry("15_employees.csv", List.of("payroll_details", "employee_salary_components", "employees")),
+            Map.entry("17_invoices.csv", List.of("invoices")),
+            Map.entry("18_transactions.csv", List.of("journal_entries", "transaction_account_mappings", "tax_transaction_details", "documents", "transactions")),
+            Map.entry("21_payroll_runs.csv", List.of("payroll_details", "payroll_runs")),
+            Map.entry("23_amortization_schedules.csv", List.of("amortization_entries", "amortization_schedules")),
+            Map.entry("27_draft_transactions.csv", List.of("draft_transactions")),
+            Map.entry("28_users.csv", List.of("telegram_user_links", "user_template_preferences", "user_roles", "audit_logs", "users")),
+            Map.entry("33_transaction_sequences.csv", List.of("transaction_sequences"))
+    );
 
-        // Disable FK checks, truncate in reverse dependency order, re-enable
-        entityManager.createNativeQuery("SET session_replication_role = 'replica'").executeUpdate();
+    private void truncateTablesForFiles(Set<String> filesWithData) {
+        Set<String> tablesToTruncate = new LinkedHashSet<>();
 
-        // Reverse dependency order (children first)
-        String[] tables = {
-            "telegram_user_links", "user_template_preferences", "user_roles",
-            "audit_logs", "transaction_sequences",
-            "draft_transactions", "tax_deadline_completions", "tax_transaction_details",
-            "amortization_entries", "amortization_schedules",
-            "payroll_details", "payroll_runs",
-            "journal_entries", "transaction_account_mappings", "transactions",
-            "invoices", "documents",
-            "employee_salary_components", "employees",
-            "merchant_mappings", "company_bank_accounts",
-            "tax_deadlines", "fiscal_periods",
-            "project_payment_terms", "project_milestones", "projects",
-            "clients",
-            "journal_template_tags", "journal_template_lines", "journal_templates",
-            "salary_components", "chart_of_accounts", "company_config", "users"
-        };
+        // Collect tables to truncate based on files with data
+        for (String file : filesWithData) {
+            List<String> tables = FILE_TO_TABLES.get(file);
+            if (tables != null) {
+                tablesToTruncate.addAll(tables);
+            }
+        }
 
-        for (String table : tables) {
+        log.info("Truncating tables: {}", tablesToTruncate);
+
+        for (String table : tablesToTruncate) {
             try {
                 entityManager.createNativeQuery("TRUNCATE TABLE " + table + " CASCADE").executeUpdate();
             } catch (Exception e) {
@@ -180,23 +226,70 @@ public class DataImportService {
             }
         }
 
-        entityManager.createNativeQuery("SET session_replication_role = 'origin'").executeUpdate();
         entityManager.flush();
     }
 
-    private void initializeMaps() {
+    private void initializeMapsFromDatabase() {
+        // Initialize maps with existing data from database
         accountMap = new HashMap<>();
+        for (ChartOfAccount a : accountRepository.findAll()) {
+            accountMap.put(a.getAccountCode(), a);
+        }
+
         templateMap = new HashMap<>();
+        for (JournalTemplate t : templateRepository.findAll()) {
+            templateMap.put(t.getTemplateName(), t);
+        }
+
         clientMap = new HashMap<>();
+        for (Client c : clientRepository.findAll()) {
+            clientMap.put(c.getCode(), c);
+        }
+
         projectMap = new HashMap<>();
+        for (Project p : projectRepository.findAll()) {
+            projectMap.put(p.getCode(), p);
+        }
+
         employeeMap = new HashMap<>();
+        for (Employee e : employeeRepository.findAll()) {
+            employeeMap.put(e.getEmployeeId(), e);
+        }
+
         salaryComponentMap = new HashMap<>();
+        for (SalaryComponent sc : salaryComponentRepository.findAll()) {
+            salaryComponentMap.put(sc.getCode(), sc);
+        }
+
         userMap = new HashMap<>();
+        for (User u : userRepository.findAll()) {
+            userMap.put(u.getUsername(), u);
+        }
+
         payrollRunMap = new HashMap<>();
+        for (PayrollRun pr : payrollRunRepository.findAll()) {
+            payrollRunMap.put(pr.getPayrollPeriod(), pr);
+        }
+
         transactionMap = new HashMap<>();
+        for (Transaction t : transactionRepository.findAll()) {
+            transactionMap.put(t.getTransactionNumber(), t);
+        }
+
         amortizationScheduleMap = new HashMap<>();
+        for (AmortizationSchedule as : amortizationScheduleRepository.findAll()) {
+            amortizationScheduleMap.put(as.getCode(), as);
+        }
+
         taxDeadlineMap = new HashMap<>();
+        for (TaxDeadline td : taxDeadlineRepository.findAll()) {
+            taxDeadlineMap.put(td.getDeadlineType(), td);
+        }
+
         milestoneMap = new HashMap<>();
+        for (ProjectMilestone m : milestoneRepository.findAll()) {
+            milestoneMap.put(m.getProject().getCode() + "_" + m.getSequence(), m);
+        }
     }
 
     private int importCsvFile(String filename, String content) {
