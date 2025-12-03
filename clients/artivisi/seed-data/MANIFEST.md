@@ -11,7 +11,7 @@ NPWP: -
 ## Export Contents
 - Chart of Accounts: 89 records
 - Salary Components: 17 records
-- Journal Templates: 61 records
+- Journal Templates: 65 records
 - Asset Categories: 4 records
 - Journal Entries: 0 records
 - Transactions: 0 records
