@@ -444,3 +444,24 @@ INSERT INTO journal_template_lines (id, id_journal_template, id_account, positio
 ('f5100000-0000-0000-0000-000000000009', 'f5000000-0000-0000-0000-000000000004', '50000000-0000-0000-0000-000000000121', 'DEBIT', 'amount', 1, 'Beban penyesuaian persediaan', NULL),
 -- Credit: Inventory account
 ('f5100000-0000-0000-0000-000000000010', 'f5000000-0000-0000-0000-000000000004', NULL, 'CREDIT', 'amount', 2, 'Penyesuaian persediaan keluar', 'PERSEDIAAN');
+
+-- ============================================
+-- SYSTEM TEMPLATE: Manual Journal Entry
+-- ============================================
+-- Template: Jurnal Manual (Manual Journal Entry)
+-- This is a special system template used for manual journal entries.
+-- It has no template lines - the user defines their own debit/credit lines.
+-- Used internally by the system when creating transactions for manual entries.
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active) VALUES
+('e0000000-0000-0000-0000-000000000099', 'Jurnal Manual', 'TRANSFER', NULL, 'SIMPLE', 'Template sistem untuk jurnal manual. Tidak memiliki baris template - pengguna mendefinisikan sendiri baris debit/kredit.', TRUE, TRUE);
+-- Note: No template lines for MANUAL template - lines are user-defined
+
+-- ============================================
+-- SYSTEM TEMPLATE: Fiscal Year Closing
+-- ============================================
+-- Template: Jurnal Penutup (Fiscal Year Closing)
+-- This is a special system template used for fiscal year closing entries.
+-- It has no template lines - entries are system-generated based on account balances.
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active) VALUES
+('e0000000-0000-0000-0000-000000000098', 'Jurnal Penutup Tahun', 'TRANSFER', NULL, 'SIMPLE', 'Template sistem untuk jurnal penutup akhir tahun. Baris debit/kredit dibuat otomatis berdasarkan saldo akun.', TRUE, TRUE);
+-- Note: No template lines for CLOSING template - lines are system-generated

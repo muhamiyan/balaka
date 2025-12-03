@@ -2,9 +2,16 @@ package com.artivisi.accountingfinance.service;
 
 import com.artivisi.accountingfinance.entity.ChartOfAccount;
 import com.artivisi.accountingfinance.entity.JournalEntry;
+import com.artivisi.accountingfinance.entity.JournalTemplate;
+import com.artivisi.accountingfinance.entity.Transaction;
+import com.artivisi.accountingfinance.entity.TransactionSequence;
 import com.artivisi.accountingfinance.enums.JournalEntryStatus;
+import com.artivisi.accountingfinance.enums.TransactionStatus;
 import com.artivisi.accountingfinance.repository.ChartOfAccountRepository;
 import com.artivisi.accountingfinance.repository.JournalEntryRepository;
+import com.artivisi.accountingfinance.repository.JournalTemplateRepository;
+import com.artivisi.accountingfinance.repository.TransactionRepository;
+import com.artivisi.accountingfinance.repository.TransactionSequenceRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service for fiscal year closing operations.
@@ -33,9 +41,15 @@ public class FiscalYearClosingService {
     private static final String LABA_BERJALAN_CODE = "3.2.02";
     private static final String LABA_DITAHAN_CODE = "3.2.01";
 
+    // Fiscal Year Closing template ID (from V004 seed data)
+    private static final UUID CLOSING_TEMPLATE_ID = UUID.fromString("e0000000-0000-0000-0000-000000000098");
+
     private final JournalEntryRepository journalEntryRepository;
     private final ChartOfAccountRepository chartOfAccountRepository;
     private final ReportService reportService;
+    private final TransactionRepository transactionRepository;
+    private final JournalTemplateRepository journalTemplateRepository;
+    private final TransactionSequenceRepository transactionSequenceRepository;
 
     /**
      * Check if closing entries already exist for a year.
@@ -111,6 +125,7 @@ public class FiscalYearClosingService {
     /**
      * Execute year-end closing.
      * Creates closing journal entries to transfer income/expense to retained earnings.
+     * Each closing entry group is backed by a Transaction.
      */
     @Transactional
     public List<JournalEntry> executeClosing(int year) {
@@ -131,6 +146,10 @@ public class FiscalYearClosingService {
         List<JournalEntry> closingEntries = new ArrayList<>();
         String username = getCurrentUsername();
 
+        // Get the closing template
+        JournalTemplate closingTemplate = journalTemplateRepository.findById(CLOSING_TEMPLATE_ID)
+                .orElseThrow(() -> new IllegalStateException("Fiscal year closing template not found"));
+
         // Get required accounts
         ChartOfAccount labaBerjalan = chartOfAccountRepository.findByAccountCode(LABA_BERJALAN_CODE)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -141,74 +160,86 @@ public class FiscalYearClosingService {
 
         // Entry 1: Close Revenue accounts to Laba Berjalan
         if (incomeStatement.totalRevenue().compareTo(BigDecimal.ZERO) != 0) {
+            Transaction transaction = createClosingTransaction(
+                    closingTemplate, yearEnd, year,
+                    "Tutup Pendapatan ke Laba Berjalan - Tahun " + year,
+                    "CLOSING-" + year + "-01",
+                    incomeStatement.totalRevenue(),
+                    username
+            );
+
             String journalNumber = generateJournalNumber(yearEnd, "01");
+            int lineIndex = 0;
 
             // Debit each revenue account (to zero it out)
             for (ReportService.IncomeStatementItem item : incomeStatement.revenueItems()) {
                 if (item.balance().compareTo(BigDecimal.ZERO) != 0) {
                     JournalEntry entry = createEntry(
-                            journalNumber,
-                            yearEnd,
+                            journalNumber + "-" + String.format("%02d", ++lineIndex),
                             item.account(),
                             item.balance(),
                             BigDecimal.ZERO,
-                            "Tutup Pendapatan ke Laba Berjalan - Tahun " + year,
-                            "CLOSING-" + year + "-01",
                             username
                     );
-                    closingEntries.add(journalEntryRepository.save(entry));
+                    transaction.addJournalEntry(entry);
                 }
             }
 
             // Credit Laba Berjalan
             JournalEntry creditEntry = createEntry(
-                    journalNumber,
-                    yearEnd,
+                    journalNumber + "-" + String.format("%02d", ++lineIndex),
                     labaBerjalan,
                     BigDecimal.ZERO,
                     incomeStatement.totalRevenue(),
-                    "Tutup Pendapatan ke Laba Berjalan - Tahun " + year,
-                    "CLOSING-" + year + "-01",
                     username
             );
-            closingEntries.add(journalEntryRepository.save(creditEntry));
+            transaction.addJournalEntry(creditEntry);
+
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            closingEntries.addAll(savedTransaction.getJournalEntries());
 
             log.info("Created revenue closing entry for year {}: {}", year, incomeStatement.totalRevenue());
         }
 
         // Entry 2: Close Expense accounts to Laba Berjalan
         if (incomeStatement.totalExpense().compareTo(BigDecimal.ZERO) != 0) {
+            Transaction transaction = createClosingTransaction(
+                    closingTemplate, yearEnd, year,
+                    "Tutup Beban ke Laba Berjalan - Tahun " + year,
+                    "CLOSING-" + year + "-02",
+                    incomeStatement.totalExpense(),
+                    username
+            );
+
             String journalNumber = generateJournalNumber(yearEnd, "02");
+            int lineIndex = 0;
 
             // Credit each expense account (to zero it out)
             for (ReportService.IncomeStatementItem item : incomeStatement.expenseItems()) {
                 if (item.balance().compareTo(BigDecimal.ZERO) != 0) {
                     JournalEntry entry = createEntry(
-                            journalNumber,
-                            yearEnd,
+                            journalNumber + "-" + String.format("%02d", ++lineIndex),
                             item.account(),
                             BigDecimal.ZERO,
                             item.balance(),
-                            "Tutup Beban ke Laba Berjalan - Tahun " + year,
-                            "CLOSING-" + year + "-02",
                             username
                     );
-                    closingEntries.add(journalEntryRepository.save(entry));
+                    transaction.addJournalEntry(entry);
                 }
             }
 
             // Debit Laba Berjalan
             JournalEntry debitEntry = createEntry(
-                    journalNumber,
-                    yearEnd,
+                    journalNumber + "-" + String.format("%02d", ++lineIndex),
                     labaBerjalan,
                     incomeStatement.totalExpense(),
                     BigDecimal.ZERO,
-                    "Tutup Beban ke Laba Berjalan - Tahun " + year,
-                    "CLOSING-" + year + "-02",
                     username
             );
-            closingEntries.add(journalEntryRepository.save(debitEntry));
+            transaction.addJournalEntry(debitEntry);
+
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            closingEntries.addAll(savedTransaction.getJournalEntries());
 
             log.info("Created expense closing entry for year {}: {}", year, incomeStatement.totalExpense());
         }
@@ -216,60 +247,37 @@ public class FiscalYearClosingService {
         // Entry 3: Transfer Laba Berjalan to Laba Ditahan
         BigDecimal netIncome = incomeStatement.netIncome();
         if (netIncome.compareTo(BigDecimal.ZERO) != 0) {
+            String description = netIncome.compareTo(BigDecimal.ZERO) > 0
+                    ? "Transfer Laba Berjalan ke Laba Ditahan - Tahun " + year
+                    : "Transfer Rugi Berjalan ke Laba Ditahan - Tahun " + year;
+
+            Transaction transaction = createClosingTransaction(
+                    closingTemplate, yearEnd, year,
+                    description,
+                    "CLOSING-" + year + "-03",
+                    netIncome.abs(),
+                    username
+            );
+
             String journalNumber = generateJournalNumber(yearEnd, "03");
 
             if (netIncome.compareTo(BigDecimal.ZERO) > 0) {
                 // Profit: Debit Laba Berjalan, Credit Laba Ditahan
-                JournalEntry debitEntry = createEntry(
-                        journalNumber,
-                        yearEnd,
-                        labaBerjalan,
-                        netIncome,
-                        BigDecimal.ZERO,
-                        "Transfer Laba Berjalan ke Laba Ditahan - Tahun " + year,
-                        "CLOSING-" + year + "-03",
-                        username
-                );
-                closingEntries.add(journalEntryRepository.save(debitEntry));
-
-                JournalEntry creditEntry = createEntry(
-                        journalNumber,
-                        yearEnd,
-                        labaDitahan,
-                        BigDecimal.ZERO,
-                        netIncome,
-                        "Transfer Laba Berjalan ke Laba Ditahan - Tahun " + year,
-                        "CLOSING-" + year + "-03",
-                        username
-                );
-                closingEntries.add(journalEntryRepository.save(creditEntry));
+                JournalEntry debitEntry = createEntry(journalNumber + "-01", labaBerjalan, netIncome, BigDecimal.ZERO, username);
+                JournalEntry creditEntry = createEntry(journalNumber + "-02", labaDitahan, BigDecimal.ZERO, netIncome, username);
+                transaction.addJournalEntry(debitEntry);
+                transaction.addJournalEntry(creditEntry);
             } else {
                 // Loss: Credit Laba Berjalan, Debit Laba Ditahan
                 BigDecimal loss = netIncome.abs();
-                JournalEntry creditEntry = createEntry(
-                        journalNumber,
-                        yearEnd,
-                        labaBerjalan,
-                        BigDecimal.ZERO,
-                        loss,
-                        "Transfer Rugi Berjalan ke Laba Ditahan - Tahun " + year,
-                        "CLOSING-" + year + "-03",
-                        username
-                );
-                closingEntries.add(journalEntryRepository.save(creditEntry));
-
-                JournalEntry debitEntry = createEntry(
-                        journalNumber,
-                        yearEnd,
-                        labaDitahan,
-                        loss,
-                        BigDecimal.ZERO,
-                        "Transfer Rugi Berjalan ke Laba Ditahan - Tahun " + year,
-                        "CLOSING-" + year + "-03",
-                        username
-                );
-                closingEntries.add(journalEntryRepository.save(debitEntry));
+                JournalEntry creditEntry = createEntry(journalNumber + "-01", labaBerjalan, BigDecimal.ZERO, loss, username);
+                JournalEntry debitEntry = createEntry(journalNumber + "-02", labaDitahan, loss, BigDecimal.ZERO, username);
+                transaction.addJournalEntry(creditEntry);
+                transaction.addJournalEntry(debitEntry);
             }
+
+            Transaction savedTransaction = transactionRepository.save(transaction);
+            closingEntries.addAll(savedTransaction.getJournalEntries());
 
             log.info("Created retained earnings transfer for year {}: {}", year, netIncome);
         }
@@ -280,6 +288,7 @@ public class FiscalYearClosingService {
 
     /**
      * Reverse (void) closing entries for a year.
+     * Voids the parent Transaction which cascades to journal entries.
      */
     @Transactional
     public int reverseClosing(int year, String reason) {
@@ -290,15 +299,34 @@ public class FiscalYearClosingService {
         }
 
         String username = getCurrentUsername();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Group entries by transaction and void the transactions
+        List<Transaction> processedTransactions = new ArrayList<>();
         int count = 0;
 
         for (JournalEntry entry : closingEntries) {
-            if (entry.getStatus() == JournalEntryStatus.POSTED) {
-                entry.setStatus(JournalEntryStatus.VOID);
-                entry.setVoidReason("Pembatalan Jurnal Penutup: " + reason);
-                entry.setVoidedAt(LocalDateTime.now());
-                journalEntryRepository.save(entry);
-                count++;
+            if (entry.getStatus() == JournalEntryStatus.POSTED && entry.getTransaction() != null) {
+                Transaction transaction = entry.getTransaction();
+
+                // Only process each transaction once
+                if (!processedTransactions.contains(transaction)) {
+                    transaction.setStatus(TransactionStatus.VOID);
+                    transaction.setVoidedAt(now);
+                    transaction.setVoidedBy(username);
+                    transaction.setVoidNotes("Pembatalan Jurnal Penutup: " + reason);
+
+                    // Void all entries in this transaction
+                    for (JournalEntry txEntry : transaction.getJournalEntries()) {
+                        txEntry.setStatus(JournalEntryStatus.VOID);
+                        txEntry.setVoidedAt(now);
+                        txEntry.setVoidReason("Pembatalan Jurnal Penutup: " + reason);
+                        count++;
+                    }
+
+                    transactionRepository.save(transaction);
+                    processedTransactions.add(transaction);
+                }
             }
         }
 
@@ -308,6 +336,39 @@ public class FiscalYearClosingService {
 
     // Helper methods
 
+    private Transaction createClosingTransaction(JournalTemplate template, LocalDate date, int year,
+            String description, String referenceNumber, BigDecimal amount, String username) {
+        Transaction transaction = new Transaction();
+        transaction.setTransactionNumber(generateTransactionNumber(year));
+        transaction.setTransactionDate(date);
+        transaction.setJournalTemplate(template);
+        transaction.setAmount(amount);
+        transaction.setDescription(description);
+        transaction.setReferenceNumber(referenceNumber);
+        transaction.setStatus(TransactionStatus.POSTED);
+        transaction.setPostedAt(LocalDateTime.now());
+        transaction.setPostedBy(username);
+        transaction.setCreatedBy(username);
+        return transaction;
+    }
+
+    private String generateTransactionNumber(int year) {
+        TransactionSequence sequence = transactionSequenceRepository
+                .findBySequenceTypeAndYearForUpdate("FISCAL_CLOSING", year)
+                .orElseGet(() -> {
+                    TransactionSequence newSeq = new TransactionSequence();
+                    newSeq.setSequenceType("FISCAL_CLOSING");
+                    newSeq.setYear(year);
+                    newSeq.setLastSequence(0);
+                    return newSeq;
+                });
+
+        sequence.setLastSequence(sequence.getLastSequence() + 1);
+        transactionSequenceRepository.save(sequence);
+
+        return String.format("FC-%d-%04d", year, sequence.getLastSequence());
+    }
+
     private String generateJournalNumber(LocalDate date, String suffix) {
         // Format: JV-YYYYMMDD-XXXX where XXXX is sequence
         String prefix = "JV-" + date.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-";
@@ -316,17 +377,13 @@ public class FiscalYearClosingService {
         return prefix + String.format("%04d", nextSeq);
     }
 
-    private JournalEntry createEntry(String journalNumber, LocalDate date,
-            ChartOfAccount account, BigDecimal debit, BigDecimal credit,
-            String description, String referenceNumber, String username) {
+    private JournalEntry createEntry(String journalNumber, ChartOfAccount account,
+            BigDecimal debit, BigDecimal credit, String username) {
         JournalEntry entry = new JournalEntry();
         entry.setJournalNumber(journalNumber);
-        entry.setJournalDate(date);
         entry.setAccount(account);
         entry.setDebitAmount(debit);
         entry.setCreditAmount(credit);
-        entry.setDescription(description);
-        entry.setReferenceNumber(referenceNumber);
         entry.setStatus(JournalEntryStatus.POSTED);
         entry.setPostedAt(LocalDateTime.now());
         entry.setCreatedBy(username);

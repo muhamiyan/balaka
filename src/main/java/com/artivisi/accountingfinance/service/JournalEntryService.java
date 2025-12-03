@@ -2,14 +2,22 @@ package com.artivisi.accountingfinance.service;
 
 import com.artivisi.accountingfinance.entity.ChartOfAccount;
 import com.artivisi.accountingfinance.entity.JournalEntry;
+import com.artivisi.accountingfinance.entity.JournalTemplate;
+import com.artivisi.accountingfinance.entity.Transaction;
 import com.artivisi.accountingfinance.enums.JournalEntryStatus;
 import com.artivisi.accountingfinance.enums.NormalBalance;
+import com.artivisi.accountingfinance.enums.TransactionStatus;
 import com.artivisi.accountingfinance.repository.ChartOfAccountRepository;
 import com.artivisi.accountingfinance.repository.JournalEntryRepository;
+import com.artivisi.accountingfinance.repository.JournalTemplateRepository;
+import com.artivisi.accountingfinance.repository.TransactionRepository;
+import com.artivisi.accountingfinance.repository.TransactionSequenceRepository;
+import com.artivisi.accountingfinance.entity.TransactionSequence;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +34,14 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class JournalEntryService {
 
+    // Manual Journal Entry template ID (from V004 seed data)
+    private static final UUID MANUAL_ENTRY_TEMPLATE_ID = UUID.fromString("e0000000-0000-0000-0000-000000000099");
+
     private final JournalEntryRepository journalEntryRepository;
     private final ChartOfAccountRepository chartOfAccountRepository;
+    private final TransactionRepository transactionRepository;
+    private final JournalTemplateRepository journalTemplateRepository;
+    private final TransactionSequenceRepository transactionSequenceRepository;
 
     public JournalEntry findById(UUID id) {
         return journalEntryRepository.findById(id)
@@ -299,6 +313,7 @@ public class JournalEntryService {
 
     /**
      * Create manual journal entries (multiple lines with same journal number).
+     * Creates a Transaction with MANUAL_ENTRY template to serve as the header.
      * All entries are created in DRAFT status.
      */
     @Transactional
@@ -309,14 +324,43 @@ public class JournalEntryService {
 
         validateBalance(entries);
 
+        // Get the first entry to extract header information
+        JournalEntry firstEntry = entries.get(0);
+
+        // Calculate total debit as the transaction amount
+        BigDecimal totalDebit = entries.stream()
+                .map(JournalEntry::getDebitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Get the MANUAL_ENTRY template
+        JournalTemplate manualTemplate = journalTemplateRepository.findById(MANUAL_ENTRY_TEMPLATE_ID)
+                .orElseThrow(() -> new IllegalStateException("Manual entry template not found"));
+
+        // Create a Transaction as the header
+        Transaction transaction = new Transaction();
+        transaction.setTransactionNumber(generateTransactionNumber());
+        transaction.setTransactionDate(firstEntry.getJournalDate());
+        transaction.setJournalTemplate(manualTemplate);
+        transaction.setAmount(totalDebit);
+        transaction.setDescription(firstEntry.getDescription());
+        transaction.setReferenceNumber(firstEntry.getReferenceNumber());
+        transaction.setStatus(TransactionStatus.DRAFT);
+        transaction.setCreatedBy(getCurrentUsername());
+
+        // Generate journal number and add entries to transaction
         String journalNumber = generateJournalNumber();
+        int lineIndex = 0;
 
         for (JournalEntry entry : entries) {
-            entry.setJournalNumber(journalNumber);
+            entry.setJournalNumber(journalNumber + "-" + String.format("%02d", ++lineIndex));
             entry.setStatus(JournalEntryStatus.DRAFT);
+            transaction.addJournalEntry(entry);
         }
 
-        return journalEntryRepository.saveAll(entries);
+        // Save the transaction (cascades to journal entries)
+        Transaction savedTransaction = transactionRepository.save(transaction);
+
+        return savedTransaction.getJournalEntries();
     }
 
     /**
@@ -325,17 +369,30 @@ public class JournalEntryService {
      */
     @Transactional
     public List<JournalEntry> update(String journalNumber, List<JournalEntry> updatedEntries) {
+        // Extract base journal number (remove line suffix like "-01")
+        String baseJournalNumber = journalNumber.contains("-")
+                ? journalNumber.substring(0, journalNumber.lastIndexOf("-"))
+                : journalNumber;
+
         List<JournalEntry> existingEntries = journalEntryRepository.findAllByJournalNumberOrderByIdAsc(journalNumber);
+
+        // If not found with exact match, try finding by base number pattern
+        if (existingEntries.isEmpty()) {
+            existingEntries = journalEntryRepository.findByReferenceNumberLike(baseJournalNumber + "-%");
+        }
 
         if (existingEntries.isEmpty()) {
             throw new EntityNotFoundException("Journal entry not found with number: " + journalNumber);
         }
 
-        // Check if any entry is not draft
-        for (JournalEntry entry : existingEntries) {
-            if (!entry.isDraft()) {
-                throw new IllegalStateException("Cannot update journal entry with status: " + entry.getStatus());
-            }
+        // Get the parent transaction
+        Transaction transaction = existingEntries.get(0).getTransaction();
+        if (transaction == null) {
+            throw new IllegalStateException("Journal entry has no parent transaction");
+        }
+
+        if (!transaction.isDraft()) {
+            throw new IllegalStateException("Cannot update journal entry with status: " + transaction.getStatus());
         }
 
         if (updatedEntries == null || updatedEntries.size() < 2) {
@@ -344,15 +401,32 @@ public class JournalEntryService {
 
         validateBalance(updatedEntries);
 
-        // Delete old entries and save new ones
+        // Clear existing entries
+        transaction.getJournalEntries().clear();
         journalEntryRepository.deleteAll(existingEntries);
 
+        // Calculate new total
+        BigDecimal totalDebit = updatedEntries.stream()
+                .map(JournalEntry::getDebitAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Update transaction header from first entry
+        JournalEntry firstEntry = updatedEntries.get(0);
+        transaction.setTransactionDate(firstEntry.getJournalDate());
+        transaction.setAmount(totalDebit);
+        transaction.setDescription(firstEntry.getDescription());
+        transaction.setReferenceNumber(firstEntry.getReferenceNumber());
+
+        // Add new entries
+        int lineIndex = 0;
         for (JournalEntry entry : updatedEntries) {
-            entry.setJournalNumber(journalNumber);
+            entry.setJournalNumber(baseJournalNumber + "-" + String.format("%02d", ++lineIndex));
             entry.setStatus(JournalEntryStatus.DRAFT);
+            transaction.addJournalEntry(entry);
         }
 
-        return journalEntryRepository.saveAll(updatedEntries);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        return savedTransaction.getJournalEntries();
     }
 
     /**
@@ -363,26 +437,46 @@ public class JournalEntryService {
     public List<JournalEntry> post(String journalNumber) {
         List<JournalEntry> entries = journalEntryRepository.findAllByJournalNumberOrderByIdAsc(journalNumber);
 
+        // Try finding by pattern if exact match not found
+        if (entries.isEmpty()) {
+            String baseNumber = journalNumber.contains("-")
+                    ? journalNumber.substring(0, journalNumber.lastIndexOf("-"))
+                    : journalNumber;
+            entries = journalEntryRepository.findByReferenceNumberLike(baseNumber + "-%");
+        }
+
         if (entries.isEmpty()) {
             throw new EntityNotFoundException("Journal entry not found with number: " + journalNumber);
         }
 
-        // Check if any entry is not draft
-        for (JournalEntry entry : entries) {
-            if (!entry.isDraft()) {
-                throw new IllegalStateException("Cannot post journal entry with status: " + entry.getStatus());
-            }
+        // Get the parent transaction
+        Transaction transaction = entries.get(0).getTransaction();
+        if (transaction == null) {
+            throw new IllegalStateException("Journal entry has no parent transaction");
+        }
+
+        if (!transaction.isDraft()) {
+            throw new IllegalStateException("Cannot post journal entry with status: " + transaction.getStatus());
         }
 
         validateBalance(entries);
 
         LocalDateTime now = LocalDateTime.now();
+        String username = getCurrentUsername();
+
+        // Update transaction status
+        transaction.setStatus(TransactionStatus.POSTED);
+        transaction.setPostedAt(now);
+        transaction.setPostedBy(username);
+
+        // Update journal entries status
         for (JournalEntry entry : entries) {
             entry.setStatus(JournalEntryStatus.POSTED);
             entry.setPostedAt(now);
         }
 
-        return journalEntryRepository.saveAll(entries);
+        transactionRepository.save(transaction);
+        return entries;
     }
 
     /**
@@ -397,25 +491,46 @@ public class JournalEntryService {
 
         List<JournalEntry> entries = journalEntryRepository.findAllByJournalNumberOrderByIdAsc(journalNumber);
 
+        // Try finding by pattern if exact match not found
+        if (entries.isEmpty()) {
+            String baseNumber = journalNumber.contains("-")
+                    ? journalNumber.substring(0, journalNumber.lastIndexOf("-"))
+                    : journalNumber;
+            entries = journalEntryRepository.findByReferenceNumberLike(baseNumber + "-%");
+        }
+
         if (entries.isEmpty()) {
             throw new EntityNotFoundException("Journal entry not found with number: " + journalNumber);
         }
 
-        // Check if any entry is not posted
-        for (JournalEntry entry : entries) {
-            if (!entry.isPosted()) {
-                throw new IllegalStateException("Cannot void journal entry with status: " + entry.getStatus());
-            }
+        // Get the parent transaction
+        Transaction transaction = entries.get(0).getTransaction();
+        if (transaction == null) {
+            throw new IllegalStateException("Journal entry has no parent transaction");
+        }
+
+        if (!transaction.isPosted()) {
+            throw new IllegalStateException("Cannot void journal entry with status: " + transaction.getStatus());
         }
 
         LocalDateTime now = LocalDateTime.now();
+        String username = getCurrentUsername();
+
+        // Update transaction status (using VoidReason.OTHER since we have a custom reason)
+        transaction.setStatus(TransactionStatus.VOID);
+        transaction.setVoidedAt(now);
+        transaction.setVoidedBy(username);
+        transaction.setVoidNotes(reason);
+
+        // Update journal entries status
         for (JournalEntry entry : entries) {
             entry.setStatus(JournalEntryStatus.VOID);
             entry.setVoidedAt(now);
             entry.setVoidReason(reason);
         }
 
-        return journalEntryRepository.saveAll(entries);
+        transactionRepository.save(transaction);
+        return entries;
     }
 
     /**
@@ -462,5 +577,30 @@ public class JournalEntryService {
         int nextSeq = (maxSeq == null) ? 1 : maxSeq + 1;
 
         return String.format("JE-%s-%04d", year, nextSeq);
+    }
+
+    /**
+     * Generate next transaction number in format MJ-YYYY-NNNN (MJ = Manual Journal)
+     */
+    private String generateTransactionNumber() {
+        int year = LocalDate.now().getYear();
+        TransactionSequence sequence = transactionSequenceRepository
+                .findBySequenceTypeAndYearForUpdate("MANUAL_JOURNAL", year)
+                .orElseGet(() -> {
+                    TransactionSequence newSeq = new TransactionSequence();
+                    newSeq.setSequenceType("MANUAL_JOURNAL");
+                    newSeq.setYear(year);
+                    newSeq.setLastSequence(0);
+                    return newSeq;
+                });
+
+        sequence.setLastSequence(sequence.getLastSequence() + 1);
+        transactionSequenceRepository.save(sequence);
+
+        return String.format("MJ-%d-%04d", year, sequence.getLastSequence());
+    }
+
+    private String getCurrentUsername() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }
