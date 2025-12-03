@@ -49,6 +49,15 @@ public class TaxExportPage {
         return this;
     }
 
+    public TaxExportPage navigateWithMonthRange(YearMonth startMonth, YearMonth endMonth) {
+        String startStr = startMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String endStr = endMonth.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        page.navigate(baseUrl + "/reports/tax-export?startMonth=" + startStr + "&endMonth=" + endStr,
+            new Page.NavigateOptions().setTimeout(30000));
+        page.waitForLoadState();
+        return this;
+    }
+
     // Actions
     public void selectStartMonth(String month) {
         page.selectOption(START_MONTH, month);
