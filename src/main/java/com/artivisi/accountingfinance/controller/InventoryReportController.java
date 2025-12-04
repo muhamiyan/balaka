@@ -33,9 +33,25 @@ public class InventoryReportController {
 
     private static final DateTimeFormatter FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
+    // Model attribute constants
+    private static final String ATTR_CURRENT_PAGE = "currentPage";
+    private static final String ATTR_REPORT_TYPE = "reportType";
+    private static final String ATTR_START_DATE = "startDate";
+    private static final String ATTR_END_DATE = "endDate";
+    private static final String ATTR_CATEGORY_ID = "categoryId";
+    private static final String ATTR_PRODUCT_ID = "productId";
+    private static final String ATTR_CATEGORIES = "categories";
+    private static final String ATTR_REPORT = "report";
+    private static final String ATTR_AS_OF_DATE = "asOfDate";
+
+    // HTTP header constants
+    private static final String ATTACHMENT_FILENAME_PREFIX = "attachment; filename=\"";
+    private static final String XLSX_EXTENSION = ".xlsx";
+    private static final String XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
     @GetMapping
     public String index(Model model) {
-        model.addAttribute("currentPage", "inventory-reports");
+        model.addAttribute(ATTR_CURRENT_PAGE, "inventory-reports");
         return "inventory/reports/index";
     }
 
@@ -45,13 +61,13 @@ public class InventoryReportController {
             @RequestParam(required = false) String search,
             Model model) {
 
-        model.addAttribute("currentPage", "inventory-reports");
-        model.addAttribute("reportType", "stock-balance");
-        model.addAttribute("categoryId", categoryId);
+        model.addAttribute(ATTR_CURRENT_PAGE, "inventory-reports");
+        model.addAttribute(ATTR_REPORT_TYPE, "stock-balance");
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
         model.addAttribute("search", search);
-        model.addAttribute("categories", categoryService.findAllActive());
-        model.addAttribute("report", reportService.generateStockBalanceReport(categoryId, search));
-        model.addAttribute("asOfDate", LocalDate.now());
+        model.addAttribute(ATTR_CATEGORIES, categoryService.findAllActive());
+        model.addAttribute(ATTR_REPORT, reportService.generateStockBalanceReport(categoryId, search));
+        model.addAttribute(ATTR_AS_OF_DATE, LocalDate.now());
 
         return "inventory/reports/stock-balance";
     }
@@ -62,10 +78,10 @@ public class InventoryReportController {
             @RequestParam(required = false) String search,
             Model model) {
 
-        model.addAttribute("categoryId", categoryId);
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
         model.addAttribute("search", search);
-        model.addAttribute("report", reportService.generateStockBalanceReport(categoryId, search));
-        model.addAttribute("asOfDate", LocalDate.now());
+        model.addAttribute(ATTR_REPORT, reportService.generateStockBalanceReport(categoryId, search));
+        model.addAttribute(ATTR_AS_OF_DATE, LocalDate.now());
 
         return "inventory/reports/stock-balance-print";
     }
@@ -81,15 +97,15 @@ public class InventoryReportController {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        model.addAttribute("currentPage", "inventory-reports");
-        model.addAttribute("reportType", "stock-movement");
-        model.addAttribute("startDate", start);
-        model.addAttribute("endDate", end);
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("productId", productId);
-        model.addAttribute("categories", categoryService.findAllActive());
+        model.addAttribute(ATTR_CURRENT_PAGE, "inventory-reports");
+        model.addAttribute(ATTR_REPORT_TYPE, "stock-movement");
+        model.addAttribute(ATTR_START_DATE, start);
+        model.addAttribute(ATTR_END_DATE, end);
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
+        model.addAttribute(ATTR_PRODUCT_ID, productId);
+        model.addAttribute(ATTR_CATEGORIES, categoryService.findAllActive());
         model.addAttribute("products", productService.findAllActive());
-        model.addAttribute("report", reportService.generateStockMovementReport(start, end, categoryId, productId));
+        model.addAttribute(ATTR_REPORT, reportService.generateStockMovementReport(start, end, categoryId, productId));
 
         return "inventory/reports/stock-movement";
     }
@@ -105,11 +121,11 @@ public class InventoryReportController {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        model.addAttribute("startDate", start);
-        model.addAttribute("endDate", end);
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("productId", productId);
-        model.addAttribute("report", reportService.generateStockMovementReport(start, end, categoryId, productId));
+        model.addAttribute(ATTR_START_DATE, start);
+        model.addAttribute(ATTR_END_DATE, end);
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
+        model.addAttribute(ATTR_PRODUCT_ID, productId);
+        model.addAttribute(ATTR_REPORT, reportService.generateStockMovementReport(start, end, categoryId, productId));
 
         return "inventory/reports/stock-movement-print";
     }
@@ -119,12 +135,12 @@ public class InventoryReportController {
             @RequestParam(required = false) UUID categoryId,
             Model model) {
 
-        model.addAttribute("currentPage", "inventory-reports");
-        model.addAttribute("reportType", "valuation");
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("categories", categoryService.findAllActive());
-        model.addAttribute("report", reportService.generateValuationReport(categoryId));
-        model.addAttribute("asOfDate", LocalDate.now());
+        model.addAttribute(ATTR_CURRENT_PAGE, "inventory-reports");
+        model.addAttribute(ATTR_REPORT_TYPE, "valuation");
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
+        model.addAttribute(ATTR_CATEGORIES, categoryService.findAllActive());
+        model.addAttribute(ATTR_REPORT, reportService.generateValuationReport(categoryId));
+        model.addAttribute(ATTR_AS_OF_DATE, LocalDate.now());
 
         return "inventory/reports/valuation";
     }
@@ -134,9 +150,9 @@ public class InventoryReportController {
             @RequestParam(required = false) UUID categoryId,
             Model model) {
 
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("report", reportService.generateValuationReport(categoryId));
-        model.addAttribute("asOfDate", LocalDate.now());
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
+        model.addAttribute(ATTR_REPORT, reportService.generateValuationReport(categoryId));
+        model.addAttribute(ATTR_AS_OF_DATE, LocalDate.now());
 
         return "inventory/reports/valuation-print";
     }
@@ -152,15 +168,15 @@ public class InventoryReportController {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        model.addAttribute("currentPage", "inventory-reports");
-        model.addAttribute("reportType", "profitability");
-        model.addAttribute("startDate", start);
-        model.addAttribute("endDate", end);
-        model.addAttribute("categoryId", categoryId);
-        model.addAttribute("productId", productId);
-        model.addAttribute("categories", categoryService.findAllActive());
+        model.addAttribute(ATTR_CURRENT_PAGE, "inventory-reports");
+        model.addAttribute(ATTR_REPORT_TYPE, "profitability");
+        model.addAttribute(ATTR_START_DATE, start);
+        model.addAttribute(ATTR_END_DATE, end);
+        model.addAttribute(ATTR_CATEGORY_ID, categoryId);
+        model.addAttribute(ATTR_PRODUCT_ID, productId);
+        model.addAttribute(ATTR_CATEGORIES, categoryService.findAllActive());
         model.addAttribute("products", productService.findAllActive());
-        model.addAttribute("report", reportService.generateProfitabilityReport(start, end, categoryId, productId));
+        model.addAttribute(ATTR_REPORT, reportService.generateProfitabilityReport(start, end, categoryId, productId));
 
         return "inventory/reports/profitability";
     }
@@ -176,9 +192,9 @@ public class InventoryReportController {
         LocalDate start = startDate != null ? startDate : LocalDate.now().withDayOfMonth(1);
         LocalDate end = endDate != null ? endDate : LocalDate.now();
 
-        model.addAttribute("startDate", start);
-        model.addAttribute("endDate", end);
-        model.addAttribute("report", reportService.generateProfitabilityReport(start, end, categoryId, productId));
+        model.addAttribute(ATTR_START_DATE, start);
+        model.addAttribute(ATTR_END_DATE, end);
+        model.addAttribute(ATTR_REPORT, reportService.generateProfitabilityReport(start, end, categoryId, productId));
 
         return "inventory/reports/profitability-print";
     }
@@ -196,7 +212,7 @@ public class InventoryReportController {
 
         String filename = "saldo-stok-" + asOfDate.format(FILE_DATE_FORMAT) + ".pdf";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
     }
@@ -209,10 +225,10 @@ public class InventoryReportController {
         InventoryReportService.StockBalanceReport report = reportService.generateStockBalanceReport(categoryId, search);
         byte[] excelBytes = reportExportService.exportStockBalanceToExcel(report, asOfDate);
 
-        String filename = "saldo-stok-" + asOfDate.format(FILE_DATE_FORMAT) + ".xlsx";
+        String filename = "saldo-stok-" + asOfDate.format(FILE_DATE_FORMAT) + XLSX_EXTENSION;
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
+                .contentType(MediaType.parseMediaType(XLSX_CONTENT_TYPE))
                 .body(excelBytes);
     }
 
@@ -230,7 +246,7 @@ public class InventoryReportController {
 
         String filename = "mutasi-stok-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + ".pdf";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
     }
@@ -246,10 +262,10 @@ public class InventoryReportController {
         InventoryReportService.StockMovementReport report = reportService.generateStockMovementReport(start, end, categoryId, productId);
         byte[] excelBytes = reportExportService.exportStockMovementToExcel(report);
 
-        String filename = "mutasi-stok-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + ".xlsx";
+        String filename = "mutasi-stok-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + XLSX_EXTENSION;
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
+                .contentType(MediaType.parseMediaType(XLSX_CONTENT_TYPE))
                 .body(excelBytes);
     }
 
@@ -263,7 +279,7 @@ public class InventoryReportController {
 
         String filename = "penilaian-persediaan-" + asOfDate.format(FILE_DATE_FORMAT) + ".pdf";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
     }
@@ -275,10 +291,10 @@ public class InventoryReportController {
         InventoryReportService.ValuationReport report = reportService.generateValuationReport(categoryId);
         byte[] excelBytes = reportExportService.exportValuationToExcel(report, asOfDate);
 
-        String filename = "penilaian-persediaan-" + asOfDate.format(FILE_DATE_FORMAT) + ".xlsx";
+        String filename = "penilaian-persediaan-" + asOfDate.format(FILE_DATE_FORMAT) + XLSX_EXTENSION;
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
+                .contentType(MediaType.parseMediaType(XLSX_CONTENT_TYPE))
                 .body(excelBytes);
     }
 
@@ -296,7 +312,7 @@ public class InventoryReportController {
 
         String filename = "profitabilitas-produk-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + ".pdf";
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
     }
@@ -312,10 +328,10 @@ public class InventoryReportController {
         InventoryReportService.ProfitabilityReport report = reportService.generateProfitabilityReport(start, end, categoryId, productId);
         byte[] excelBytes = reportExportService.exportProductProfitabilityToExcel(report);
 
-        String filename = "profitabilitas-produk-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + ".xlsx";
+        String filename = "profitabilitas-produk-" + start.format(FILE_DATE_FORMAT) + "-" + end.format(FILE_DATE_FORMAT) + XLSX_EXTENSION;
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ATTACHMENT_FILENAME_PREFIX + filename + "\"")
+                .contentType(MediaType.parseMediaType(XLSX_CONTENT_TYPE))
                 .body(excelBytes);
     }
 }

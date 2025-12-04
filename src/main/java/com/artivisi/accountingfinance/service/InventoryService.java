@@ -458,48 +458,10 @@ public class InventoryService {
         }
 
         JournalTemplate template = templateOpt.get();
-
-        // Build formula context with inventory variables
-        Map<String, BigDecimal> variables = new HashMap<>();
-        variables.put("amount", invTransaction.getTotalCost());
-        variables.put("cogsAmount", invTransaction.getTotalCost());
-
-        // For sales, include revenue amount
-        if (invTransaction.getUnitPrice() != null) {
-            BigDecimal revenueAmount = invTransaction.getQuantity().multiply(invTransaction.getUnitPrice());
-            variables.put("revenueAmount", revenueAmount);
-        }
-
-        FormulaContext context = FormulaContext.of(invTransaction.getTotalCost(), variables);
-
-        // Build description
+        FormulaContext context = buildFormulaContext(invTransaction);
         String description = buildJournalDescription(invTransaction, product);
+        Map<UUID, UUID> accountMappings = buildAccountMappings(template, product);
 
-        // Create account mappings for dynamic accounts (lines with NULL account and account_hint)
-        Map<UUID, UUID> accountMappings = new HashMap<>();
-        for (JournalTemplateLine line : template.getLines()) {
-            if (line.getAccount() == null && line.getAccountHint() != null) {
-                switch (line.getAccountHint()) {
-                    case "PERSEDIAAN":
-                        if (product.getInventoryAccount() != null) {
-                            accountMappings.put(line.getId(), product.getInventoryAccount().getId());
-                        }
-                        break;
-                    case "HPP":
-                        if (product.getCogsAccount() != null) {
-                            accountMappings.put(line.getId(), product.getCogsAccount().getId());
-                        }
-                        break;
-                    case "PENJUALAN":
-                        if (product.getSalesAccount() != null) {
-                            accountMappings.put(line.getId(), product.getSalesAccount().getId());
-                        }
-                        break;
-                }
-            }
-        }
-
-        // Create transaction
         Transaction transaction = new Transaction();
         transaction.setJournalTemplate(template);
         transaction.setTransactionDate(invTransaction.getTransactionDate());
@@ -507,7 +469,6 @@ public class InventoryService {
         transaction.setDescription(description);
         transaction.setReferenceNumber(invTransaction.getReferenceNumber());
 
-        // Create and post the transaction
         Transaction savedTransaction = transactionService.create(transaction, accountMappings);
         Transaction postedTransaction = transactionService.post(savedTransaction.getId(), getCurrentUsername(), context);
 
@@ -515,6 +476,42 @@ public class InventoryService {
                 postedTransaction.getTransactionNumber(), invTransaction.getId());
 
         return postedTransaction;
+    }
+
+    private FormulaContext buildFormulaContext(InventoryTransaction invTransaction) {
+        Map<String, BigDecimal> variables = new HashMap<>();
+        variables.put("amount", invTransaction.getTotalCost());
+        variables.put("cogsAmount", invTransaction.getTotalCost());
+
+        if (invTransaction.getUnitPrice() != null) {
+            BigDecimal revenueAmount = invTransaction.getQuantity().multiply(invTransaction.getUnitPrice());
+            variables.put("revenueAmount", revenueAmount);
+        }
+
+        return FormulaContext.of(invTransaction.getTotalCost(), variables);
+    }
+
+    private Map<UUID, UUID> buildAccountMappings(JournalTemplate template, Product product) {
+        Map<UUID, UUID> accountMappings = new HashMap<>();
+        for (JournalTemplateLine line : template.getLines()) {
+            if (line.getAccount() != null || line.getAccountHint() == null) {
+                continue;
+            }
+            UUID accountId = resolveAccountFromHint(line.getAccountHint(), product);
+            if (accountId != null) {
+                accountMappings.put(line.getId(), accountId);
+            }
+        }
+        return accountMappings;
+    }
+
+    private UUID resolveAccountFromHint(String hint, Product product) {
+        return switch (hint) {
+            case "PERSEDIAAN" -> product.getInventoryAccount() != null ? product.getInventoryAccount().getId() : null;
+            case "HPP" -> product.getCogsAccount() != null ? product.getCogsAccount().getId() : null;
+            case "PENJUALAN" -> product.getSalesAccount() != null ? product.getSalesAccount().getId() : null;
+            default -> null;
+        };
     }
 
     private UUID getTemplateIdForType(InventoryTransactionType type) {

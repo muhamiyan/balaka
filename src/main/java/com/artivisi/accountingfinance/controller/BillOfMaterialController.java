@@ -28,6 +28,10 @@ import java.util.UUID;
 @Slf4j
 public class BillOfMaterialController {
 
+    private static final String ATTR_ERROR = "error";
+    private static final String ATTR_SUCCESS = "success";
+    private static final String REDIRECT_BOM_LIST = "redirect:/inventory/bom";
+
     private final BillOfMaterialService bomService;
     private final ProductService productService;
 
@@ -61,8 +65,8 @@ public class BillOfMaterialController {
                     return "inventory/bom/form";
                 })
                 .orElseGet(() -> {
-                    redirectAttributes.addFlashAttribute("error", "BOM tidak ditemukan");
-                    return "redirect:/inventory/bom";
+                    redirectAttributes.addFlashAttribute(ATTR_ERROR, "BOM tidak ditemukan");
+                    return REDIRECT_BOM_LIST;
                 });
     }
 
@@ -74,8 +78,8 @@ public class BillOfMaterialController {
                     return "inventory/bom/detail";
                 })
                 .orElseGet(() -> {
-                    redirectAttributes.addFlashAttribute("error", "BOM tidak ditemukan");
-                    return "redirect:/inventory/bom";
+                    redirectAttributes.addFlashAttribute(ATTR_ERROR, "BOM tidak ditemukan");
+                    return REDIRECT_BOM_LIST;
                 });
     }
 
@@ -87,7 +91,7 @@ public class BillOfMaterialController {
             @RequestParam(required = false) String description,
             @RequestParam UUID productId,
             @RequestParam BigDecimal outputQuantity,
-            @RequestParam(required = false) boolean active,
+            @RequestParam(required = false, defaultValue = "false") Boolean active,
             @RequestParam(name = "componentId[]", required = false) List<UUID> componentIds,
             @RequestParam(name = "componentQty[]", required = false) List<BigDecimal> componentQtys,
             @RequestParam(name = "componentNotes[]", required = false) List<String> componentNotes,
@@ -99,7 +103,7 @@ public class BillOfMaterialController {
             bom.setName(name);
             bom.setDescription(description);
             bom.setOutputQuantity(outputQuantity);
-            bom.setActive(active);
+            bom.setActive(Boolean.TRUE.equals(active));
 
             // Set product
             Product product = new Product();
@@ -126,16 +130,16 @@ public class BillOfMaterialController {
 
             if (id == null) {
                 bomService.create(bom);
-                redirectAttributes.addFlashAttribute("success", "BOM berhasil dibuat");
+                redirectAttributes.addFlashAttribute(ATTR_SUCCESS, "BOM berhasil dibuat");
             } else {
                 bomService.update(id, bom);
-                redirectAttributes.addFlashAttribute("success", "BOM berhasil diperbarui");
+                redirectAttributes.addFlashAttribute(ATTR_SUCCESS, "BOM berhasil diperbarui");
             }
 
-            return "redirect:/inventory/bom";
+            return REDIRECT_BOM_LIST;
         } catch (Exception e) {
             log.error("Error saving BOM", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
             return id == null ? "redirect:/inventory/bom/create" : "redirect:/inventory/bom/" + id + "/edit";
         }
     }
@@ -144,11 +148,11 @@ public class BillOfMaterialController {
     public String delete(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         try {
             bomService.delete(id);
-            redirectAttributes.addFlashAttribute("success", "BOM berhasil dinonaktifkan");
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS, "BOM berhasil dinonaktifkan");
         } catch (Exception e) {
             log.error("Error deleting BOM", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
         }
-        return "redirect:/inventory/bom";
+        return REDIRECT_BOM_LIST;
     }
 }

@@ -31,7 +31,7 @@ public class BillOfMaterialService {
     @Transactional(readOnly = true)
     public List<BillOfMaterial> search(String search) {
         if (search == null || search.isBlank()) {
-            return findAll();
+            return bomRepository.findAllActiveWithProduct();
         }
         return bomRepository.searchActive(search);
     }

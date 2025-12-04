@@ -25,6 +25,8 @@ import java.util.UUID;
 @Slf4j
 public class ProductionOrderService {
 
+    private static final String MSG_ORDER_NOT_FOUND = "Production order tidak ditemukan: ";
+
     private final ProductionOrderRepository orderRepository;
     private final BillOfMaterialRepository bomRepository;
     private final InventoryService inventoryService;
@@ -72,7 +74,7 @@ public class ProductionOrderService {
     @Transactional
     public ProductionOrder update(UUID id, ProductionOrder updated) {
         ProductionOrder existing = orderRepository.findByIdWithBom(id)
-                .orElseThrow(() -> new IllegalArgumentException("Production order tidak ditemukan: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(MSG_ORDER_NOT_FOUND + id));
 
         if (!existing.isDraft()) {
             throw new IllegalStateException("Hanya order dengan status DRAFT yang dapat diubah");
@@ -101,7 +103,7 @@ public class ProductionOrderService {
     @Transactional
     public ProductionOrder start(UUID id) {
         ProductionOrder order = orderRepository.findByIdWithBomAndLines(id)
-                .orElseThrow(() -> new IllegalArgumentException("Production order tidak ditemukan: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(MSG_ORDER_NOT_FOUND + id));
 
         if (!order.canStart()) {
             throw new IllegalStateException("Order tidak dapat dimulai dari status " + order.getStatus());
@@ -137,7 +139,7 @@ public class ProductionOrderService {
     @Transactional
     public ProductionOrder complete(UUID id) {
         ProductionOrder order = orderRepository.findByIdWithBomAndLines(id)
-                .orElseThrow(() -> new IllegalArgumentException("Production order tidak ditemukan: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(MSG_ORDER_NOT_FOUND + id));
 
         if (!order.canComplete()) {
             throw new IllegalStateException("Order tidak dapat diselesaikan dari status " + order.getStatus());
@@ -196,7 +198,7 @@ public class ProductionOrderService {
     @Transactional
     public ProductionOrder cancel(UUID id) {
         ProductionOrder order = orderRepository.findByIdWithBom(id)
-                .orElseThrow(() -> new IllegalArgumentException("Production order tidak ditemukan: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(MSG_ORDER_NOT_FOUND + id));
 
         if (!order.canCancel()) {
             throw new IllegalStateException("Order tidak dapat dibatalkan dari status " + order.getStatus());
@@ -210,7 +212,7 @@ public class ProductionOrderService {
     @Transactional
     public void delete(UUID id) {
         ProductionOrder order = orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Production order tidak ditemukan: " + id));
+                .orElseThrow(() -> new IllegalArgumentException(MSG_ORDER_NOT_FOUND + id));
 
         if (!order.isDraft()) {
             throw new IllegalStateException("Hanya order dengan status DRAFT yang dapat dihapus");

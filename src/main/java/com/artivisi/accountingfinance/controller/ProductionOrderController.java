@@ -27,6 +27,14 @@ import java.util.UUID;
 @Slf4j
 public class ProductionOrderController {
 
+    private static final String ATTR_ORDER = "order";
+    private static final String ATTR_ERROR = "error";
+    private static final String ATTR_SUCCESS = "success";
+    private static final String REDIRECT_PRODUCTION_LIST = "redirect:/inventory/production";
+    private static final String REDIRECT_PRODUCTION_DETAIL = "redirect:/inventory/production/";
+    private static final String MSG_ORDER_NOT_FOUND = "Production order tidak ditemukan";
+    private static final String MSG_PRODUCTION_ORDER = "Production order ";
+
     private final ProductionOrderService orderService;
     private final BillOfMaterialService bomService;
 
@@ -44,7 +52,7 @@ public class ProductionOrderController {
 
     @GetMapping("/create")
     public String createForm(Model model) {
-        model.addAttribute("order", new ProductionOrder());
+        model.addAttribute(ATTR_ORDER, new ProductionOrder());
         model.addAttribute("boms", bomService.findAll());
         return "inventory/production/form";
     }
@@ -54,16 +62,16 @@ public class ProductionOrderController {
         return orderService.findById(id)
                 .map(order -> {
                     if (!order.isDraft()) {
-                        redirectAttributes.addFlashAttribute("error", "Hanya order dengan status DRAFT yang dapat diubah");
-                        return "redirect:/inventory/production/" + id;
+                        redirectAttributes.addFlashAttribute(ATTR_ERROR, "Hanya order dengan status DRAFT yang dapat diubah");
+                        return REDIRECT_PRODUCTION_DETAIL + id;
                     }
-                    model.addAttribute("order", order);
+                    model.addAttribute(ATTR_ORDER, order);
                     model.addAttribute("boms", bomService.findAll());
                     return "inventory/production/form";
                 })
                 .orElseGet(() -> {
-                    redirectAttributes.addFlashAttribute("error", "Production order tidak ditemukan");
-                    return "redirect:/inventory/production";
+                    redirectAttributes.addFlashAttribute(ATTR_ERROR, MSG_ORDER_NOT_FOUND);
+                    return REDIRECT_PRODUCTION_LIST;
                 });
     }
 
@@ -71,12 +79,12 @@ public class ProductionOrderController {
     public String detail(@PathVariable UUID id, Model model, RedirectAttributes redirectAttributes) {
         return orderService.findByIdWithLines(id)
                 .map(order -> {
-                    model.addAttribute("order", order);
+                    model.addAttribute(ATTR_ORDER, order);
                     return "inventory/production/detail";
                 })
                 .orElseGet(() -> {
-                    redirectAttributes.addFlashAttribute("error", "Production order tidak ditemukan");
-                    return "redirect:/inventory/production";
+                    redirectAttributes.addFlashAttribute(ATTR_ERROR, MSG_ORDER_NOT_FOUND);
+                    return REDIRECT_PRODUCTION_LIST;
                 });
     }
 
@@ -102,17 +110,17 @@ public class ProductionOrderController {
 
             if (id == null) {
                 ProductionOrder created = orderService.create(order);
-                redirectAttributes.addFlashAttribute("success", "Production order " + created.getOrderNumber() + " berhasil dibuat");
+                redirectAttributes.addFlashAttribute(ATTR_SUCCESS, MSG_PRODUCTION_ORDER + created.getOrderNumber() + " berhasil dibuat");
             } else {
                 orderService.update(id, order);
-                redirectAttributes.addFlashAttribute("success", "Production order berhasil diperbarui");
+                redirectAttributes.addFlashAttribute(ATTR_SUCCESS, "Production order berhasil diperbarui");
             }
 
-            return "redirect:/inventory/production";
+            return REDIRECT_PRODUCTION_LIST;
         } catch (Exception e) {
             log.error("Error saving production order", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
-            return id == null ? "redirect:/inventory/production/create" : "redirect:/inventory/production/" + id + "/edit";
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
+            return id == null ? "redirect:/inventory/production/create" : REDIRECT_PRODUCTION_DETAIL + id + "/edit";
         }
     }
 
@@ -120,49 +128,49 @@ public class ProductionOrderController {
     public String start(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         try {
             ProductionOrder order = orderService.start(id);
-            redirectAttributes.addFlashAttribute("success", "Production order " + order.getOrderNumber() + " sedang diproses");
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS, MSG_PRODUCTION_ORDER + order.getOrderNumber() + " sedang diproses");
         } catch (Exception e) {
             log.error("Error starting production order", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
         }
-        return "redirect:/inventory/production/" + id;
+        return REDIRECT_PRODUCTION_DETAIL + id;
     }
 
     @PostMapping("/{id}/complete")
     public String complete(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         try {
             ProductionOrder order = orderService.complete(id);
-            redirectAttributes.addFlashAttribute("success",
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS,
                     String.format("Production order %s selesai. Total biaya: Rp %,.0f, Harga pokok per unit: Rp %,.2f",
                             order.getOrderNumber(), order.getTotalComponentCost(), order.getUnitCost()));
         } catch (Exception e) {
             log.error("Error completing production order", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
         }
-        return "redirect:/inventory/production/" + id;
+        return REDIRECT_PRODUCTION_DETAIL + id;
     }
 
     @PostMapping("/{id}/cancel")
     public String cancel(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         try {
             ProductionOrder order = orderService.cancel(id);
-            redirectAttributes.addFlashAttribute("success", "Production order " + order.getOrderNumber() + " dibatalkan");
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS, MSG_PRODUCTION_ORDER + order.getOrderNumber() + " dibatalkan");
         } catch (Exception e) {
             log.error("Error cancelling production order", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
         }
-        return "redirect:/inventory/production/" + id;
+        return REDIRECT_PRODUCTION_DETAIL + id;
     }
 
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable UUID id, RedirectAttributes redirectAttributes) {
         try {
             orderService.delete(id);
-            redirectAttributes.addFlashAttribute("success", "Production order berhasil dihapus");
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS, "Production order berhasil dihapus");
         } catch (Exception e) {
             log.error("Error deleting production order", e);
-            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addFlashAttribute(ATTR_ERROR, e.getMessage());
         }
-        return "redirect:/inventory/production";
+        return REDIRECT_PRODUCTION_LIST;
     }
 }
