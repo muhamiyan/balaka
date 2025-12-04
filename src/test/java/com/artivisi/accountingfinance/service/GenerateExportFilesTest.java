@@ -6,6 +6,9 @@ import com.artivisi.accountingfinance.enums.NormalBalance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -20,14 +23,21 @@ import java.util.UUID;
  * This test generates actual export files to /tmp/reports for manual verification.
  */
 @DisplayName("Generate Export Files for Manual Verification")
+@ExtendWith(MockitoExtension.class)
 class GenerateExportFilesTest {
+
+    @Mock
+    private DepreciationReportService depreciationReportService;
+
+    @Mock
+    private InventoryReportService inventoryReportService;
 
     private ReportExportService exportService;
     private Path outputDir;
 
     @BeforeEach
     void setUp() throws IOException {
-        exportService = new ReportExportService();
+        exportService = new ReportExportService(depreciationReportService, inventoryReportService);
         outputDir = Paths.get("/tmp/reports");
         Files.createDirectories(outputDir);
     }

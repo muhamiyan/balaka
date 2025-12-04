@@ -589,6 +589,34 @@ public class ReportController {
         return ResponseEntity.ok(depreciationReportService.generateReport(reportYear));
     }
 
+    @GetMapping("/depreciation/export/pdf")
+    public ResponseEntity<byte[]> exportDepreciationToPdf(
+            @RequestParam(required = false) Integer year) {
+        int reportYear = year != null ? year : LocalDate.now().getYear();
+        DepreciationReportService.DepreciationReport report = depreciationReportService.generateReport(reportYear);
+        byte[] pdfBytes = reportExportService.exportDepreciationToPdf(report);
+
+        String filename = "laporan-penyusutan-" + reportYear + ".pdf";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    @GetMapping("/depreciation/export/excel")
+    public ResponseEntity<byte[]> exportDepreciationToExcel(
+            @RequestParam(required = false) Integer year) {
+        int reportYear = year != null ? year : LocalDate.now().getYear();
+        DepreciationReportService.DepreciationReport report = depreciationReportService.generateReport(reportYear);
+        byte[] excelBytes = reportExportService.exportDepreciationToExcel(report);
+
+        String filename = "laporan-penyusutan-" + reportYear + ".xlsx";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
     // ==================== FISCAL YEAR CLOSING ====================
 
     @GetMapping("/fiscal-closing")

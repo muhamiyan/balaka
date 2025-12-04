@@ -19,6 +19,12 @@ public class InventoryTransactionDetailPage {
         this.baseUrl = baseUrl;
     }
 
+    public InventoryTransactionDetailPage navigate(String transactionId) {
+        page.navigate(baseUrl + "/inventory/transactions/" + transactionId);
+        page.waitForLoadState();
+        return this;
+    }
+
     public void assertPageTitleText(String expected) {
         assertThat(page.locator(PAGE_TITLE).textContent()).contains(expected);
     }
@@ -41,5 +47,30 @@ public class InventoryTransactionDetailPage {
 
     public boolean hasSuccessMessage() {
         return page.locator(SUCCESS_MESSAGE).isVisible();
+    }
+
+    // Sales-specific assertions
+    public void assertSellingPriceVisible() {
+        assertThat(page.locator("h3:has-text('Harga Jual')").isVisible()).isTrue();
+    }
+
+    public void assertRevenueVisible() {
+        assertThat(page.locator("h3:has-text('Total Pendapatan')").isVisible()).isTrue();
+    }
+
+    public void assertMarginVisible() {
+        assertThat(page.locator("h3:has-text('Margin')").isVisible()).isTrue();
+    }
+
+    public boolean hasSellingPrice() {
+        return page.locator("h3:has-text('Harga Jual')").count() > 0;
+    }
+
+    public boolean hasMargin() {
+        return page.locator("h3:has-text('Margin')").count() > 0;
+    }
+
+    public String getPageContent() {
+        return page.content();
     }
 }

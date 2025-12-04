@@ -41,6 +41,9 @@ import java.util.Locale;
 @Slf4j
 public class ReportExportService {
 
+    private final DepreciationReportService depreciationReportService;
+    private final InventoryReportService inventoryReportService;
+
     private static final String COMPANY_NAME = "PT ArtiVisi Intermedia";
     private static final DecimalFormat NUMBER_FORMAT;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("id", "ID"));
@@ -516,6 +519,682 @@ public class ReportExportService {
         }
     }
 
+    // ==================== DEPRECIATION REPORT ====================
+
+    public byte[] exportDepreciationToPdf(DepreciationReportService.DepreciationReport report) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addReportHeader(document, "LAPORAN PENYUSUTAN ASET TETAP", "Depreciation Report",
+                    "Tahun " + report.year());
+
+            PdfPTable table = new PdfPTable(10);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3, 12, 10, 8, 12, 6, 8, 12, 12, 12});
+            table.setSpacingBefore(20);
+
+            addTableHeader(table, "No", "Nama Aset", "Kategori", "Tgl Perolehan",
+                    "Harga Perolehan", "Masa", "Metode", "Penyusutan Thn Ini", "Akum. Penyusutan", "Nilai Buku");
+
+            int no = 1;
+            for (DepreciationReportService.DepreciationReportItem item : report.items()) {
+                addTableCell(table, String.valueOf(no++), Element.ALIGN_CENTER);
+                addTableCell(table, item.assetName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.categoryName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.purchaseDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), Element.ALIGN_CENTER);
+                addTableCell(table, formatNumber(item.purchaseCost()), Element.ALIGN_RIGHT);
+                addTableCell(table, item.usefulLifeYears() + " thn", Element.ALIGN_CENTER);
+                addTableCell(table, item.depreciationMethod(), Element.ALIGN_LEFT);
+                addTableCell(table, formatNumber(item.depreciationThisYear()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.accumulatedDepreciation()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.bookValue()), Element.ALIGN_RIGHT);
+            }
+
+            // Total row
+            PdfPCell totalLabelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+            totalLabelCell.setColspan(4);
+            totalLabelCell.setPadding(6);
+            totalLabelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            totalLabelCell.setBackgroundColor(new Color(230, 230, 230));
+            totalLabelCell.setBorderWidth(1f);
+            table.addCell(totalLabelCell);
+
+            PdfPCell purchaseTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalPurchaseCost()), getBoldFont()));
+            purchaseTotalCell.setPadding(6);
+            purchaseTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            purchaseTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            purchaseTotalCell.setBorderWidth(1f);
+            table.addCell(purchaseTotalCell);
+
+            PdfPCell emptyCell = new PdfPCell(new Phrase("", getBoldFont()));
+            emptyCell.setColspan(2);
+            emptyCell.setPadding(6);
+            emptyCell.setBackgroundColor(new Color(230, 230, 230));
+            emptyCell.setBorderWidth(1f);
+            table.addCell(emptyCell);
+
+            PdfPCell depreciationTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalDepreciationThisYear()), getBoldFont()));
+            depreciationTotalCell.setPadding(6);
+            depreciationTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            depreciationTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            depreciationTotalCell.setBorderWidth(1f);
+            table.addCell(depreciationTotalCell);
+
+            PdfPCell accumTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalAccumulatedDepreciation()), getBoldFont()));
+            accumTotalCell.setPadding(6);
+            accumTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            accumTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            accumTotalCell.setBorderWidth(1f);
+            table.addCell(accumTotalCell);
+
+            PdfPCell bookValueTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalBookValue()), getBoldFont()));
+            bookValueTotalCell.setPadding(6);
+            bookValueTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            bookValueTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            bookValueTotalCell.setBorderWidth(1f);
+            table.addCell(bookValueTotalCell);
+
+            document.add(table);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Depreciation Report PDF", e);
+            throw new RuntimeException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
+
+    public byte[] exportDepreciationToExcel(DepreciationReportService.DepreciationReport report) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Laporan Penyusutan");
+            int rowNum = 0;
+
+            rowNum = addExcelHeader(workbook, sheet, rowNum, "LAPORAN PENYUSUTAN ASET TETAP",
+                    "Tahun " + report.year(), 10);
+
+            Row headerRow = sheet.createRow(rowNum++);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            createCell(headerRow, 0, "No", headerStyle);
+            createCell(headerRow, 1, "Nama Aset", headerStyle);
+            createCell(headerRow, 2, "Kategori", headerStyle);
+            createCell(headerRow, 3, "Tgl Perolehan", headerStyle);
+            createCell(headerRow, 4, "Harga Perolehan", headerStyle);
+            createCell(headerRow, 5, "Masa Manfaat", headerStyle);
+            createCell(headerRow, 6, "Metode", headerStyle);
+            createCell(headerRow, 7, "Penyusutan Tahun Ini", headerStyle);
+            createCell(headerRow, 8, "Akum. Penyusutan", headerStyle);
+            createCell(headerRow, 9, "Nilai Buku", headerStyle);
+
+            CellStyle numberStyle = createNumberStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            int no = 1;
+            for (DepreciationReportService.DepreciationReportItem item : report.items()) {
+                Row row = sheet.createRow(rowNum++);
+                createNumericCell(row, 0, java.math.BigDecimal.valueOf(no++), textStyle);
+                createCell(row, 1, item.assetName(), textStyle);
+                createCell(row, 2, item.categoryName(), textStyle);
+                Cell dateCell = row.createCell(3);
+                dateCell.setCellValue(java.sql.Date.valueOf(item.purchaseDate()));
+                dateCell.setCellStyle(dateStyle);
+                createNumericCell(row, 4, item.purchaseCost(), numberStyle);
+                createCell(row, 5, item.usefulLifeYears() + " tahun", textStyle);
+                createCell(row, 6, item.depreciationMethod(), textStyle);
+                createNumericCell(row, 7, item.depreciationThisYear(), numberStyle);
+                createNumericCell(row, 8, item.accumulatedDepreciation(), numberStyle);
+                createNumericCell(row, 9, item.bookValue(), numberStyle);
+            }
+
+            Row totalRow = sheet.createRow(rowNum);
+            CellStyle totalStyle = createTotalStyle(workbook);
+            createCell(totalRow, 0, "", totalStyle);
+            createCell(totalRow, 1, "", totalStyle);
+            createCell(totalRow, 2, "", totalStyle);
+            createCell(totalRow, 3, "TOTAL", totalStyle);
+            createNumericCell(totalRow, 4, report.totalPurchaseCost(), totalStyle);
+            createCell(totalRow, 5, "", totalStyle);
+            createCell(totalRow, 6, "", totalStyle);
+            createNumericCell(totalRow, 7, report.totalDepreciationThisYear(), totalStyle);
+            createNumericCell(totalRow, 8, report.totalAccumulatedDepreciation(), totalStyle);
+            createNumericCell(totalRow, 9, report.totalBookValue(), totalStyle);
+
+            autoSizeColumns(sheet, 10);
+            workbook.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Error generating Depreciation Report Excel", e);
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage());
+        }
+    }
+
+    // ==================== STOCK BALANCE REPORT ====================
+
+    public byte[] exportStockBalanceToPdf(InventoryReportService.StockBalanceReport report, LocalDate asOfDate) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addReportHeader(document, "LAPORAN SALDO STOK", "Stock Balance Report",
+                    "Per tanggal " + asOfDate.format(DATE_FORMAT));
+
+            PdfPTable table = new PdfPTable(8);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3, 10, 15, 10, 8, 10, 12, 12});
+            table.setSpacingBefore(20);
+
+            addTableHeader(table, "No", "Kode", "Nama Produk", "Kategori", "Satuan", "Qty", "Harga Rata-rata", "Nilai");
+
+            int no = 1;
+            for (InventoryReportService.StockBalanceItem item : report.items()) {
+                addTableCell(table, String.valueOf(no++), Element.ALIGN_CENTER);
+                addTableCell(table, item.productCode(), Element.ALIGN_LEFT);
+                addTableCell(table, item.productName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.categoryName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.unit(), Element.ALIGN_CENTER);
+                addTableCell(table, formatNumber(item.quantity()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.averageCost()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.totalValue()), Element.ALIGN_RIGHT);
+            }
+
+            // Total row
+            PdfPCell totalLabelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+            totalLabelCell.setColspan(5);
+            totalLabelCell.setPadding(6);
+            totalLabelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            totalLabelCell.setBackgroundColor(new Color(230, 230, 230));
+            totalLabelCell.setBorderWidth(1f);
+            table.addCell(totalLabelCell);
+
+            PdfPCell qtyTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalQuantity()), getBoldFont()));
+            qtyTotalCell.setPadding(6);
+            qtyTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            qtyTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            qtyTotalCell.setBorderWidth(1f);
+            table.addCell(qtyTotalCell);
+
+            PdfPCell emptyCell = new PdfPCell(new Phrase("", getBoldFont()));
+            emptyCell.setPadding(6);
+            emptyCell.setBackgroundColor(new Color(230, 230, 230));
+            emptyCell.setBorderWidth(1f);
+            table.addCell(emptyCell);
+
+            PdfPCell valueTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalValue()), getBoldFont()));
+            valueTotalCell.setPadding(6);
+            valueTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            valueTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            valueTotalCell.setBorderWidth(1f);
+            table.addCell(valueTotalCell);
+
+            document.add(table);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Stock Balance PDF", e);
+            throw new RuntimeException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
+
+    public byte[] exportStockBalanceToExcel(InventoryReportService.StockBalanceReport report, LocalDate asOfDate) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Saldo Stok");
+            int rowNum = 0;
+
+            rowNum = addExcelHeader(workbook, sheet, rowNum, "LAPORAN SALDO STOK",
+                    "Per tanggal " + asOfDate.format(DATE_FORMAT), 8);
+
+            Row headerRow = sheet.createRow(rowNum++);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            createCell(headerRow, 0, "No", headerStyle);
+            createCell(headerRow, 1, "Kode", headerStyle);
+            createCell(headerRow, 2, "Nama Produk", headerStyle);
+            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 4, "Satuan", headerStyle);
+            createCell(headerRow, 5, "Qty", headerStyle);
+            createCell(headerRow, 6, "Harga Rata-rata", headerStyle);
+            createCell(headerRow, 7, "Nilai", headerStyle);
+
+            CellStyle numberStyle = createNumberStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+
+            int no = 1;
+            for (InventoryReportService.StockBalanceItem item : report.items()) {
+                Row row = sheet.createRow(rowNum++);
+                createNumericCell(row, 0, BigDecimal.valueOf(no++), textStyle);
+                createCell(row, 1, item.productCode(), textStyle);
+                createCell(row, 2, item.productName(), textStyle);
+                createCell(row, 3, item.categoryName(), textStyle);
+                createCell(row, 4, item.unit(), textStyle);
+                createNumericCell(row, 5, item.quantity(), numberStyle);
+                createNumericCell(row, 6, item.averageCost(), numberStyle);
+                createNumericCell(row, 7, item.totalValue(), numberStyle);
+            }
+
+            Row totalRow = sheet.createRow(rowNum);
+            CellStyle totalStyle = createTotalStyle(workbook);
+            createCell(totalRow, 0, "", totalStyle);
+            createCell(totalRow, 1, "", totalStyle);
+            createCell(totalRow, 2, "", totalStyle);
+            createCell(totalRow, 3, "", totalStyle);
+            createCell(totalRow, 4, "TOTAL", totalStyle);
+            createNumericCell(totalRow, 5, report.totalQuantity(), totalStyle);
+            createCell(totalRow, 6, "", totalStyle);
+            createNumericCell(totalRow, 7, report.totalValue(), totalStyle);
+
+            autoSizeColumns(sheet, 8);
+            workbook.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Error generating Stock Balance Excel", e);
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage());
+        }
+    }
+
+    // ==================== STOCK MOVEMENT REPORT ====================
+
+    public byte[] exportStockMovementToPdf(InventoryReportService.StockMovementReport report) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addReportHeader(document, "LAPORAN MUTASI STOK", "Stock Movement Report",
+                    "Periode " + report.startDate().format(DATE_FORMAT) + " - " + report.endDate().format(DATE_FORMAT));
+
+            PdfPTable table = new PdfPTable(9);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3, 8, 10, 12, 10, 10, 10, 10, 10});
+            table.setSpacingBefore(20);
+
+            addTableHeader(table, "No", "Tanggal", "Kode", "Nama Produk", "Tipe", "Qty", "Harga", "Nilai", "Saldo");
+
+            int no = 1;
+            for (InventoryReportService.StockMovementItem item : report.items()) {
+                addTableCell(table, String.valueOf(no++), Element.ALIGN_CENTER);
+                addTableCell(table, item.transactionDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")), Element.ALIGN_CENTER);
+                addTableCell(table, item.productCode(), Element.ALIGN_LEFT);
+                addTableCell(table, item.productName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.transactionTypeLabel(), Element.ALIGN_LEFT);
+                addTableCell(table, formatNumber(item.quantity()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.unitCost()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.totalCost()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.balanceAfter()), Element.ALIGN_RIGHT);
+            }
+
+            document.add(table);
+
+            // Summary table
+            Paragraph summaryTitle = new Paragraph("Ringkasan", getBoldFont());
+            summaryTitle.setSpacingBefore(20);
+            document.add(summaryTitle);
+
+            PdfPTable summaryTable = new PdfPTable(2);
+            summaryTable.setWidthPercentage(40);
+            summaryTable.setHorizontalAlignment(Element.ALIGN_LEFT);
+            summaryTable.setSpacingBefore(10);
+
+            addTableCell(summaryTable, "Total Masuk (Qty)", Element.ALIGN_LEFT);
+            addTableCell(summaryTable, formatNumber(report.totalInboundQty()), Element.ALIGN_RIGHT);
+            addTableCell(summaryTable, "Total Keluar (Qty)", Element.ALIGN_LEFT);
+            addTableCell(summaryTable, formatNumber(report.totalOutboundQty()), Element.ALIGN_RIGHT);
+            addTableCell(summaryTable, "Total Masuk (Nilai)", Element.ALIGN_LEFT);
+            addTableCell(summaryTable, formatNumber(report.totalInboundValue()), Element.ALIGN_RIGHT);
+            addTableCell(summaryTable, "Total Keluar (Nilai)", Element.ALIGN_LEFT);
+            addTableCell(summaryTable, formatNumber(report.totalOutboundValue()), Element.ALIGN_RIGHT);
+
+            document.add(summaryTable);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Stock Movement PDF", e);
+            throw new RuntimeException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
+
+    public byte[] exportStockMovementToExcel(InventoryReportService.StockMovementReport report) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Mutasi Stok");
+            int rowNum = 0;
+
+            rowNum = addExcelHeader(workbook, sheet, rowNum, "LAPORAN MUTASI STOK",
+                    "Periode " + report.startDate().format(DATE_FORMAT) + " - " + report.endDate().format(DATE_FORMAT), 9);
+
+            Row headerRow = sheet.createRow(rowNum++);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            createCell(headerRow, 0, "No", headerStyle);
+            createCell(headerRow, 1, "Tanggal", headerStyle);
+            createCell(headerRow, 2, "Kode", headerStyle);
+            createCell(headerRow, 3, "Nama Produk", headerStyle);
+            createCell(headerRow, 4, "Tipe", headerStyle);
+            createCell(headerRow, 5, "Qty", headerStyle);
+            createCell(headerRow, 6, "Harga", headerStyle);
+            createCell(headerRow, 7, "Nilai", headerStyle);
+            createCell(headerRow, 8, "Saldo", headerStyle);
+
+            CellStyle numberStyle = createNumberStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            int no = 1;
+            for (InventoryReportService.StockMovementItem item : report.items()) {
+                Row row = sheet.createRow(rowNum++);
+                createNumericCell(row, 0, BigDecimal.valueOf(no++), textStyle);
+                Cell dateCell = row.createCell(1);
+                dateCell.setCellValue(java.sql.Date.valueOf(item.transactionDate()));
+                dateCell.setCellStyle(dateStyle);
+                createCell(row, 2, item.productCode(), textStyle);
+                createCell(row, 3, item.productName(), textStyle);
+                createCell(row, 4, item.transactionTypeLabel(), textStyle);
+                createNumericCell(row, 5, item.quantity(), numberStyle);
+                createNumericCell(row, 6, item.unitCost(), numberStyle);
+                createNumericCell(row, 7, item.totalCost(), numberStyle);
+                createNumericCell(row, 8, item.balanceAfter(), numberStyle);
+            }
+
+            // Summary
+            rowNum += 2;
+            CellStyle totalStyle = createTotalStyle(workbook);
+
+            Row summaryHeader = sheet.createRow(rowNum++);
+            createCell(summaryHeader, 0, "Ringkasan", totalStyle);
+
+            Row inboundQtyRow = sheet.createRow(rowNum++);
+            createCell(inboundQtyRow, 0, "Total Masuk (Qty)", textStyle);
+            createNumericCell(inboundQtyRow, 1, report.totalInboundQty(), numberStyle);
+
+            Row outboundQtyRow = sheet.createRow(rowNum++);
+            createCell(outboundQtyRow, 0, "Total Keluar (Qty)", textStyle);
+            createNumericCell(outboundQtyRow, 1, report.totalOutboundQty(), numberStyle);
+
+            Row inboundValueRow = sheet.createRow(rowNum++);
+            createCell(inboundValueRow, 0, "Total Masuk (Nilai)", textStyle);
+            createNumericCell(inboundValueRow, 1, report.totalInboundValue(), numberStyle);
+
+            Row outboundValueRow = sheet.createRow(rowNum);
+            createCell(outboundValueRow, 0, "Total Keluar (Nilai)", textStyle);
+            createNumericCell(outboundValueRow, 1, report.totalOutboundValue(), numberStyle);
+
+            autoSizeColumns(sheet, 9);
+            workbook.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Error generating Stock Movement Excel", e);
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage());
+        }
+    }
+
+    // ==================== INVENTORY VALUATION REPORT ====================
+
+    public byte[] exportValuationToPdf(InventoryReportService.ValuationReport report, LocalDate asOfDate) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addReportHeader(document, "LAPORAN PENILAIAN PERSEDIAAN", "Inventory Valuation Report",
+                    "Per tanggal " + asOfDate.format(DATE_FORMAT));
+
+            PdfPTable table = new PdfPTable(8);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3, 10, 15, 10, 8, 10, 12, 12});
+            table.setSpacingBefore(20);
+
+            addTableHeader(table, "No", "Kode", "Nama Produk", "Kategori", "Satuan", "Qty", "Harga Rata-rata", "Nilai");
+
+            int no = 1;
+            for (InventoryReportService.ValuationItem item : report.items()) {
+                addTableCell(table, String.valueOf(no++), Element.ALIGN_CENTER);
+                addTableCell(table, item.productCode(), Element.ALIGN_LEFT);
+                addTableCell(table, item.productName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.categoryName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.unit(), Element.ALIGN_CENTER);
+                addTableCell(table, formatNumber(item.quantity()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.averageCost()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.totalValue()), Element.ALIGN_RIGHT);
+            }
+
+            // Total row
+            PdfPCell totalLabelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+            totalLabelCell.setColspan(7);
+            totalLabelCell.setPadding(6);
+            totalLabelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            totalLabelCell.setBackgroundColor(new Color(230, 230, 230));
+            totalLabelCell.setBorderWidth(1f);
+            table.addCell(totalLabelCell);
+
+            PdfPCell valueTotalCell = new PdfPCell(new Phrase(formatNumber(report.totalValue()), getBoldFont()));
+            valueTotalCell.setPadding(6);
+            valueTotalCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            valueTotalCell.setBackgroundColor(new Color(230, 230, 230));
+            valueTotalCell.setBorderWidth(1f);
+            table.addCell(valueTotalCell);
+
+            document.add(table);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Valuation PDF", e);
+            throw new RuntimeException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
+
+    public byte[] exportValuationToExcel(InventoryReportService.ValuationReport report, LocalDate asOfDate) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Penilaian Persediaan");
+            int rowNum = 0;
+
+            rowNum = addExcelHeader(workbook, sheet, rowNum, "LAPORAN PENILAIAN PERSEDIAAN",
+                    "Per tanggal " + asOfDate.format(DATE_FORMAT), 8);
+
+            Row headerRow = sheet.createRow(rowNum++);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            createCell(headerRow, 0, "No", headerStyle);
+            createCell(headerRow, 1, "Kode", headerStyle);
+            createCell(headerRow, 2, "Nama Produk", headerStyle);
+            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 4, "Satuan", headerStyle);
+            createCell(headerRow, 5, "Qty", headerStyle);
+            createCell(headerRow, 6, "Harga Rata-rata", headerStyle);
+            createCell(headerRow, 7, "Nilai", headerStyle);
+
+            CellStyle numberStyle = createNumberStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+
+            int no = 1;
+            for (InventoryReportService.ValuationItem item : report.items()) {
+                Row row = sheet.createRow(rowNum++);
+                createNumericCell(row, 0, BigDecimal.valueOf(no++), textStyle);
+                createCell(row, 1, item.productCode(), textStyle);
+                createCell(row, 2, item.productName(), textStyle);
+                createCell(row, 3, item.categoryName(), textStyle);
+                createCell(row, 4, item.unit(), textStyle);
+                createNumericCell(row, 5, item.quantity(), numberStyle);
+                createNumericCell(row, 6, item.averageCost(), numberStyle);
+                createNumericCell(row, 7, item.totalValue(), numberStyle);
+            }
+
+            Row totalRow = sheet.createRow(rowNum);
+            CellStyle totalStyle = createTotalStyle(workbook);
+            createCell(totalRow, 0, "", totalStyle);
+            createCell(totalRow, 1, "", totalStyle);
+            createCell(totalRow, 2, "", totalStyle);
+            createCell(totalRow, 3, "", totalStyle);
+            createCell(totalRow, 4, "", totalStyle);
+            createCell(totalRow, 5, "", totalStyle);
+            createCell(totalRow, 6, "TOTAL", totalStyle);
+            createNumericCell(totalRow, 7, report.totalValue(), totalStyle);
+
+            autoSizeColumns(sheet, 8);
+            workbook.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Error generating Valuation Excel", e);
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage());
+        }
+    }
+
+    // ==================== PRODUCT PROFITABILITY REPORT ====================
+
+    public byte[] exportProductProfitabilityToPdf(InventoryReportService.ProfitabilityReport report) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4.rotate());
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            addReportHeader(document, "LAPORAN PROFITABILITAS PRODUK", "Product Profitability Report",
+                    "Periode " + report.startDate().format(DATE_FORMAT) + " - " + report.endDate().format(DATE_FORMAT));
+
+            PdfPTable table = new PdfPTable(9);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3, 8, 15, 10, 8, 12, 12, 12, 8});
+            table.setSpacingBefore(20);
+
+            addTableHeader(table, "No", "Kode", "Nama Produk", "Kategori", "Qty", "Pendapatan", "HPP", "Margin", "%");
+
+            int no = 1;
+            for (InventoryReportService.ProfitabilityItem item : report.items()) {
+                addTableCell(table, String.valueOf(no++), Element.ALIGN_CENTER);
+                addTableCell(table, item.productCode(), Element.ALIGN_LEFT);
+                addTableCell(table, item.productName(), Element.ALIGN_LEFT);
+                addTableCell(table, item.categoryName(), Element.ALIGN_LEFT);
+                addTableCell(table, formatNumber(item.quantitySold()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.revenue()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.cogs()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.margin()), Element.ALIGN_RIGHT);
+                addTableCell(table, formatNumber(item.marginPercent()) + "%", Element.ALIGN_RIGHT);
+            }
+
+            // Total row
+            PdfPCell totalLabelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+            totalLabelCell.setColspan(4);
+            totalLabelCell.setPadding(6);
+            totalLabelCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            totalLabelCell.setBackgroundColor(new Color(230, 230, 230));
+            totalLabelCell.setBorderWidth(1f);
+            table.addCell(totalLabelCell);
+
+            PdfPCell qtyCell = new PdfPCell(new Phrase(formatNumber(report.totalQuantitySold()), getBoldFont()));
+            qtyCell.setPadding(6);
+            qtyCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            qtyCell.setBackgroundColor(new Color(230, 230, 230));
+            qtyCell.setBorderWidth(1f);
+            table.addCell(qtyCell);
+
+            PdfPCell revenueCell = new PdfPCell(new Phrase(formatNumber(report.totalRevenue()), getBoldFont()));
+            revenueCell.setPadding(6);
+            revenueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            revenueCell.setBackgroundColor(new Color(230, 230, 230));
+            revenueCell.setBorderWidth(1f);
+            table.addCell(revenueCell);
+
+            PdfPCell cogsCell = new PdfPCell(new Phrase(formatNumber(report.totalCogs()), getBoldFont()));
+            cogsCell.setPadding(6);
+            cogsCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            cogsCell.setBackgroundColor(new Color(230, 230, 230));
+            cogsCell.setBorderWidth(1f);
+            table.addCell(cogsCell);
+
+            PdfPCell marginCell = new PdfPCell(new Phrase(formatNumber(report.totalMargin()), getBoldFont()));
+            marginCell.setPadding(6);
+            marginCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            marginCell.setBackgroundColor(new Color(230, 230, 230));
+            marginCell.setBorderWidth(1f);
+            table.addCell(marginCell);
+
+            PdfPCell percentCell = new PdfPCell(new Phrase(formatNumber(report.getTotalMarginPercent()) + "%", getBoldFont()));
+            percentCell.setPadding(6);
+            percentCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            percentCell.setBackgroundColor(new Color(230, 230, 230));
+            percentCell.setBorderWidth(1f);
+            table.addCell(percentCell);
+
+            document.add(table);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Product Profitability PDF", e);
+            throw new RuntimeException("Failed to generate PDF: " + e.getMessage());
+        }
+    }
+
+    public byte[] exportProductProfitabilityToExcel(InventoryReportService.ProfitabilityReport report) {
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            Sheet sheet = workbook.createSheet("Profitabilitas Produk");
+            int rowNum = 0;
+
+            rowNum = addExcelHeader(workbook, sheet, rowNum, "LAPORAN PROFITABILITAS PRODUK",
+                    "Periode " + report.startDate().format(DATE_FORMAT) + " - " + report.endDate().format(DATE_FORMAT), 9);
+
+            Row headerRow = sheet.createRow(rowNum++);
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            createCell(headerRow, 0, "No", headerStyle);
+            createCell(headerRow, 1, "Kode", headerStyle);
+            createCell(headerRow, 2, "Nama Produk", headerStyle);
+            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 4, "Qty Terjual", headerStyle);
+            createCell(headerRow, 5, "Pendapatan", headerStyle);
+            createCell(headerRow, 6, "HPP", headerStyle);
+            createCell(headerRow, 7, "Margin", headerStyle);
+            createCell(headerRow, 8, "Margin %", headerStyle);
+
+            CellStyle numberStyle = createNumberStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+            CellStyle percentStyle = createPercentStyle(workbook);
+
+            int no = 1;
+            for (InventoryReportService.ProfitabilityItem item : report.items()) {
+                Row row = sheet.createRow(rowNum++);
+                createNumericCell(row, 0, BigDecimal.valueOf(no++), textStyle);
+                createCell(row, 1, item.productCode(), textStyle);
+                createCell(row, 2, item.productName(), textStyle);
+                createCell(row, 3, item.categoryName(), textStyle);
+                createNumericCell(row, 4, item.quantitySold(), numberStyle);
+                createNumericCell(row, 5, item.revenue(), numberStyle);
+                createNumericCell(row, 6, item.cogs(), numberStyle);
+                createNumericCell(row, 7, item.margin(), numberStyle);
+                createNumericCell(row, 8, item.marginPercent().divide(BigDecimal.valueOf(100)), percentStyle);
+            }
+
+            Row totalRow = sheet.createRow(rowNum);
+            CellStyle totalStyle = createTotalStyle(workbook);
+            createCell(totalRow, 0, "", totalStyle);
+            createCell(totalRow, 1, "", totalStyle);
+            createCell(totalRow, 2, "", totalStyle);
+            createCell(totalRow, 3, "TOTAL", totalStyle);
+            createNumericCell(totalRow, 4, report.totalQuantitySold(), totalStyle);
+            createNumericCell(totalRow, 5, report.totalRevenue(), totalStyle);
+            createNumericCell(totalRow, 6, report.totalCogs(), totalStyle);
+            createNumericCell(totalRow, 7, report.totalMargin(), totalStyle);
+            Cell percentTotalCell = totalRow.createCell(8);
+            percentTotalCell.setCellValue(report.getTotalMarginPercent().divide(BigDecimal.valueOf(100)).doubleValue());
+            percentTotalCell.setCellStyle(percentStyle);
+
+            autoSizeColumns(sheet, 9);
+            workbook.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Error generating Product Profitability Excel", e);
+            throw new RuntimeException("Failed to generate Excel: " + e.getMessage());
+        }
+    }
+
     // ==================== HELPER METHODS ====================
 
     private String formatNumber(BigDecimal value) {
@@ -728,6 +1407,29 @@ public class ReportExportService {
         style.setBorderRight(BorderStyle.THIN);
         DataFormat format = workbook.createDataFormat();
         style.setDataFormat(format.getFormat("#,##0"));
+        return style;
+    }
+
+    private CellStyle createDateStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        DataFormat format = workbook.createDataFormat();
+        style.setDataFormat(format.getFormat("dd/MM/yyyy"));
+        return style;
+    }
+
+    private CellStyle createPercentStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setAlignment(HorizontalAlignment.RIGHT);
+        DataFormat format = workbook.createDataFormat();
+        style.setDataFormat(format.getFormat("0.00%"));
         return style;
     }
 

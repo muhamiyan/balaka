@@ -458,7 +458,7 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [x] Filter by year
 - [x] Print view
 - [x] Functional tests
-- [ ] PDF/Excel export (deferred - print view sufficient for now)
+- [x] PDF/Excel export
 
 ### 4.5 Fiscal Year Closing ✅
 - [x] Year-end closing service (auto-generate closing entries)
@@ -516,8 +516,8 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [x] Stock movement report (in/out per period)
 - [x] Inventory valuation report (FIFO layers or weighted average)
 - [x] Low stock alert (configurable threshold per product)
-- [ ] PDF/Excel export (deferred)
-- [ ] Functional tests (deferred)
+- [x] PDF/Excel export
+- [x] Functional tests (22 tests)
 - [x] User manual (77-kartu-stok.md)
 
 ### 5.4 Simple Production (BOM) ✅
@@ -543,7 +543,7 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [x] Sales template with COGS variables (`cogsAmount`, `revenueAmount`) in V004 seed data
 - [x] Margin calculation per sale (transaction detail shows revenue, margin amount, margin %)
 - [x] Product profitability report (inventory/reports/profitability)
-- [ ] Functional tests (deferred)
+- [x] Functional tests (10 Playwright tests: SalesIntegrationTest)
 - [x] User manual (79-analisis-profitabilitas-produk.md)
 
 **Phase 5 Deliverable:** Inventory management with FIFO/weighted average costing, simple BOM-based production, and automatic COGS calculation.
