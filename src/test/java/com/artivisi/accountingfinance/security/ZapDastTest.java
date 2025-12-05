@@ -13,10 +13,11 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.zaproxy.clientapi.core.*;
+import org.zaproxy.clientapi.gen.Alert;
 import org.zaproxy.clientapi.gen.Pscan;
+import org.zaproxy.clientapi.gen.Reports;
 import org.zaproxy.clientapi.gen.Spider;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -138,8 +139,9 @@ class ZapDastTest {
         // Wait for passive scan to complete
         waitForPassiveScan();
 
-        // Get alerts
-        ApiResponseList alerts = (ApiResponseList) zapClient.core.alerts(targetUrl, "-1", "-1", null);
+        // Get alerts using Alert API
+        Alert alertApi = new Alert(zapClient);
+        ApiResponseList alerts = (ApiResponseList) alertApi.alerts(targetUrl, "-1", "-1", null);
         List<ApiResponse> alertList = alerts.getItems();
 
         // Count by severity
@@ -154,10 +156,10 @@ class ZapDastTest {
 
         for (ApiResponse alert : alertList) {
             ApiResponseSet alertSet = (ApiResponseSet) alert;
-            String risk = alertSet.getAttribute("risk");
-            String name = alertSet.getAttribute("alert");
-            String url = alertSet.getAttribute("url");
-            String confidence = alertSet.getAttribute("confidence");
+            String risk = alertSet.getStringValue("risk");
+            String name = alertSet.getStringValue("alert");
+            String url = alertSet.getStringValue("url");
+            String confidence = alertSet.getStringValue("confidence");
 
             switch (risk) {
                 case "High" -> {
@@ -237,14 +239,14 @@ class ZapDastTest {
         // Wait for passive scan
         waitForPassiveScan();
 
-        // Get alerts for authenticated scan
-        ApiResponseList alerts = (ApiResponseList) zapClient.core.alerts(targetUrl, "-1", "-1", null);
+        // Get alerts for authenticated scan using Alert API
+        Alert alertApi = new Alert(zapClient);
+        ApiResponseList alerts = (ApiResponseList) alertApi.alerts(targetUrl, "-1", "-1", null);
 
         log.info("Authenticated scan found {} total alerts", alerts.getItems().size());
 
-        // Save authenticated scan report
-        byte[] htmlReport = zapClient.core.htmlreport();
-        Files.write(REPORTS_DIR.resolve("zap-authenticated-report.html"), htmlReport);
+        // Save authenticated scan report using Reports API
+        generateHtmlReport("zap-authenticated-report.html", targetUrl);
     }
 
     private void waitForZapReady() throws Exception {
@@ -287,7 +289,7 @@ class ZapDastTest {
         log.info("Starting authenticated spider on {}", url);
 
         Spider spider = new Spider(zapClient);
-        ApiResponse response = spider.scanAsUser(contextName, userId, url, null, null, null, null);
+        ApiResponse response = spider.scanAsUser(contextName, userId, url, null, null, null);
         String scanId = ((ApiResponseElement) response).getValue();
 
         int progress = 0;
@@ -315,9 +317,35 @@ class ZapDastTest {
     }
 
     private void saveHtmlReport(String targetUrl) throws Exception {
-        byte[] htmlReport = zapClient.core.htmlreport();
-        Path reportPath = REPORTS_DIR.resolve("zap-baseline-report.html");
-        Files.write(reportPath, htmlReport);
+        generateHtmlReport("zap-baseline-report.html", targetUrl);
+    }
+
+    private void generateHtmlReport(String filename, String targetUrl) throws Exception {
+        Reports reports = new Reports(zapClient);
+        String reportDir = REPORTS_DIR.toAbsolutePath().toString();
+        String reportFilename = filename.replace(".html", "");
+
+        // Generate report using Reports API
+        // Parameters: title, template, theme, description, contexts, sites, sections,
+        //             includedconfidences, includedrisks, reportfilename, reportfilenamepattern,
+        //             reportdir, display
+        reports.generate(
+                "ZAP Security Scan Report",  // title
+                "traditional-html",           // template
+                null,                          // theme
+                "Security scan results",       // description
+                null,                          // contexts
+                targetUrl,                     // sites
+                null,                          // sections
+                null,                          // includedconfidences
+                null,                          // includedrisks
+                reportFilename,                // reportfilename
+                null,                          // reportfilenamepattern
+                reportDir,                     // reportdir
+                null                           // display
+        );
+
+        Path reportPath = REPORTS_DIR.resolve(filename);
         log.info("HTML report saved to {}", reportPath);
     }
 }
