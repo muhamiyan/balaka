@@ -44,6 +44,15 @@
     mode: "0600"
   notify: restart app
 
+- name: Create secure environment file for secrets
+  ansible.builtin.template:
+    src: env.conf.j2
+    dest: "/opt/{{ app_name }}/env.conf"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  notify: restart app
+
 - name: Create systemd service file
   ansible.builtin.template:
     src: app.service.j2

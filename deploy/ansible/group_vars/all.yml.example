@@ -35,6 +35,12 @@ ssl_email: "admin@artivisi.com"
 # document_max_file_size: 10485760  # 10MB
 # document_allowed_types: "image/jpeg,image/png,image/gif,application/pdf"
 
+# Document Encryption Key (AES-256-GCM)
+# Generate with: openssl rand -base64 32
+# IMPORTANT: This key encrypts uploaded documents. If lost, documents cannot be recovered.
+# Store this key securely (e.g., password manager, vault)
+# document_encryption_key: "BASE64_ENCODED_32_BYTE_KEY"
+
 # Telegram Bot Configuration (optional)
 # IMPORTANT: If telegram_bot_enabled is true, telegram_webhook_secret is REQUIRED
 # The application will fail to start without it for security reasons

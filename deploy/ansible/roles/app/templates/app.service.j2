@@ -9,6 +9,9 @@ User={{ app_user }}
 Group={{ app_user }}
 WorkingDirectory=/opt/{{ app_name }}
 
+# Load sensitive environment variables from secure file (mode 0600)
+EnvironmentFile=/opt/{{ app_name }}/env.conf
+
 ExecStart=/usr/bin/java \
     -Xms{{ java_heap_min }} \
     -Xmx{{ java_heap_max }} \
