@@ -44,11 +44,25 @@ Gunakan kolom pencarian untuk mencari pengguna berdasarkan:
 1. Klik tombol **Pengguna Baru** di halaman daftar
 2. Isi informasi pengguna:
    - **Username**: Username unik untuk login (wajib)
-   - **Password**: Password minimal 4 karakter (wajib untuk pengguna baru)
+   - **Password**: Password sesuai kebijakan keamanan (wajib untuk pengguna baru)
    - **Nama Lengkap**: Nama lengkap pengguna (wajib)
    - **Email**: Alamat email (opsional)
 3. Pilih minimal satu role dari daftar yang tersedia
 4. Klik **Simpan** untuk membuat pengguna
+
+### Persyaratan Password
+
+Password harus memenuhi persyaratan berikut:
+
+| Persyaratan | Keterangan |
+|-------------|------------|
+| Panjang minimal | 12 karakter |
+| Huruf besar | Minimal 1 karakter (A-Z) |
+| Huruf kecil | Minimal 1 karakter (a-z) |
+| Angka | Minimal 1 digit (0-9) |
+| Karakter spesial | Minimal 1 karakter (!@#$%^&*(),.?":{}|<>) |
+
+Contoh password yang valid: `SecurePass123!`
 
 ## Mengedit Pengguna
 
@@ -63,9 +77,11 @@ Gunakan kolom pencarian untuk mencari pengguna berdasarkan:
 
 1. Buka halaman detail pengguna
 2. Klik tombol **Ubah Password**
-3. Masukkan password baru (minimal 4 karakter)
+3. Masukkan password baru sesuai persyaratan keamanan
 4. Konfirmasi password baru
 5. Klik **Simpan Password**
+
+Lihat bagian **Persyaratan Password** untuk ketentuan password yang valid.
 
 ## Menonaktifkan/Mengaktifkan Pengguna
 
@@ -82,9 +98,39 @@ Pengguna yang dinonaktifkan tidak dapat login ke aplikasi tetapi datanya tetap t
 
 **Catatan**: Anda tidak dapat menghapus akun sendiri.
 
+## Penguncian Akun (Account Lockout)
+
+Untuk melindungi dari serangan brute force, sistem akan mengunci akun setelah beberapa kali gagal login:
+
+| Parameter | Nilai |
+|-----------|-------|
+| Percobaan gagal maksimal | 5 kali |
+| Durasi penguncian | 30 menit |
+
+Setelah dikunci:
+- Pengguna tidak dapat login meskipun password benar
+- Penguncian otomatis berakhir setelah 30 menit
+- Administrator dapat melihat status penguncian di log audit
+
+## Log Audit Keamanan
+
+Semua aktivitas keamanan dicatat dalam log audit yang dapat diakses di **Pengaturan > Log Audit**. Aktivitas yang dicatat:
+
+| Event | Keterangan |
+|-------|------------|
+| LOGIN_SUCCESS | Login berhasil |
+| LOGIN_FAILURE | Login gagal (password salah) |
+| ACCOUNT_LOCKED | Akun dikunci karena terlalu banyak percobaan gagal |
+| PASSWORD_CHANGE | Perubahan password |
+| USER_CREATE | Pengguna baru dibuat |
+| USER_UPDATE | Data pengguna diubah |
+| USER_DELETE | Pengguna dihapus |
+| ROLE_CHANGE | Perubahan role pengguna |
+
 ## Best Practices
 
 1. **Prinsip Least Privilege**: Berikan hanya role yang diperlukan untuk tugas pengguna
 2. **Review Berkala**: Periksa dan update role pengguna secara berkala
-3. **Password Aman**: Gunakan password yang kuat (minimal 4 karakter, disarankan kombinasi huruf, angka, dan simbol)
+3. **Password Aman**: Gunakan password yang kuat sesuai persyaratan (12+ karakter, kombinasi huruf, angka, dan simbol)
 4. **Nonaktifkan Pengguna**: Nonaktifkan pengguna yang sudah tidak aktif daripada menghapus untuk keperluan audit
+5. **Monitor Log Audit**: Periksa log audit secara berkala untuk mendeteksi aktivitas mencurigakan

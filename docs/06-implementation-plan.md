@@ -694,6 +694,13 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
   - [ ] Consent capture on employee onboarding
   - [ ] Consent withdrawal workflow
 - [x] Privacy notice display in application (/privacy-policy) - SettingsController /settings/privacy + privacy.html template
+- [x] Data subject rights UI for administrators
+  - [x] DataSubjectController with ADMIN-only access
+  - [x] Data subjects list page (/settings/data-subjects)
+  - [x] Data subject detail page with retention status
+  - [x] DSAR export page (masked sensitive data)
+  - [x] Anonymization confirmation page with reason and audit trail
+  - [x] DataSubjectRightsTest (16 Playwright functional tests)
 - [ ] Data breach response procedures
   - [ ] DataBreachIncident entity (detected_at, description, affected_count, notified_at)
   - [ ] Breach notification template (72h GDPR / 14 days UU PDP)
@@ -822,7 +829,10 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [x] GDPR/UU PDP data subject rights (DataSubjectService: export, anonymize, delete, retention check)
 - [x] Integration tests for data subject rights (DataSubjectServiceTest: 11 tests covering Art. 15 & 17)
 - [ ] Penetration testing checklist (manual verification)
-- [ ] Update user manual with security best practices
+- [x] Update user manual with security best practices
+  - [x] docs/user-manual/70-kelola-pengguna.md (password complexity, lockout, audit log)
+  - [x] docs/user-manual/80-kebijakan-data.md (data subject rights, encryption)
+  - [x] docs/user-manual/82-keamanan.md (comprehensive security documentation)
 - [ ] Create SECURITY.md with vulnerability reporting process
 - [ ] Document security patch procedures for PCI-DSS compliance
 - [x] Privacy policy page (/privacy) with UU PDP and GDPR compliance

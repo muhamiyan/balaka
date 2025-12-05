@@ -91,28 +91,90 @@ Untuk mengekspor seluruh data perusahaan:
 3. Klik **Ekspor Semua**
 4. Unduh file ZIP yang berisi semua data
 
-## Hak Anda
+## Hak Subjek Data (GDPR/UU PDP)
 
-### Akses Data
-Anda dapat melihat semua data Anda melalui aplikasi.
+Aplikasi ini mendukung hak-hak subjek data sesuai dengan GDPR (General Data Protection Regulation) dan UU PDP (Perlindungan Data Pribadi) No. 27/2022.
 
-### Koreksi Data
+### Hak Akses (Right to Access - Art. 15 GDPR)
+
+Anda berhak mendapatkan salinan data pribadi Anda. Administrator dapat memproses permintaan ini melalui:
+
+1. Buka **Pengaturan > Hak Subjek Data**
+2. Cari karyawan berdasarkan nama atau NIK
+3. Klik **Lihat Detail** untuk melihat ringkasan data
+4. Klik **Ekspor Data (DSAR)** untuk mengunduh data lengkap
+
+Data yang diekspor mencakup:
+- Informasi identitas (nama, email, telepon)
+- Informasi kepegawaian (jabatan, departemen, tanggal masuk)
+- Data sensitif dalam format tersamarkan (NIK, NPWP, nomor rekening)
+
+### Hak Penghapusan (Right to Erasure - Art. 17 GDPR)
+
+Anda berhak meminta penghapusan data pribadi Anda. Karena kewajiban retensi perpajakan, penghapusan dilakukan melalui **anonimisasi**:
+
+1. Buka **Pengaturan > Hak Subjek Data**
+2. Pilih karyawan yang mengajukan permintaan
+3. Klik **Anonimisasi Data**
+4. Isi alasan anonimisasi (misalnya: nomor surat permintaan)
+5. Centang konfirmasi bahwa tindakan tidak dapat dibatalkan
+6. Klik **Anonimisasi Data**
+
+Setelah dianonimisasi:
+- Nama diganti menjadi `ANONYMIZED-XXXXXXXX`
+- Email, telepon, alamat dihapus
+- NIK KTP, NPWP, nomor rekening dihapus
+- Data BPJS dihapus
+- Catatan keuangan tetap dipertahankan untuk kepatuhan pajak
+
+### Status Retensi Data
+
+Sistem menampilkan status retensi untuk setiap karyawan:
+- **Periode retensi**: 10 tahun sesuai UU KUP Art. 28
+- **Tanggal berakhir**: Dihitung dari tanggal resign + 10 tahun
+- **Dapat dihapus**: Status apakah data sudah melewati periode retensi
+
+### Hak Koreksi (Right to Rectification - Art. 16 GDPR)
+
 - Data profil dapat diubah melalui menu Profil
 - Data keuangan yang sudah diposting tidak dapat diubah (harus void dan buat baru)
 
-### Penghapusan Data
-- Data keuangan dalam periode 10 tahun tidak dapat dihapus (kewajiban hukum)
-- Data di luar periode retensi dapat diajukan untuk penghapusan
+## Catatan untuk Administrator
+
+Untuk memproses permintaan hak subjek data:
+
+1. Verifikasi identitas pemohon sebelum memproses
+2. Catat nomor referensi permintaan tertulis
+3. Simpan bukti permintaan selama periode retensi
+4. Semua tindakan tercatat dalam log audit
 
 ## Keamanan Data
 
-### Enkripsi
-- Koneksi ke aplikasi menggunakan HTTPS (enkripsi dalam transit)
-- Backup dienkripsi saat disimpan
+### Enkripsi Data Tersimpan (At Rest)
+
+Data sensitif dienkripsi menggunakan AES-256-GCM:
+
+| Jenis Data | Status Enkripsi |
+|------------|-----------------|
+| NIK KTP | Terenkripsi |
+| NPWP | Terenkripsi |
+| Nomor Rekening Bank | Terenkripsi |
+| Nomor BPJS Kesehatan | Terenkripsi |
+| Nomor BPJS Ketenagakerjaan | Terenkripsi |
+| Dokumen yang diunggah | Terenkripsi |
+| Backup | Terenkripsi (AES-256 + GPG) |
+
+### Enkripsi Data Transit
+
+- Koneksi ke aplikasi menggunakan HTTPS (TLS 1.2/1.3)
+- Koneksi database menggunakan SSL
+- Transfer backup ke cloud menggunakan HTTPS
 
 ### Akses Terbatas
+
 - Setiap pengguna hanya dapat mengakses data sesuai role-nya
 - Aktivitas pengguna dicatat dalam log audit
+- Data sensitif ditampilkan dalam format tersamarkan di UI
 
 ## Kontak
 
@@ -123,3 +185,4 @@ Untuk pertanyaan tentang data Anda, hubungi administrator sistem.
 | Versi | Tanggal | Perubahan |
 |-------|---------|-----------|
 | 1.0 | November 2024 | Kebijakan awal |
+| 2.0 | Desember 2024 | Penambahan hak subjek data (GDPR/UU PDP), enkripsi data |
