@@ -1,9 +1,13 @@
 package com.artivisi.accountingfinance.functional;
 
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
+import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.LoadState;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
@@ -12,13 +16,29 @@ class AuditLogViewerTest {
 
     @Nested
     @DisplayName("Audit Log Access and Display")
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
     class AuditLogAccessTests extends PlaywrightTestBase {
+
+        @BeforeEach
+        void setUp() {
+            loginAsAdmin();
+        }
+
+        private void navigateToAuditLogs() {
+            navigateToAuditLogs("");
+        }
+
+        private void navigateToAuditLogs(String queryParams) {
+            // Use longer timeout for audit logs page (may have many entries from other tests)
+            page.navigate(baseUrl() + "/settings/audit-logs" + queryParams,
+                    new Page.NavigateOptions().setTimeout(30000));
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+        }
 
         @Test
         @DisplayName("Should display audit log page")
         void shouldDisplayAuditLogPage() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            navigateToAuditLogs();
 
             assertThat(page.locator("#page-title")).containsText("Security Audit Log");
             assertThat(page.locator("#audit-log-table")).isVisible();
@@ -27,9 +47,8 @@ class AuditLogViewerTest {
         @Test
         @DisplayName("Should display audit log entries")
         void shouldDisplayAuditLogEntries() {
-            loginAsAdmin();
             // Login generates audit log entries
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            navigateToAuditLogs();
 
             // Should have at least one entry (from login)
             assertThat(page.locator("#audit-log-table")).isVisible();
@@ -41,15 +60,14 @@ class AuditLogViewerTest {
         @Test
         @DisplayName("Should filter by event type")
         void shouldFilterByEventType() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            navigateToAuditLogs();
 
             // Select LOGIN_SUCCESS event type
             page.locator("#event-type-filter").selectOption("LOGIN_SUCCESS");
             page.locator("#btn-apply").click();
 
             // Wait for HTMX to update
-            page.waitForLoadState();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // All visible entries should be LOGIN_SUCCESS
             assertThat(page.locator("#audit-log-table")).containsText("LOGIN SUCCESS");
@@ -58,15 +76,14 @@ class AuditLogViewerTest {
         @Test
         @DisplayName("Should filter by username")
         void shouldFilterByUsername() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            navigateToAuditLogs();
 
             // Filter by admin username
             page.locator("#username-filter").fill("admin");
             page.locator("#btn-apply").click();
 
             // Wait for HTMX to update
-            page.waitForLoadState();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Results should contain admin
             assertThat(page.locator("#audit-log-table")).containsText("admin");
@@ -75,14 +92,13 @@ class AuditLogViewerTest {
         @Test
         @DisplayName("Should reset filters")
         void shouldResetFilters() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs?eventType=LOGIN_SUCCESS&username=admin");
+            navigateToAuditLogs("?eventType=LOGIN_SUCCESS&username=admin");
 
             // Click reset button
             page.locator("#btn-reset").click();
 
             // Wait for page load
-            page.waitForLoadState();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Filters should be cleared
             assertThat(page.locator("#event-type-filter")).hasValue("");
@@ -92,8 +108,7 @@ class AuditLogViewerTest {
         @Test
         @DisplayName("Should display event type badges with correct colors")
         void shouldDisplayEventTypeBadges() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            navigateToAuditLogs();
 
             // Check that LOGIN_SUCCESS badge exists (green color)
             assertThat(page.locator("#audit-log-table .bg-green-100").first()).isVisible();
@@ -102,13 +117,20 @@ class AuditLogViewerTest {
 
     @Nested
     @DisplayName("Audit Log Pagination")
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
     class AuditLogPaginationTests extends PlaywrightTestBase {
+
+        @BeforeEach
+        void setUp() {
+            loginAsAdmin();
+        }
 
         @Test
         @DisplayName("Should show audit log table even with few entries")
         void shouldShowAuditLogTable() {
-            loginAsAdmin();
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            page.navigate(baseUrl() + "/settings/audit-logs",
+                    new Page.NavigateOptions().setTimeout(30000));
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Check audit log table is displayed (pagination only shows if > 1 page)
             assertThat(page.locator("#audit-log-table")).isVisible();
@@ -117,13 +139,16 @@ class AuditLogViewerTest {
 
     @Nested
     @DisplayName("Audit Log Authorization")
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
     class AuditLogAuthorizationTests extends PlaywrightTestBase {
 
         @Test
         @DisplayName("Should require authentication")
         void shouldRequireAuthentication() {
             // Navigate without login
-            page.navigate(baseUrl() + "/settings/audit-logs");
+            page.navigate(baseUrl() + "/settings/audit-logs",
+                    new Page.NavigateOptions().setTimeout(30000));
+            page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Should redirect to login
             assertThat(page).hasURL(java.util.regex.Pattern.compile(".*/login.*"));
