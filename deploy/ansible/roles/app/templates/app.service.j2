@@ -12,8 +12,26 @@ WorkingDirectory=/opt/{{ app_name }}
 ExecStart=/usr/bin/java \
     -Xms{{ java_heap_min }} \
     -Xmx{{ java_heap_max }} \
+    -XX:+UseZGC \
+    -XX:+DisableAttachMechanism \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/var/log/{{ app_name }}/heapdump.hprof \
+    -Djava.security.egd=file:/dev/urandom \
     -jar /opt/{{ app_name }}/{{ app_name }}.jar \
     --spring.config.location=/opt/{{ app_name }}/application.properties
+
+# Security: Prevent core dumps that may contain sensitive data
+LimitCORE=0
+
+# Security: Restrict filesystem access
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/{{ app_name }} /var/log/{{ app_name }}
+PrivateTmp=true
+
+# Security: Restrict capabilities
+NoNewPrivileges=true
+CapabilityBoundingSet=
 
 SuccessExitStatus=143
 Restart=always

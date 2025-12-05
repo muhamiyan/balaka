@@ -1,0 +1,33 @@
+# Ansible-lint configuration
+# Security-focused rules for production deployment
+
+# Exclude paths
+exclude_paths:
+  - .cache/
+
+# Enable all default rules plus security
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+
+# Warn on these (don't fail)
+warn_list:
+  - experimental
+  - yaml[line-length]
+
+# Skip these rules
+skip_list:
+  - role-name  # Our role names are descriptive
+
+# Strict mode for security
+strict: true
+
+# Offline mode (don't download galaxy roles during lint)
+offline: true
+
+# Security-specific settings
+# Ensure no hardcoded passwords or secrets
+# no-log-password: Warn when password/secret vars are logged
+# no-same-owner: Warn about file ownership issues

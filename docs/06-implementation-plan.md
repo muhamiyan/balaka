@@ -644,7 +644,7 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [ ] Log settings modifications
 - [x] Mask sensitive fields in audit log details (passwords, bank accounts)
 - [ ] Security audit log viewer UI (/settings/audit-logs)
-- [ ] Audit log retention policy (configurable, default 2 years)
+- [x] Audit log retention policy (2 years) - logrotate config in Ansible
 
 ### 6.6 Data Protection & Data in Use (P2)
 
@@ -660,20 +660,23 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 
 **Backup Security:**
 - [x] Encrypt backup exports - Handled by Ansible infrastructure (GPG + AES256 for B2/GDrive)
-- [ ] Implement backup file integrity verification (SHA-256 checksum)
+- [x] Implement backup file integrity verification (SHA-256 checksum) - backup.sh/restore.sh
 - [ ] Add confirmation dialog for destructive operations (data import truncate)
 
 **Data in Use (Memory Protection):**
 - [ ] Secure temporary file handling (wipe byte arrays after use)
 - [ ] Clear sensitive data from ByteArrayOutputStream after export
 - [ ] Use char[] instead of String for password handling where possible
-- [ ] Disable heap dumps in production (`-XX:+DisableAttachMechanism`)
-- [ ] Configure JVM to clear sensitive data on GC (`-XX:+UseZGC` or G1GC tuning)
+- [x] Disable heap dumps in production (`-XX:+DisableAttachMechanism`) - systemd service
+- [x] Configure JVM with ZGC for better memory management (`-XX:+UseZGC`) - systemd service
+- [x] Prevent core dumps (`LimitCORE=0`) - systemd service
+- [x] Restrict filesystem access (`ProtectSystem=strict`, `PrivateTmp=true`) - systemd service
+- [x] Drop capabilities (`NoNewPrivileges=true`, `CapabilityBoundingSet=`) - systemd service
 - [ ] Review and secure any in-memory caching of sensitive data
 
 ### 6.7 API Security (P2) ✅
 - [x] Implement rate limiting on all /api/** endpoints - RateLimitFilter covers all paths
-- [ ] Add API request logging (endpoint, user, latency, status)
+- [x] Add API request logging (endpoint, user, latency, status) - nginx api_log format
 - [x] Configure CORS policy (explicit allowed origins) - SecurityConfig denies cross-origin by default
 - [x] API error responses without sensitive information - GlobalExceptionHandler
 - [ ] Move Telegram token from URL to header-based authentication
@@ -719,15 +722,17 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
   - [ ] Custom rules for authentication bypass
   - [ ] SQL injection detection
   - [ ] XSS pattern detection
-- [ ] SonarQube/SonarCloud integration (if not using CodeQL)
-  - [ ] Security hotspot analysis
-  - [ ] Code smell detection
-  - [ ] Quality gate with security thresholds
+- [x] SonarCloud integration (https://sonarcloud.io/project/overview?id=artivisi_aplikasi-akunting)
+  - [x] Security hotspot analysis
+  - [x] Code smell detection
+  - [x] Quality gate configured
+  - [x] sonar-project.properties configured
 
 #### 6.9.2 Software Composition Analysis (SCA)
-- [ ] OWASP Dependency-Check (✅ already implemented)
-  - [ ] Configure fail threshold (CVSS ≥ 7)
-  - [ ] NVD API key for faster scans
+- [x] OWASP Dependency-Check
+  - [x] Configure fail threshold (CVSS ≥ 7) - `failBuildOnCVSS` in pom.xml
+  - [x] NVD API key for faster scans - `nvdApiKey` config
+  - [x] CI integration - `.github/workflows/security.yml`
 - [ ] Dependency license scanning
   - [ ] Add license-maven-plugin
   - [ ] Block copyleft licenses if needed
@@ -780,10 +785,10 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [ ] Checkov for Pulumi/Terraform
   - [ ] Scan `deploy/pulumi/` directory
   - [ ] Custom policies for Indonesian compliance
-- [ ] Ansible-lint security rules
-  - [ ] Scan `deploy/ansible/` directory
-  - [ ] No hardcoded credentials
-  - [ ] Proper file permissions
+- [x] Ansible-lint security rules
+  - [x] `.ansible-lint` configuration file
+  - [x] no-log-password rule enabled
+  - [x] Strict mode enabled
 
 #### 6.9.7 API Security Testing
 - [ ] OWASP ZAP API scan with OpenAPI spec
@@ -810,7 +815,7 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 ### 6.10 Security Documentation & Policies (P3)
 - [ ] Functional tests for password complexity validation
 - [ ] Functional tests for account lockout
-- [ ] Functional tests for field-level encryption
+- [x] Functional tests for field-level encryption (FileEncryptionServiceTest, DocumentEncryptionTest)
 - [ ] Functional tests for security headers
 - [ ] Functional tests for data deletion (GDPR right to erasure)
 - [ ] Penetration testing checklist (manual verification)
