@@ -10,6 +10,9 @@ app_domain: akunting.artivisi.id
 db_name: accountingdb
 db_user: accounting
 db_password: "CHANGE_THIS_DB_PASSWORD"
+# SSL mode: require (encrypted), verify-ca, verify-full (strictest)
+# For localhost PostgreSQL, 'require' is sufficient
+db_ssl_mode: require
 
 # Admin User Configuration
 # SECURITY: Do NOT use common usernames like 'admin', 'administrator', 'root'
@@ -33,11 +36,13 @@ ssl_email: "admin@artivisi.com"
 # document_allowed_types: "image/jpeg,image/png,image/gif,application/pdf"
 
 # Telegram Bot Configuration (optional)
+# IMPORTANT: If telegram_bot_enabled is true, telegram_webhook_secret is REQUIRED
+# The application will fail to start without it for security reasons
 telegram_bot_enabled: false
 # telegram_bot_token: "your-bot-token"
 # telegram_bot_username: "YourBotUsername"
-# telegram_webhook_url: "https://akunting.artivisi.id/api/telegram/webhook"
-# telegram_webhook_secret: "your-webhook-secret"
+# telegram_webhook_url: "https://yourdomain.com/api/telegram/webhook"
+# telegram_webhook_secret: "your-webhook-secret"  # REQUIRED when telegram_bot_enabled=true
 # telegram_admin_chat_id: "123456789"  # Your Telegram user ID for deployment notifications
 
 # Google Cloud Vision Configuration (optional - for receipt OCR)

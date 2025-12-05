@@ -23,7 +23,24 @@
     regexp: "^#?ssl\\s*="
     line: "ssl = on"
     state: present
-  notify: restart postgresql
+  register: ssl_config_changed
+
+- name: Restart PostgreSQL if SSL config changed
+  ansible.builtin.systemd:
+    name: postgresql
+    state: restarted
+  when: ssl_config_changed.changed
+
+- name: Verify PostgreSQL SSL is enabled
+  ansible.builtin.shell: sudo -u postgres psql -t -c "SHOW ssl;" | tr -d ' '
+  register: pg_ssl_status
+  changed_when: false
+
+- name: Restart PostgreSQL if SSL is not enabled
+  ansible.builtin.systemd:
+    name: postgresql
+    state: restarted
+  when: pg_ssl_status.stdout != "on"
 
 - name: Create database user
   community.postgresql.postgresql_user:
