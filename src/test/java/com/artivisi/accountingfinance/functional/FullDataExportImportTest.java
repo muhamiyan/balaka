@@ -131,7 +131,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
 
         // Wait for download when clicking export button
         Download download = page.waitForDownload(() -> {
-            page.locator("button:has-text('Ekspor Semua Data')").click();
+            page.locator("#btn-export").click();
         });
 
         // Save the download to a temp file
@@ -185,7 +185,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
         page.waitForLoadState();
 
         // Verify import page displays
-        assertThat(page.locator("h2:has-text('Import Data Lengkap')")).isVisible();
+        assertThat(page.locator("#import-title")).isVisible();
 
         // Upload the exported ZIP file
         page.locator("input[type='file']").setInputFiles(exportedZipPath.toAbsolutePath());
@@ -194,7 +194,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
         page.onDialog(dialog -> dialog.accept());
 
         // Import can take a while, increase timeout
-        page.locator("button:has-text('Import Data')").click(
+        page.locator("#btn-import").click(
             new com.microsoft.playwright.Locator.ClickOptions().setTimeout(60000)
         );
 
@@ -281,7 +281,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
         loginPage.navigate().loginAsAdmin();
 
         // Should be on dashboard
-        assertThat(page.locator("h1:has-text('Dashboard')")).isVisible();
+        assertThat(page.locator("#page-title")).containsText("Dashboard");
     }
 
     @Test
@@ -307,9 +307,9 @@ class FullDataExportImportTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/import");
             page.waitForLoadState();
 
-            assertThat(page.locator("h2:has-text('Import Data Lengkap')")).isVisible();
-            assertThat(page.locator("input[type='file'][accept='.zip']")).isVisible();
-            assertThat(page.locator("button:has-text('Import Data')")).isVisible();
+            assertThat(page.locator("#import-title")).isVisible();
+            assertThat(page.locator("#file")).isVisible();
+            assertThat(page.locator("#btn-import")).isVisible();
         }
 
         @Test
@@ -328,7 +328,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/import");
             page.waitForLoadState();
 
-            assertThat(page.locator("h3:has-text('Petunjuk')")).isVisible();
+            assertThat(page.locator("#instructions-title")).isVisible();
             assertThat(page.locator("text=Format File")).isVisible();
             assertThat(page.locator("text=Proses Import")).isVisible();
         }
@@ -339,7 +339,7 @@ class FullDataExportImportTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/import");
             page.waitForLoadState();
 
-            assertThat(page.locator("a[href='/settings/export']")).isVisible();
+            assertThat(page.locator("#link-to-export")).isVisible();
         }
     }
 }

@@ -51,8 +51,8 @@ class DetailedTemplatePreviewTest extends PlaywrightTestBase {
         // Instead should show variable inputs section
         assertThat(page.locator("text=Saldo per Akun")).isVisible();
 
-        // Should show variable input fields
-        assertThat(page.locator(".var-input")).not().hasCount(0);
+        // Should show variable input fields (use data-testid or specific selectors)
+        assertThat(page.locator("[data-var-name]")).not().hasCount(0);
 
         // Should show inputs for specific variables from the template
         // revenueAmount and cogsAmount
@@ -143,11 +143,11 @@ class DetailedTemplatePreviewTest extends PlaywrightTestBase {
         assertThat(page.locator("#template-name")).containsText("Pendapatan Jasa Konsultasi");
 
         // For SIMPLE template, should show the single "Jumlah" input
-        assertThat(page.locator("label:has-text('Jumlah')")).isVisible();
+        assertThat(page.locator("#label-amount")).isVisible();
         assertThat(page.locator("#amount")).isVisible();
 
         // Should NOT show variable inputs section
         assertThat(page.locator("text=Saldo per Akun")).not().isVisible();
-        assertThat(page.locator(".var-input")).hasCount(0);
+        assertThat(page.locator("[data-var-name]")).hasCount(0);
     }
 }

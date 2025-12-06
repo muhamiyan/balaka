@@ -113,7 +113,7 @@
                             <h3 th:class="${retentionStatus.canBeDeleted() ? 'font-medium text-green-900' : 'font-medium text-yellow-900'}" th:text="${retentionStatus.message()}">Status retensi</h3>
                             <dl class="mt-2 text-sm space-y-1">
                                 <div class="flex gap-2">
-                                    <dt th:class="${retentionStatus.canBeDeleted() ? 'text-green-700' : 'text-yellow-700'}">Periode Retensi:</dt>
+                                    <dt id="label-retention-period" th:class="${retentionStatus.canBeDeleted() ? 'text-green-700' : 'text-yellow-700'}">Periode Retensi:</dt>
                                     <dd th:class="${retentionStatus.canBeDeleted() ? 'text-green-900' : 'text-yellow-900'}" th:text="${retentionStatus.retentionYears() + ' tahun (sesuai UU KUP Art. 28)'}">10 tahun</dd>
                                 </div>
                                 <div th:if="${retentionStatus.retentionEndDate()}" class="flex gap-2">

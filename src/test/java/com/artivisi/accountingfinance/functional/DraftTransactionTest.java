@@ -162,7 +162,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             assertThat(page.locator("#templateId").isVisible()).isTrue();
             assertThat(page.locator("#description").isVisible()).isTrue();
             assertThat(page.locator("#amount").isVisible()).isTrue();
-            assertThat(page.locator("button:has-text('Approve')").isVisible()).isTrue();
+            assertThat(page.locator("#btn-approve").isVisible()).isTrue();
         }
 
         @Test
@@ -173,7 +173,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
 
             // Verify reject form exists
             assertThat(page.locator("#reason").isVisible()).isTrue();
-            assertThat(page.locator("button:has-text('Tolak')").isVisible()).isTrue();
+            assertThat(page.locator("#btn-reject").isVisible()).isTrue();
         }
 
         @Test
@@ -243,7 +243,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             waitForPageLoad();
 
             // Verify back link
-            Locator backLink = page.locator("a:has-text('Kembali ke Daftar Draft')");
+            Locator backLink = page.locator("#link-back-to-list");
             assertThat(backLink.isVisible()).isTrue();
 
             backLink.click();
@@ -273,7 +273,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             descriptionInput.fill("Test approval from Playwright");
 
             // Submit approve form
-            page.locator("button:has-text('Approve')").click();
+            page.locator("#btn-approve").click();
             waitForPageLoad();
 
             // Should redirect to transaction edit page
@@ -292,7 +292,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             reasonInput.fill("Test rejection from Playwright - struk tidak valid");
 
             // Submit reject form
-            page.locator("button:has-text('Tolak')").click();
+            page.locator("#btn-reject").click();
             waitForPageLoad();
 
             // Should redirect to drafts list
@@ -366,7 +366,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             waitForPageLoad();
 
             // Verify PENDING status badge
-            Locator statusBadge = page.locator("span:has-text('Menunggu Review')");
+            Locator statusBadge = page.locator("#status-badge-pending");
             assertThat(statusBadge.isVisible()).isTrue();
         }
 
@@ -377,7 +377,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             waitForPageLoad();
 
             // Verify APPROVED status badge
-            Locator statusBadge = page.locator("span:has-text('Disetujui')");
+            Locator statusBadge = page.locator("#status-badge-approved");
             assertThat(statusBadge.isVisible()).isTrue();
         }
 
@@ -388,7 +388,7 @@ class DraftTransactionTest extends PlaywrightTestBase {
             waitForPageLoad();
 
             // Verify REJECTED status badge
-            Locator statusBadge = page.locator("span:has-text('Ditolak')");
+            Locator statusBadge = page.locator("#status-badge-rejected");
             assertThat(statusBadge.isVisible()).isTrue();
         }
     }

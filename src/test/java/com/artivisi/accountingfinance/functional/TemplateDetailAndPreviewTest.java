@@ -42,7 +42,7 @@ class TemplateDetailAndPreviewTest extends PlaywrightTestBase {
         assertThat(page.locator("text=Kredit:")).isVisible();
 
         // Should display balance status icon (tests the fixed SpEL conditional)
-        assertThat(page.locator("svg.text-green-600").first()).isVisible();
+        assertThat(page.locator("#balance-icon")).isVisible();
 
         // Should not show any SpEL error messages
         assertThat(page.locator("text=SpelParseException")).not().isVisible();
@@ -94,7 +94,7 @@ class TemplateDetailAndPreviewTest extends PlaywrightTestBase {
         page.waitForTimeout(300);
 
         // Click preview button
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
 
         // Wait for modal to appear
         page.waitForSelector("#previewModal");
@@ -103,43 +103,44 @@ class TemplateDetailAndPreviewTest extends PlaywrightTestBase {
         assertThat(page.locator("#previewModal")).isVisible();
 
         // Modal should show template name
-        assertThat(page.locator("#previewModal h3")).containsText("Test Preview Bug Fix");
+        assertThat(page.locator("#preview-modal-title")).containsText("Test Preview Bug Fix");
 
         // Modal should show preview amount
         // This verifies that the JavaScript correctly captures and displays form values
-        assertThat(page.locator("#previewModal:has-text('Rp 2.500.000')")).isVisible();
+        assertThat(page.locator("#preview-amount-display")).containsText("Rp 2.500.000");
 
         // Modal should show table structure  
         assertThat(page.locator("#previewModal table")).isVisible();
         
         // Modal should show actual account data in the table rows (not empty)
-        assertThat(page.locator("#previewModal table tbody tr")).not().hasCount(0);
-        
+        assertThat(page.locator("#preview-tbody tr")).not().hasCount(0);
+
         // Modal should show debit and credit amounts (not just dashes)
         // At least one cell should have "2.500.000" (the amount we entered)
-        assertThat(page.locator("#previewModal table tbody:has-text('2.500.000')")).isVisible();
-        
+        assertThat(page.locator("#preview-tbody")).containsText("2.500.000");
+
         // Modal should NOT show "?" or "Akun tidak tersedia" since we selected real accounts
-        assertThat(page.locator("#previewModal:has-text('? - Akun tidak tersedia')")).not().isVisible();
+        String modalContent = page.locator("#previewModal").textContent();
+        org.assertj.core.api.Assertions.assertThat(modalContent).doesNotContain("? - Akun tidak tersedia");
         
         // Modal should show actual account names (not placeholder text)
         // We should see actual account codes and names from the selected accounts
         assertThat(page.locator("#previewModal table tbody tr").first()).isVisible();
 
         // Test X button (close icon) works
-        page.locator("#previewModal button[onclick*='remove']").first().click();
+        page.locator("#btn-preview-close-x").click();
         page.waitForTimeout(500);
 
         // Modal should be closed
         assertThat(page.locator("#previewModal")).not().isVisible();
 
         // Open modal again to test second close button
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
         page.waitForSelector("#previewModal");
         assertThat(page.locator("#previewModal")).isVisible();
 
         // Test "Tutup" button works
-        page.locator("#previewModal button:has-text('Tutup')").click();
+        page.locator("#btn-preview-close").click();
         page.waitForTimeout(500);
 
         // Modal should be closed
@@ -162,6 +163,6 @@ class TemplateDetailAndPreviewTest extends PlaywrightTestBase {
         assertThat(page.locator("text=/Kredit:\\s*\\d+/")).isVisible();
 
         // Should show balance indicator when debit > 0 and credit > 0
-        assertThat(page.locator("svg.text-green-600").first()).isVisible();
+        assertThat(page.locator("#balance-icon")).isVisible();
     }
 }

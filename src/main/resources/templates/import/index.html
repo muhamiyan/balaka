@@ -29,7 +29,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-900">Import Data Lengkap</h2>
+                    <h2 id="import-title" class="text-lg font-semibold text-gray-900">Import Data Lengkap</h2>
                     <p class="text-sm text-gray-500">Upload file ZIP hasil ekspor untuk mengganti seluruh data</p>
                 </div>
             </div>
@@ -54,7 +54,7 @@
                     </div>
                 </div>
 
-                <button type="submit"
+                <button type="submit" id="btn-import"
                         class="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                         onclick="return confirm('PERINGATAN: Seluruh data akan dihapus dan diganti dengan data dari file. Lanjutkan?');">
                     Import Data
@@ -64,7 +64,7 @@
 
         <!-- Info Section -->
         <div class="mt-8 bg-gray-50 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Petunjuk</h3>
+            <h3 id="instructions-title" class="text-lg font-semibold text-gray-900 mb-4">Petunjuk</h3>
             <div class="space-y-4 text-sm text-gray-600">
                 <div>
                     <h4 class="font-medium text-gray-900">Format File</h4>
@@ -87,7 +87,7 @@
 
         <!-- Link to Export -->
         <div class="mt-4 text-center">
-            <a th:href="@{/settings/export}" class="text-blue-600 hover:text-blue-800 text-sm">
+            <a id="link-to-export" th:href="@{/settings/export}" class="text-blue-600 hover:text-blue-800 text-sm">
                 &larr; Kembali ke halaman Ekspor
             </a>
         </div>

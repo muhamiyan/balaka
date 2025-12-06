@@ -214,7 +214,7 @@ class SettingsTest extends PlaywrightTestBase {
             assertThat(page.url()).contains("/settings");
 
             // Verify the bank account appears in the list
-            assertThat(page.locator("text=" + uniqueNumber).count()).isGreaterThan(0);
+            assertThat(page.content()).contains(uniqueNumber);
         }
 
         @Test
@@ -238,9 +238,8 @@ class SettingsTest extends PlaywrightTestBase {
             page.locator("#accountName").fill("Account 2");
             submitBankForm();
 
-            // Should show error message (stays on form page)
-            boolean hasError = page.locator(".text-red-500, .text-red-600").count() > 0
-                || page.locator("text=sudah ada").count() > 0
+            // Should show error message (stays on form page or shows error)
+            boolean hasError = page.content().contains("sudah ada")
                 || page.url().contains("/bank-accounts/new");
             assertThat(hasError).isTrue();
         }
@@ -265,7 +264,7 @@ class SettingsTest extends PlaywrightTestBase {
                 page.waitForLoadState(LoadState.NETWORKIDLE);
 
                 // Verify success - should see "Utama" badge
-                assertThat(page.locator("text=Utama").count()).isGreaterThan(0);
+                assertThat(page.content()).contains("Utama");
             }
         }
 
@@ -289,7 +288,7 @@ class SettingsTest extends PlaywrightTestBase {
                 page.waitForLoadState(LoadState.NETWORKIDLE);
 
                 // Verify "Nonaktif" badge appears
-                assertThat(page.locator("text=Nonaktif").count()).isGreaterThan(0);
+                assertThat(page.content()).contains("Nonaktif");
             }
         }
 
@@ -318,7 +317,7 @@ class SettingsTest extends PlaywrightTestBase {
                 submitBankForm();
 
                 // Verify update
-                assertThat(page.locator("text=" + newBankName).count()).isGreaterThan(0);
+                assertThat(page.content()).contains(newBankName);
             }
         }
     }
@@ -334,9 +333,9 @@ class SettingsTest extends PlaywrightTestBase {
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Verify logo upload section exists
-            assertThat(page.locator("text=Logo Perusahaan").count()).isGreaterThan(0);
+            assertThat(page.locator("#label-logo").isVisible()).isTrue();
             assertThat(page.locator("#logoFile").isVisible()).isTrue();
-            assertThat(page.locator("button:has-text('Upload Logo')").isVisible()).isTrue();
+            assertThat(page.locator("#btn-upload-logo").isVisible()).isTrue();
         }
 
         @Test
@@ -350,11 +349,11 @@ class SettingsTest extends PlaywrightTestBase {
 
             // Upload the file
             page.locator("#logoFile").setInputFiles(testImage);
-            page.locator("button:has-text('Upload Logo')").click();
+            page.locator("#btn-upload-logo").click();
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Verify success message
-            assertThat(page.locator("text=berhasil").count()).isGreaterThan(0);
+            assertThat(page.content()).contains("berhasil");
 
             // Verify logo preview is displayed
             assertThat(page.locator("img[alt='Company Logo']").count()).isGreaterThan(0);
@@ -374,7 +373,7 @@ class SettingsTest extends PlaywrightTestBase {
             if (logoPreview.count() == 0) {
                 java.nio.file.Path testImage = createTestImage();
                 page.locator("#logoFile").setInputFiles(testImage);
-                page.locator("button:has-text('Upload Logo')").click();
+                page.locator("#btn-upload-logo").click();
                 page.waitForLoadState(LoadState.NETWORKIDLE);
                 deleteTestImage(testImage);
             }
@@ -383,14 +382,14 @@ class SettingsTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings");
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
-            Locator deleteButton = page.locator("button:has-text('Hapus Logo')");
+            Locator deleteButton = page.locator("#btn-delete-logo");
             if (deleteButton.count() > 0) {
                 page.onDialog(dialog -> dialog.accept());
                 deleteButton.click();
                 page.waitForLoadState(LoadState.NETWORKIDLE);
 
                 // Verify success message
-                assertThat(page.locator("text=berhasil").count()).isGreaterThan(0);
+                assertThat(page.content()).contains("berhasil");
             }
         }
 
@@ -403,7 +402,7 @@ class SettingsTest extends PlaywrightTestBase {
 
             java.nio.file.Path testImage = createTestImage();
             page.locator("#logoFile").setInputFiles(testImage);
-            page.locator("button:has-text('Upload Logo')").click();
+            page.locator("#btn-upload-logo").click();
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
             // Navigate to logo URL and verify it returns an image
@@ -458,8 +457,8 @@ class SettingsTest extends PlaywrightTestBase {
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
             assertThat(page.locator("#page-title").textContent()).containsIgnoringCase("Tentang");
-            assertThat(page.locator("text=Commit ID").count()).isGreaterThan(0);
-            assertThat(page.locator("text=Branch").count()).isGreaterThan(0);
+            assertThat(page.locator("#label-commit-id").isVisible()).isTrue();
+            assertThat(page.locator("#label-branch").isVisible()).isTrue();
         }
 
         @Test
@@ -468,9 +467,9 @@ class SettingsTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/about");
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
-            assertThat(page.locator("text=Spring Boot").count()).isGreaterThan(0);
-            assertThat(page.locator("text=PostgreSQL").count()).isGreaterThan(0);
-            assertThat(page.locator("text=Thymeleaf").count()).isGreaterThan(0);
+            assertThat(page.locator("#tech-spring-boot").isVisible()).isTrue();
+            assertThat(page.locator("#tech-postgresql").isVisible()).isTrue();
+            assertThat(page.locator("#tech-thymeleaf").isVisible()).isTrue();
         }
 
         @Test
@@ -479,8 +478,7 @@ class SettingsTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/about");
             page.waitForLoadState(LoadState.NETWORKIDLE);
 
-            Locator githubLink = page.locator("a[href*='github.com']");
-            assertThat(githubLink.count()).isGreaterThan(0);
+            assertThat(page.locator("#link-github").isVisible()).isTrue();
         }
     }
 }

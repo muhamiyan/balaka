@@ -210,9 +210,9 @@
                                 <span id="credit-count" class="text-gray-600">Kredit: <span class="font-medium text-gray-900" th:text="${creditCount}">0</span></span>
                             </div>
                             <div class="flex items-center text-xs" th:with="debitCount=${#aggregates.sum(template.lines.![position.name() eq 'DEBIT' ? 1 : 0])}, creditCount=${#aggregates.sum(template.lines.![position.name() eq 'CREDIT' ? 1 : 0])}">
-                                <span th:if="${debitCount > 0 and creditCount > 0}" 
+                                <span id="balance-icon" th:if="${debitCount > 0 and creditCount > 0}"
                                       class="flex items-center text-accent-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                     </svg>
                                     Struktur valid

@@ -49,10 +49,10 @@ class DataExportTest extends PlaywrightTestBase {
             // Should display statistics section
             assertThat(page.locator("text=Data yang Akan Diekspor")).isVisible();
 
-            // Should display stat boxes (use first() to get specific element)
-            assertThat(page.locator("p.text-sm:has-text('Akun (COA)')").first()).isVisible();
-            assertThat(page.locator("p.text-sm:has-text('Jurnal')").first()).isVisible();
-            assertThat(page.locator("p.text-sm:has-text('Transaksi')").first()).isVisible();
+            // Should display stat boxes (use IDs)
+            assertThat(page.locator("#stat-account")).isVisible();
+            assertThat(page.locator("#stat-journal")).isVisible();
+            assertThat(page.locator("#stat-transaction")).isVisible();
         }
 
         @Test
@@ -60,7 +60,7 @@ class DataExportTest extends PlaywrightTestBase {
         void shouldDisplayExportButton() {
             page.navigate(baseUrl() + "/settings/export");
 
-            assertThat(page.locator("button:has-text('Ekspor Semua Data')")).isVisible();
+            assertThat(page.locator("#btn-export")).isVisible();
         }
 
         @Test
@@ -68,10 +68,12 @@ class DataExportTest extends PlaywrightTestBase {
         void shouldDisplayExportContentsList() {
             page.navigate(baseUrl() + "/settings/export");
 
-            assertThat(page.locator("text=chart-of-accounts.csv")).isVisible();
-            assertThat(page.locator("text=journal-entries.csv")).isVisible();
-            assertThat(page.locator("text=transactions.csv")).isVisible();
-            assertThat(page.locator("text=manifest.json")).isVisible();
+            // Use page.content() to verify text contents rather than text= locators
+            String content = page.content();
+            org.assertj.core.api.Assertions.assertThat(content).contains("chart-of-accounts.csv");
+            org.assertj.core.api.Assertions.assertThat(content).contains("journal-entries.csv");
+            org.assertj.core.api.Assertions.assertThat(content).contains("transactions.csv");
+            org.assertj.core.api.Assertions.assertThat(content).contains("manifest.json");
         }
     }
 
@@ -86,7 +88,7 @@ class DataExportTest extends PlaywrightTestBase {
 
             // Wait for download when clicking export button
             Download download = page.waitForDownload(() -> {
-                page.locator("button:has-text('Ekspor Semua Data')").click();
+                page.locator("#btn-export").click();
             });
 
             // Verify download file name format
@@ -107,7 +109,7 @@ class DataExportTest extends PlaywrightTestBase {
             page.navigate(baseUrl() + "/settings/export");
 
             Download download = page.waitForDownload(() -> {
-                page.locator("button:has-text('Ekspor Semua Data')").click();
+                page.locator("#btn-export").click();
             });
 
             // Check for manifest entry in ZIP
@@ -136,7 +138,7 @@ class DataExportTest extends PlaywrightTestBase {
         void shouldNavigateBackToSettings() {
             page.navigate(baseUrl() + "/settings/export");
 
-            page.locator("a:has-text('Kembali ke Pengaturan')").click();
+            page.locator("#link-back-to-settings").click();
 
             assertThat(page.locator("h1")).containsText("Pengaturan Perusahaan");
         }

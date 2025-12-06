@@ -192,15 +192,16 @@ class UserManagementTest extends PlaywrightTestBase {
         listPage.clickUserDetailLink(uniqueUsername);
 
         // Click change password link
-        page.locator("a:has-text('Ubah Password')").click();
+        page.locator("#link-change-password").click();
 
         // Fill password form with complex password
-        page.locator("input[name='newPassword']").fill("NewSecurePass2!");
-        page.locator("input[name='confirmPassword']").fill("NewSecurePass2!");
-        page.locator("button[type='submit']:has-text('Simpan')").click();
+        page.locator("#newPassword").fill("NewSecurePass2!");
+        page.locator("#confirmPassword").fill("NewSecurePass2!");
+        page.locator("#btn-save-password").click();
 
         // Should redirect back to detail page with success message
-        assertThat(page.locator("body").textContent()).contains("Password berhasil diubah");
+        page.waitForLoadState();
+        assertThat(page.content()).contains("Password berhasil diubah");
     }
 
     @Test
@@ -220,15 +221,16 @@ class UserManagementTest extends PlaywrightTestBase {
         // Navigate to change password
         listPage.navigate();
         listPage.clickUserDetailLink(uniqueUsername);
-        page.locator("a:has-text('Ubah Password')").click();
+        page.locator("#link-change-password").click();
 
         // Fill mismatched passwords (both complex but different)
-        page.locator("input[name='newPassword']").fill("NewSecurePass1!");
-        page.locator("input[name='confirmPassword']").fill("DifferentPass2!");
-        page.locator("button[type='submit']:has-text('Simpan')").click();
+        page.locator("#newPassword").fill("NewSecurePass1!");
+        page.locator("#confirmPassword").fill("DifferentPass2!");
+        page.locator("#btn-save-password").click();
 
         // Should show error
-        assertThat(page.locator("body").textContent()).contains("Password tidak cocok");
+        page.waitForLoadState();
+        assertThat(page.content()).contains("Password tidak cocok");
     }
 
     @Test
@@ -240,7 +242,7 @@ class UserManagementTest extends PlaywrightTestBase {
 
         // Wait for detail page to load
         page.waitForLoadState();
-        page.locator("a:has-text('Ubah Password')").click();
+        page.locator("#link-change-password").click();
 
         // Wait for change password form
         page.waitForLoadState();
@@ -254,7 +256,7 @@ class UserManagementTest extends PlaywrightTestBase {
 
         // Search for admin
         page.locator("input[name='search']").fill("admin");
-        page.locator("button:has-text('Cari')").click();
+        page.locator("#btn-search").click();
 
         // Wait for search results to load
         page.waitForLoadState();
@@ -277,6 +279,7 @@ class UserManagementTest extends PlaywrightTestBase {
         formPage.clickSubmit();
 
         // Should show error
-        assertThat(page.locator("body").textContent()).contains("At least one role must be selected");
+        page.waitForLoadState();
+        assertThat(page.content()).contains("At least one role must be selected");
     }
 }

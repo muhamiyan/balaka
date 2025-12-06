@@ -12,7 +12,7 @@
     <div id="draft-detail-content" layout:fragment="content">
         <!-- Back Link -->
         <div class="mb-4">
-            <a th:href="@{/drafts}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+            <a id="link-back-to-list" th:href="@{/drafts}" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
@@ -68,7 +68,7 @@
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm">
                         </div>
 
-                        <button type="submit"
+                        <button type="submit" id="btn-approve"
                                 class="w-full inline-flex justify-center items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -88,7 +88,7 @@
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"></textarea>
                         </div>
 
-                        <button type="submit"
+                        <button type="submit" id="btn-reject"
                                 class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -115,15 +115,15 @@
                 <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">Informasi Draft</h2>
-                        <span th:if="${draft.status.name() == 'PENDING'}"
+                        <span th:if="${draft.status.name() == 'PENDING'}" id="status-badge-pending"
                               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                             Menunggu Review
                         </span>
-                        <span th:if="${draft.status.name() == 'APPROVED'}"
+                        <span th:if="${draft.status.name() == 'APPROVED'}" id="status-badge-approved"
                               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                             Disetujui
                         </span>
-                        <span th:if="${draft.status.name() == 'REJECTED'}"
+                        <span th:if="${draft.status.name() == 'REJECTED'}" id="status-badge-rejected"
                               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
                             Ditolak
                         </span>

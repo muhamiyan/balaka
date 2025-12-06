@@ -444,13 +444,13 @@ class TransactionTest extends PlaywrightTestBase {
             // - PPN Keluaran (Credit) = 11,100,000 - 10,000,000 = 1,100,000 (PPN 11%)
             
             // Get all debit and credit amounts from preview
-            var previewLines = page.locator("#preview-content .grid.grid-cols-12").all();
+            var previewLines = page.locator("#preview-content .preview-row").all();
             assertThat(previewLines).hasSizeGreaterThanOrEqualTo(3);
-            
+
             // Verify that amounts are different (not all showing 11,100,000)
-            String firstDebitAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(1) .col-span-3:nth-child(3)").innerText();
-            String firstCreditAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(2) .col-span-3:nth-child(4)").innerText();
-            String secondCreditAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(3) .col-span-3:nth-child(4)").innerText();
+            String firstDebitAmount = page.locator("[data-row-index='0'] .preview-debit").innerText();
+            String firstCreditAmount = page.locator("[data-row-index='1'] .preview-credit").innerText();
+            String secondCreditAmount = page.locator("[data-row-index='2'] .preview-credit").innerText();
             
             // First line (Bank Debit) should show 11,100,000 (full amount)
             assertThat(firstDebitAmount).contains("11.100.000");
@@ -474,8 +474,8 @@ class TransactionTest extends PlaywrightTestBase {
             page.waitForTimeout(1000);
             
             // Get first calculated values
-            String firstBankAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(1) .col-span-3:nth-child(3)").innerText();
-            String firstRevenueAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(2) .col-span-3:nth-child(4)").innerText();
+            String firstBankAmount = page.locator("[data-row-index='0'] .preview-debit").innerText();
+            String firstRevenueAmount = page.locator("[data-row-index='1'] .preview-credit").innerText();
             
             // Should show calculated amounts for 5.55M
             assertThat(firstBankAmount).contains("5.550.000");
@@ -486,8 +486,8 @@ class TransactionTest extends PlaywrightTestBase {
             page.waitForTimeout(1000);
             
             // Get second calculated values
-            String secondBankAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(1) .col-span-3:nth-child(3)").innerText();
-            String secondRevenueAmount = page.locator("#preview-content .grid.grid-cols-12:nth-child(2) .col-span-3:nth-child(4)").innerText();
+            String secondBankAmount = page.locator("[data-row-index='0'] .preview-debit").innerText();
+            String secondRevenueAmount = page.locator("[data-row-index='1'] .preview-credit").innerText();
             
             // Should show new calculated amounts for 22.2M
             assertThat(secondBankAmount).contains("22.200.000");

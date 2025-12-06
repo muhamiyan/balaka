@@ -130,7 +130,7 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         page.waitForTimeout(300);
 
         // Click preview button
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
 
         // Wait for modal to appear
         page.waitForSelector("#previewModal");
@@ -139,20 +139,20 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         assertThat(page.locator("#previewModal")).isVisible();
 
         // Should show template name in modal title
-        assertThat(page.locator("#previewModal h3:has-text('Preview Template: Test Preview Modal')")).isVisible();
+        assertThat(page.locator("#preview-modal-title")).containsText("Preview Template: Test Preview Modal");
 
         // Should show preview amount
-        assertThat(page.locator("#previewModal:has-text('Rp 5.000.000')")).isVisible();
+        assertThat(page.locator("#preview-amount-display")).containsText("Rp 5.000.000");
 
         // Should show account names in table
-        assertThat(page.locator("#previewModal table tbody tr")).hasCount(2);
+        assertThat(page.locator("#preview-tbody tr")).hasCount(2);
 
         // Should show debit and credit columns
-        assertThat(page.locator("#previewModal th:has-text('Debit')")).isVisible();
-        assertThat(page.locator("#previewModal th:has-text('Kredit')")).isVisible();
+        assertThat(page.locator("#th-debit")).isVisible();
+        assertThat(page.locator("#th-kredit")).isVisible();
 
         // Should show balance status
-        assertThat(page.locator("#previewModal .text-green-600:has-text('Jurnal seimbang')")).isVisible();
+        assertThat(page.locator("#preview-balance-status")).containsText("Jurnal seimbang");
     }
 
     @Test
@@ -182,24 +182,24 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         templateFormPage.fillPreviewAmount("1.000.000");
 
         // Open preview modal
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
         page.waitForSelector("#previewModal");
         assertThat(page.locator("#previewModal")).isVisible();
 
         // Test X button (close icon)
-        page.locator("#previewModal button[onclick*='remove']").first().click();
+        page.locator("#btn-preview-close-x").click();
         page.waitForTimeout(300);
 
         // Modal should be closed
         assertThat(page.locator("#previewModal")).not().isVisible();
 
         // Open modal again
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
         page.waitForSelector("#previewModal");
         assertThat(page.locator("#previewModal")).isVisible();
 
         // Test "Tutup" button
-        page.locator("#previewModal button:has-text('Tutup')").click();
+        page.locator("#btn-preview-close").click();
         page.waitForTimeout(300);
 
         // Modal should be closed
@@ -235,14 +235,14 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         templateFormPage.fillPreviewAmount("10.000.000");
 
         // Click preview
-        page.locator("button:has-text('Preview')").click();
+        page.locator("#btn-preview").click();
         page.waitForSelector("#previewModal");
 
         // Should show calculated amount (7,000,000)
-        assertThat(page.locator("#previewModal:has-text('7.000.000')")).isVisible();
+        assertThat(page.locator("#preview-total-debit")).containsText("7.000.000");
 
         // Total should match (both debit and credit should be 7,000,000)
-        assertThat(page.locator("#previewModal tfoot:has-text('7.000.000')")).isVisible();
+        assertThat(page.locator("#preview-tfoot")).containsText("7.000.000");
     }
 
     @Test
@@ -284,19 +284,19 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         templateFormPage.navigateToNew();
 
         // Preview button should be disabled initially
-        assertThat(page.locator("button:has-text('Preview')")).isDisabled();
+        assertThat(page.locator("#btn-preview")).isDisabled();
 
         // Fill template name only
         templateFormPage.fillTemplateName("Incomplete Template");
 
         // Should still be disabled
-        assertThat(page.locator("button:has-text('Preview')")).isDisabled();
+        assertThat(page.locator("#btn-preview")).isDisabled();
 
         // Fill category
         templateFormPage.selectCategory("INCOME");
 
         // Should still be disabled (needs lines)
-        assertThat(page.locator("button:has-text('Preview')")).isDisabled();
+        assertThat(page.locator("#btn-preview")).isDisabled();
 
         // Add debit line
         String accountId = templateFormPage.getFirstAccountId();
@@ -305,7 +305,7 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
         templateFormPage.fillFormulaForLine(0, "AMOUNT");
 
         // Should still be disabled (needs credit line)
-        assertThat(page.locator("button:has-text('Preview')")).isDisabled();
+        assertThat(page.locator("#btn-preview")).isDisabled();
 
         // Add credit line
         templateFormPage.clickAddLine();
@@ -317,6 +317,6 @@ class TemplateDynamicAccountTest extends PlaywrightTestBase {
 
         // Now preview button should be enabled
         page.waitForTimeout(500); // Wait for Alpine.js reactivity
-        assertThat(page.locator("button:has-text('Preview')")).isEnabled();
+        assertThat(page.locator("#btn-preview")).isEnabled();
     }
 }

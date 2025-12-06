@@ -49,9 +49,10 @@ class DataSubjectRightsTest {
             navigateToDataSubjects();
 
             // Check info panel exists with GDPR references
-            assertThat(page.locator("text=Pengelolaan Hak Subjek Data")).isVisible();
-            assertThat(page.locator("text=Hak Akses (Art. 15)")).isVisible();
-            assertThat(page.locator("text=Hak Penghapusan (Art. 17)")).isVisible();
+            assertThat(page.locator("#gdpr-info-panel")).isVisible();
+            assertThat(page.locator("#gdpr-info-title")).isVisible();
+            assertThat(page.locator("#gdpr-info-access")).isVisible();
+            assertThat(page.locator("#gdpr-info-erasure")).isVisible();
         }
 
         @Test
@@ -120,7 +121,7 @@ class DataSubjectRightsTest {
 
             // Should show retention status section
             assertThat(page.locator("#retention-status")).isVisible();
-            assertThat(page.locator("text=Periode Retensi")).isVisible();
+            assertThat(page.locator("#label-retention-period")).isVisible();
         }
 
         @Test
@@ -236,7 +237,7 @@ class DataSubjectRightsTest {
 
                 // Should show anonymize confirmation page
                 assertThat(page.locator("#page-title")).containsText("Anonimisasi Data");
-                assertThat(page.locator("text=Peringatan")).isVisible();
+                assertThat(page.locator("#warning-panel")).isVisible();
                 assertThat(page.locator("#reason")).isVisible();
             }
         }
