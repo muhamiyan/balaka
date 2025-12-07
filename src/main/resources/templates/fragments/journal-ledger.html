@@ -150,7 +150,7 @@
                         <span>Menampilkan</span>
                         <span class="mx-1 font-medium" th:text="${ledgerData.currentPage * pageSize + 1}">1</span>
                         <span>-</span>
-                        <span class="mx-1 font-medium" th:text="${T(Math).min((ledgerData.currentPage + 1) * pageSize, ledgerData.totalElements)}">20</span>
+                        <span class="mx-1 font-medium" th:text="${((ledgerData.currentPage + 1) * pageSize) > ledgerData.totalElements ? ledgerData.totalElements : ((ledgerData.currentPage + 1) * pageSize)}">20</span>
                         <span>dari</span>
                         <span id="total-entries" class="mx-1 font-medium" th:text="${ledgerData.totalElements}">100</span>
                         <span>entri</span>

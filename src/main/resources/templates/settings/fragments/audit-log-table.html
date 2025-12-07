@@ -85,7 +85,7 @@
                 <span>Menampilkan</span>
                 <span class="mx-1 font-medium" th:text="${auditLogs.number * auditLogs.size + 1}">1</span>
                 <span>-</span>
-                <span class="mx-1 font-medium" th:text="${T(Math).min((auditLogs.number + 1) * auditLogs.size, auditLogs.totalElements)}">20</span>
+                <span class="mx-1 font-medium" th:text="${((auditLogs.number + 1) * auditLogs.size) > auditLogs.totalElements ? auditLogs.totalElements : ((auditLogs.number + 1) * auditLogs.size)}">20</span>
                 <span>dari</span>
                 <span id="total-entries" class="mx-1 font-medium" th:text="${auditLogs.totalElements}">100</span>
                 <span>entri</span>

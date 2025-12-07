@@ -115,7 +115,7 @@
                     Menampilkan
                     <span class="font-medium" th:text="${page.number * page.size + 1}">1</span>
                     -
-                    <span class="font-medium" th:text="${T(Math).min((page.number + 1) * page.size, page.totalElements)}">10</span>
+                    <span class="font-medium" th:text="${((page.number + 1) * page.size) > page.totalElements ? page.totalElements : ((page.number + 1) * page.size)}">10</span>
                     dari
                     <span class="font-medium" th:text="${page.totalElements}">100</span>
                     hasil
