@@ -29,6 +29,7 @@ public record JournalTemplateDto(
 
         String description,
 
+        // Note: isFavorite is deprecated - use UserTemplatePreferenceService for user-specific favorites
         Boolean isFavorite,
 
         Boolean active,

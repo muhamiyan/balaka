@@ -55,6 +55,12 @@ public class JournalTemplate extends BaseEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    /**
+     * @deprecated This field is deprecated and will be removed in the next GA release.
+     * Use {@link com.artivisi.accountingfinance.entity.UserTemplatePreference#isFavorite} instead
+     * for user-specific favorite functionality.
+     */
+    @Deprecated(since = "0.1.0", forRemoval = true)
     @Column(name = "is_favorite", nullable = false)
     private Boolean isFavorite = false;
 
@@ -106,5 +112,25 @@ public class JournalTemplate extends BaseEntity {
 
     public List<String> getTagNames() {
         return tags.stream().map(JournalTemplateTag::getTag).toList();
+    }
+
+    /**
+     * @deprecated This method is deprecated and will be removed in the next GA release.
+     * Use {@link com.artivisi.accountingfinance.service.UserTemplatePreferenceService#isFavorite(String, java.util.UUID)}
+     * instead for user-specific favorite functionality.
+     */
+    @Deprecated(since = "0.1.0", forRemoval = true)
+    public Boolean getIsFavorite() {
+        return isFavorite;
+    }
+
+    /**
+     * @deprecated This method is deprecated and will be removed in the next GA release.
+     * Use {@link com.artivisi.accountingfinance.service.UserTemplatePreferenceService#toggleFavorite(String, java.util.UUID)}
+     * instead for user-specific favorite functionality.
+     */
+    @Deprecated(since = "0.1.0", forRemoval = true)
+    public void setIsFavorite(Boolean isFavorite) {
+        this.isFavorite = isFavorite;
     }
 }

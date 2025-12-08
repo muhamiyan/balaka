@@ -19,6 +19,11 @@ public interface JournalTemplateRepository extends JpaRepository<JournalTemplate
 
     List<JournalTemplate> findByCategoryAndActiveOrderByTemplateNameAsc(TemplateCategory category, Boolean active);
 
+    /**
+     * @deprecated This method uses the deprecated template-level favorite field.
+     * Use {@link UserTemplatePreferenceRepository#findFavoritesByUserId(UUID)} instead for user-specific favorites.
+     */
+    @Deprecated(since = "0.1.0", forRemoval = true)
     List<JournalTemplate> findByIsFavoriteAndActiveOrderByTemplateNameAsc(Boolean isFavorite, Boolean active);
 
     List<JournalTemplate> findByActiveOrderByUsageCountDesc(Boolean active);
