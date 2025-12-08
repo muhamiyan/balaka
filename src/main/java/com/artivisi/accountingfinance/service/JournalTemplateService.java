@@ -45,16 +45,6 @@ public class JournalTemplateService {
         return journalTemplateRepository.findByCategoryAndActiveOrderByTemplateNameAsc(category, true);
     }
 
-    /**
-     * @deprecated This method uses the deprecated template-level favorite field.
-     * Use {@link UserTemplatePreferenceService#getFavorites(String)} instead for user-specific favorites.
-     */
-    @Deprecated(since = "0.1.0", forRemoval = true)
-    @SuppressWarnings("deprecation")
-    public List<JournalTemplate> findFavorites() {
-        return journalTemplateRepository.findByIsFavoriteAndActiveOrderByTemplateNameAsc(true, true);
-    }
-
     public List<JournalTemplate> findMostUsed() {
         return journalTemplateRepository.findByActiveOrderByUsageCountDesc(true);
     }
@@ -83,7 +73,6 @@ public class JournalTemplateService {
         return journalTemplateRepository.save(template);
     }
 
-    @SuppressWarnings("deprecation")
     @Transactional
     public JournalTemplate update(UUID id, @Valid JournalTemplate templateData) {
         JournalTemplate existing = findById(id);
@@ -97,7 +86,6 @@ public class JournalTemplateService {
         existing.setCashFlowCategory(templateData.getCashFlowCategory());
         existing.setTemplateType(templateData.getTemplateType());
         existing.setDescription(templateData.getDescription());
-        existing.setIsFavorite(templateData.getIsFavorite());
         existing.setVersion(existing.getVersion() + 1);
 
         existing.getLines().clear();
@@ -116,7 +104,6 @@ public class JournalTemplateService {
         return journalTemplateRepository.save(existing);
     }
 
-    @SuppressWarnings("deprecation")
     @Transactional
     public JournalTemplate duplicate(UUID sourceId, String newName) {
         JournalTemplate source = findByIdWithLines(sourceId);
@@ -127,7 +114,6 @@ public class JournalTemplateService {
         duplicate.setCashFlowCategory(source.getCashFlowCategory());
         duplicate.setTemplateType(source.getTemplateType());
         duplicate.setDescription(source.getDescription());
-        duplicate.setIsFavorite(false); // Deprecated: template-level favorite
         duplicate.setIsSystem(false);
         duplicate.setActive(true);
 
@@ -142,19 +128,6 @@ public class JournalTemplateService {
         }
 
         return journalTemplateRepository.save(duplicate);
-    }
-
-    /**
-     * @deprecated This method uses the deprecated template-level favorite field.
-     * Use {@link UserTemplatePreferenceService#toggleFavorite(String, UUID)} instead for user-specific favorites.
-     */
-    @Deprecated(since = "0.1.0", forRemoval = true)
-    @SuppressWarnings("deprecation")
-    @Transactional
-    public void toggleFavorite(UUID id) {
-        JournalTemplate template = findById(id);
-        template.setIsFavorite(!template.getIsFavorite());
-        journalTemplateRepository.save(template);
     }
 
     @Transactional

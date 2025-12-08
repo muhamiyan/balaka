@@ -85,7 +85,6 @@ CREATE TABLE journal_templates (
     cash_flow_category VARCHAR(20) NOT NULL,
     template_type VARCHAR(20) NOT NULL DEFAULT 'SIMPLE',
     description TEXT,
-    is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
     active BOOLEAN NOT NULL DEFAULT TRUE,
     version INTEGER NOT NULL DEFAULT 1,
@@ -104,7 +103,6 @@ CREATE TABLE journal_templates (
 
 CREATE INDEX idx_jt_category ON journal_templates(category);
 CREATE INDEX idx_jt_active ON journal_templates(active);
-CREATE INDEX idx_jt_is_favorite ON journal_templates(is_favorite);
 
 CREATE TABLE journal_template_lines (
     id UUID PRIMARY KEY,

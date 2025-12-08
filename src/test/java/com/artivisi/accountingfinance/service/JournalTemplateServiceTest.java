@@ -110,17 +110,6 @@ class JournalTemplateServiceTest {
         }
 
         @Test
-        @DisplayName("findFavorites should return only favorite templates")
-        void findFavoritesShouldReturnOnlyFavorites() {
-            JournalTemplate template = createTestTemplate();
-            journalTemplateService.toggleFavorite(template.getId());
-
-            List<JournalTemplate> favorites = journalTemplateService.findFavorites();
-
-            assertThat(favorites).isNotEmpty().allMatch(JournalTemplate::getIsFavorite);
-        }
-
-        @Test
         @DisplayName("search should find by template name")
         void searchShouldFindByTemplateName() {
             JournalTemplate template = buildTestTemplate();
@@ -241,7 +230,6 @@ class JournalTemplateServiceTest {
             assertThat(duplicate.getTemplateName()).isEqualTo(newName);
             assertThat(duplicate.getCategory()).isEqualTo(source.getCategory());
             assertThat(duplicate.getIsSystem()).isFalse();
-            assertThat(duplicate.getIsFavorite()).isFalse();
         }
 
         @Test
@@ -253,23 +241,6 @@ class JournalTemplateServiceTest {
             JournalTemplate duplicate = journalTemplateService.duplicate(source.getId(), "Duplicate " + System.nanoTime());
 
             assertThat(duplicate.getLines()).hasSize(sourceLineCount);
-        }
-    }
-
-    @Nested
-    @DisplayName("Favorite Operations")
-    class FavoriteOperationsTests {
-
-        @Test
-        @DisplayName("toggleFavorite should change favorite status")
-        void toggleFavoriteShouldChangeFavoriteStatus() {
-            JournalTemplate template = createTestTemplate();
-            boolean initialFavorite = template.getIsFavorite();
-
-            journalTemplateService.toggleFavorite(template.getId());
-
-            JournalTemplate updated = journalTemplateRepository.findById(template.getId()).orElseThrow();
-            assertThat(updated.getIsFavorite()).isNotEqualTo(initialFavorite);
         }
     }
 
@@ -491,7 +462,6 @@ class JournalTemplateServiceTest {
         template.setCashFlowCategory(CashFlowCategory.OPERATING);
         template.setTemplateType(TemplateType.SIMPLE);
         template.setDescription("Test description");
-        template.setIsFavorite(false);
         template.setIsSystem(false);
         template.setActive(true);
         return template;

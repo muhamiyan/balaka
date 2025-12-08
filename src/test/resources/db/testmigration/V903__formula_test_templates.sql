@@ -13,9 +13,9 @@ INSERT INTO chart_of_accounts (id, account_code, account_name, account_type, nor
 -- Input: Rp 11,100,000 (gross)
 -- Output: DPP = 10,000,000, PPN = 1,100,000
 -- =====================================================
-INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, is_favorite, active, version) VALUES
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active, version) VALUES
 ('f0000000-0000-0000-0000-000000000011', 'Penjualan Jasa dengan PPN', 'INCOME', 'OPERATING', 'SIMPLE',
- 'Mencatat penjualan jasa dengan PPN 11%. Input jumlah gross (sudah termasuk PPN).', FALSE, FALSE, TRUE, 1);
+ 'Mencatat penjualan jasa dengan PPN 11%. Input jumlah gross (sudah termasuk PPN).', FALSE, TRUE, 1);
 
 INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description) VALUES
 -- Debit Bank: full amount
@@ -31,9 +31,9 @@ INSERT INTO journal_template_lines (id, id_journal_template, id_account, positio
 -- Input: Rp 5,550,000 (gross including PPN)
 -- Output: DPP = 5,000,000, PPN Masukan = 550,000
 -- =====================================================
-INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, is_favorite, active, version) VALUES
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active, version) VALUES
 ('f0000000-0000-0000-0000-000000000012', 'Pembelian dengan PPN', 'EXPENSE', 'OPERATING', 'SIMPLE',
- 'Mencatat pembelian dengan PPN 11% masukan. Input jumlah gross.', FALSE, FALSE, TRUE, 1);
+ 'Mencatat pembelian dengan PPN 11% masukan. Input jumlah gross.', FALSE, TRUE, 1);
 
 INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description) VALUES
 -- Debit Perlengkapan: DPP
@@ -50,9 +50,9 @@ INSERT INTO journal_template_lines (id, id_journal_template, id_account, positio
 -- Output: PPh 23 = 100,000 (2%), Net payment = 4,900,000
 -- If input <= 2,000,000: No PPh 23 deduction
 -- =====================================================
-INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, is_favorite, active, version) VALUES
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active, version) VALUES
 ('f0000000-0000-0000-0000-000000000013', 'Bayar Jasa dengan PPh 23', 'EXPENSE', 'OPERATING', 'SIMPLE',
- 'Mencatat pembayaran jasa profesional dengan pemotongan PPh 23 (2%) jika > Rp 2.000.000.', FALSE, FALSE, TRUE, 1);
+ 'Mencatat pembayaran jasa profesional dengan pemotongan PPh 23 (2%) jika > Rp 2.000.000.', FALSE, TRUE, 1);
 
 INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description) VALUES
 -- Debit Beban Jasa: full amount
@@ -68,9 +68,9 @@ INSERT INTO journal_template_lines (id, id_journal_template, id_account, positio
 -- Input: Rp 8,000,000
 -- Output: BPJS = 320,000 (fixed), Net = 7,680,000
 -- =====================================================
-INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, is_favorite, active, version) VALUES
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active, version) VALUES
 ('f0000000-0000-0000-0000-000000000014', 'Bayar Gaji (Potongan Tetap)', 'EXPENSE', 'OPERATING', 'SIMPLE',
- 'Mencatat pembayaran gaji dengan potongan BPJS tetap Rp 320.000.', FALSE, FALSE, TRUE, 1);
+ 'Mencatat pembayaran gaji dengan potongan BPJS tetap Rp 320.000.', FALSE, TRUE, 1);
 
 INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description) VALUES
 -- Debit Beban Gaji: full amount

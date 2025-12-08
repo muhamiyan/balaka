@@ -303,7 +303,7 @@ public class DataExportService {
     private String exportJournalTemplates() {
         StringBuilder csv = new StringBuilder();
         csv.append("template_name,category,cash_flow_category,template_type,description,");
-        csv.append("is_favorite,is_system,active,version,usage_count,last_used_at\n");
+        csv.append("is_system,active,version,usage_count,last_used_at\n");
 
         List<JournalTemplate> templates = templateRepository.findAll(Sort.by("templateName"));
         for (JournalTemplate t : templates) {
@@ -312,7 +312,6 @@ public class DataExportService {
             csv.append(t.getCashFlowCategory()).append(",");
             csv.append(t.getTemplateType()).append(",");
             csv.append(escapeCsv(t.getDescription())).append(",");
-            csv.append(t.getIsFavorite()).append(",");
             csv.append(t.getIsSystem()).append(",");
             csv.append(t.getActive()).append(",");
             csv.append(t.getVersion()).append(",");

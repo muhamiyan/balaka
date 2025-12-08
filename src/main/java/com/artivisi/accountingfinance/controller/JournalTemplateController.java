@@ -267,18 +267,6 @@ public class JournalTemplateController {
         return ResponseEntity.ok(journalTemplateService.findByCategory(category));
     }
 
-    /**
-     * @deprecated This endpoint uses the deprecated template-level favorite field.
-     * Use user-specific favorites via UserTemplatePreferenceService instead.
-     */
-    @Deprecated(since = "0.1.0", forRemoval = true)
-    @SuppressWarnings("deprecation")
-    @GetMapping("/api/favorites")
-    @ResponseBody
-    public ResponseEntity<List<JournalTemplate>> apiFavorites() {
-        return ResponseEntity.ok(journalTemplateService.findFavorites());
-    }
-
     @GetMapping("/api/recent")
     @ResponseBody
     public ResponseEntity<List<JournalTemplate>> apiRecent() {
@@ -317,19 +305,6 @@ public class JournalTemplateController {
     @ResponseBody
     public ResponseEntity<JournalTemplate> apiDuplicate(@PathVariable UUID id, @RequestParam String newName) {
         return ResponseEntity.ok(journalTemplateService.duplicate(id, newName));
-    }
-
-    /**
-     * @deprecated This endpoint uses the deprecated template-level favorite field.
-     * Use /templates/{id}/toggle-favorite (HTMX endpoint) instead, which uses UserTemplatePreferenceService.
-     */
-    @Deprecated(since = "0.1.0", forRemoval = true)
-    @SuppressWarnings("deprecation")
-    @PostMapping("/api/{id}/toggle-favorite")
-    @ResponseBody
-    public ResponseEntity<Void> apiToggleFavorite(@PathVariable UUID id) {
-        journalTemplateService.toggleFavorite(id);
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/api/{id}/activate")
@@ -450,7 +425,6 @@ public class JournalTemplateController {
         return "fragments/template-tags :: tag-list";
     }
 
-    @SuppressWarnings("deprecation")
     private JournalTemplate mapDtoToEntity(JournalTemplateDto dto) {
         JournalTemplate template = new JournalTemplate();
         template.setTemplateName(dto.templateName());
@@ -458,7 +432,6 @@ public class JournalTemplateController {
         template.setCashFlowCategory(dto.cashFlowCategory());
         template.setTemplateType(dto.templateType());
         template.setDescription(dto.description());
-        template.setIsFavorite(dto.isFavorite() != null ? dto.isFavorite() : false); // Deprecated: use UserTemplatePreferenceService
         template.setActive(dto.active() != null ? dto.active() : true);
 
         if (dto.lines() != null) {

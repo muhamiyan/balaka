@@ -608,7 +608,7 @@ public class DataImportService {
 
         for (String[] row : rows) {
             String templateName = getField(row, 0);
-            boolean isSystem = parseBoolean(getField(row, 6));
+            boolean isSystem = parseBoolean(getField(row, 5));
 
             // Check if system template already exists (preserved from seed data)
             JournalTemplate existing = templateMap.get(templateName);
@@ -624,12 +624,11 @@ public class DataImportService {
             t.setCashFlowCategory(CashFlowCategory.valueOf(getField(row, 2)));
             t.setTemplateType(TemplateType.valueOf(getField(row, 3)));
             t.setDescription(getField(row, 4));
-            t.setIsFavorite(parseBoolean(getField(row, 5)));
             t.setIsSystem(isSystem);
-            t.setActive(parseBoolean(getField(row, 7)));
-            t.setVersion(parseInteger(getField(row, 8)));
-            t.setUsageCount(parseInteger(getField(row, 9)));
-            t.setLastUsedAt(parseDateTime(getField(row, 10)));
+            t.setActive(parseBoolean(getField(row, 6)));
+            t.setVersion(parseInteger(getField(row, 7)));
+            t.setUsageCount(parseInteger(getField(row, 8)));
+            t.setLastUsedAt(parseDateTime(getField(row, 9)));
 
             templateRepository.save(t);
             templateMap.put(t.getTemplateName(), t);
