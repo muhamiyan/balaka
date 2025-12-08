@@ -28,6 +28,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -268,8 +269,8 @@ public class TransactionController {
     @GetMapping("/preview")
     public String preview(
             @RequestParam UUID templateId,
-            @RequestParam BigDecimal amount,
-            @RequestParam(required = false) java.util.Map<String, String> accountMapping,
+            @RequestParam(required = false, defaultValue = "0") BigDecimal amount,
+            @RequestParam(required = false) MultiValueMap<String, String> params,
             Model model) {
         JournalTemplate template = journalTemplateService.findByIdWithLines(templateId);
         
@@ -283,7 +284,20 @@ public class TransactionController {
         
         // Apply account mappings for template lines with null accounts
         java.util.List<TemplateExecutionEngine.PreviewEntry> entries = previewResult.entries();
-        if (accountMapping != null && !accountMapping.isEmpty()) {
+        
+        // Extract accountMapping parameters from params
+        java.util.Map<String, String> accountMapping = new java.util.HashMap<>();
+        for (String key : params.keySet()) {
+            if (key.startsWith("accountMapping[") && key.endsWith("]")) {
+                String lineId = key.substring(15, key.length() - 1);
+                String accountId = params.getFirst(key);
+                if (accountId != null && !accountId.isEmpty()) {
+                    accountMapping.put(lineId, accountId);
+                }
+            }
+        }
+        
+        if (!accountMapping.isEmpty()) {
             // Match entries to template lines by order and create new entries with mapped accounts
             java.util.List<TemplateExecutionEngine.PreviewEntry> mappedEntries = new java.util.ArrayList<>();
             for (int i = 0; i < Math.min(template.getLines().size(), previewResult.entries().size()); i++) {
