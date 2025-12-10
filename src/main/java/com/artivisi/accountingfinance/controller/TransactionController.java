@@ -314,8 +314,8 @@ public class TransactionController {
                 amount,
                 "Preview",
                 null,
-                variables.isEmpty() ? null : variables,
-                accountMapping.isEmpty() ? null : accountMapping
+                variables.isEmpty() ? java.util.Map.of() : variables,
+                accountMapping.isEmpty() ? java.util.Map.of() : accountMapping
         );
 
         var previewResult = templateExecutionEngine.preview(template, context);

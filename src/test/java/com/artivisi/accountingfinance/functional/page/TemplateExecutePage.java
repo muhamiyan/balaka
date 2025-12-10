@@ -9,21 +9,16 @@ public class TemplateExecutePage {
     private final Page page;
     private final String baseUrl;
 
-    // Locators
+    // Locators - Updated to match consolidated transaction form
     private static final String PAGE_TITLE = "#page-title";
-    private static final String TEMPLATE_NAME = "#template-name";
-    private static final String EXECUTE_CONTENT = "#execute-content";
+    private static final String FORM_CONTENT = "#transaction-form-content";
     private static final String TRANSACTION_DATE = "#transactionDate";
     private static final String AMOUNT = "#amount";
     private static final String DESCRIPTION = "#description";
-    private static final String PREVIEW_BUTTON = "#btn-preview";
-    private static final String EXECUTE_BUTTON = "#btn-execute";
-    private static final String PREVIEW_TABLE = "#preview-table";
-    private static final String TOTAL_DEBIT = "#total-debit";
-    private static final String TOTAL_CREDIT = "#total-credit";
-    private static final String BALANCE_STATUS = "#balance-status";
-    private static final String ERROR_MESSAGE = "#error-message";
-    private static final String TRANSACTION_NUMBER = "#transaction-number";
+    private static final String PREVIEW_CONTENT = "#preview-content";
+    private static final String SAVE_POST_BUTTON = "#btn-simpan-posting";
+    private static final String TRANSACTION_DETAIL_CONTENT = "#transaction-detail-content";
+    private static final String ERROR_MESSAGE = ".bg-red-50, .text-red-600";
 
     public TemplateExecutePage(Page page, String baseUrl) {
         this.page = page;
@@ -31,8 +26,11 @@ public class TemplateExecutePage {
     }
 
     public TemplateExecutePage navigate(String templateId) {
-        page.navigate(baseUrl + "/templates/" + templateId + "/execute");
+        // Navigate to consolidated transaction form with template
+        page.navigate(baseUrl + "/transactions/new?templateId=" + templateId);
         page.waitForLoadState();
+        // Wait for Alpine.js to initialize
+        page.waitForSelector("[x-data]");
         return this;
     }
 
@@ -45,11 +43,13 @@ public class TemplateExecutePage {
     }
 
     public void assertTemplateNameVisible() {
-        assertThat(page.locator(TEMPLATE_NAME)).isVisible();
+        // Template name is shown in the info card, look for "Template:" text
+        assertThat(page.locator("text=Template:")).isVisible();
     }
 
     public void assertTemplateNameText(String expectedText) {
-        assertThat(page.locator(TEMPLATE_NAME)).hasText(expectedText);
+        // Template name is shown in the info card
+        assertThat(page.locator("text=" + expectedText).first()).isVisible();
     }
 
     public void assertTransactionDateVisible() {
@@ -65,7 +65,9 @@ public class TemplateExecutePage {
     }
 
     public void assertPreviewButtonVisible() {
-        assertThat(page.locator(PREVIEW_BUTTON)).isVisible();
+        // In consolidated form, there's no preview button - preview is loaded via HTMX automatically
+        // Check that the preview section exists instead
+        assertThat(page.locator("#journal-preview")).isVisible();
     }
 
     public void fillTransactionDate(String date) {
@@ -73,7 +75,40 @@ public class TemplateExecutePage {
     }
 
     public void fillAmount(String amount) {
+        // Fill the visible input field
         page.fill(AMOUNT, amount);
+
+        // Update Alpine.js model and hidden input via JavaScript, then trigger HTMX
+        String jsCode = String.format("""
+            (() => {
+                const amountValue = parseInt('%s'.replace(/\\D/g, '')) || 0;
+
+                // Update Alpine.js model
+                const amountInput = document.querySelector('#amount');
+                const form = amountInput.closest('[x-data]');
+                if (form && form.__x && form.__x.$data) {
+                    form.__x.$data.amount = amountValue;
+                } else if (form && form._x_dataStack && form._x_dataStack[0]) {
+                    form._x_dataStack[0].amount = amountValue;
+                }
+
+                // Update the hidden amount input
+                const hiddenAmount = document.querySelector('input[name="amount"][type="hidden"]');
+                if (hiddenAmount) {
+                    hiddenAmount.value = amountValue;
+                }
+
+                // Trigger HTMX on the preview content element
+                const previewContent = document.querySelector('#preview-content');
+                if (previewContent && typeof htmx !== 'undefined') {
+                    htmx.trigger(previewContent, 'amount-changed');
+                } else {
+                    // Fallback: dispatch custom event
+                    document.body.dispatchEvent(new CustomEvent('amount-changed', { bubbles: true }));
+                }
+            })()
+            """, amount);
+        page.evaluate(jsCode);
     }
 
     public void fillDescription(String description) {
@@ -81,84 +116,91 @@ public class TemplateExecutePage {
     }
 
     public void clickPreviewButton() {
-        page.click(PREVIEW_BUTTON);
-        page.waitForTimeout(1500); // Wait for Alpine.js to process and fetch data
+        // In consolidated form, preview is triggered automatically via HTMX on amount/account change
+        // Wait for preview rows to appear
+        page.waitForSelector(PREVIEW_CONTENT + " .preview-row");
     }
 
     public void clickExecuteButton() {
-        page.click(EXECUTE_BUTTON);
-        page.waitForTimeout(1000); // Wait for Alpine.js to process
+        // In consolidated form, use "Simpan & Posting" button
+        page.click(SAVE_POST_BUTTON);
+        // Wait for redirect to transaction detail page
+        page.waitForSelector(TRANSACTION_DETAIL_CONTENT,
+            new com.microsoft.playwright.Page.WaitForSelectorOptions().setTimeout(30000));
     }
 
     public void assertPreviewTableVisible() {
-        assertThat(page.locator(PREVIEW_TABLE)).isVisible();
+        // Wait for preview rows to be loaded via HTMX
+        page.waitForSelector(PREVIEW_CONTENT + " .preview-row");
+        assertThat(page.locator(PREVIEW_CONTENT)).isVisible();
     }
 
     public void assertTotalDebitText(String expectedText) {
-        assertThat(page.locator(TOTAL_DEBIT)).containsText(expectedText);
+        // Total is in the preview content section
+        assertThat(page.locator(PREVIEW_CONTENT).getByText("Rp " + expectedText).first()).isVisible();
     }
 
     public void assertTotalCreditText(String expectedText) {
-        assertThat(page.locator(TOTAL_CREDIT)).containsText(expectedText);
+        // Total is in the preview content section
+        assertThat(page.locator(PREVIEW_CONTENT).getByText("Rp " + expectedText).last()).isVisible();
     }
 
     public void assertBalanceStatusVisible() {
-        assertThat(page.locator(BALANCE_STATUS)).isVisible();
+        // Balance status shows "Jurnal Balance" text
+        assertThat(page.locator("text=Jurnal Balance")).isVisible();
     }
 
     public void assertBalanced() {
-        assertThat(page.locator(BALANCE_STATUS)).containsText("Jurnal Balance");
+        assertThat(page.locator("text=Jurnal Balance")).isVisible();
     }
 
     public void assertRedirectedToTransactionDetail() {
         // Wait for redirect to complete
         page.waitForURL("**/transactions/**");
-        // Verify we're on transaction detail page by checking for transaction number element
-        assertThat(page.locator(TRANSACTION_NUMBER)).isVisible();
+        // Verify we're on transaction detail page by checking for detail content
+        assertThat(page.locator(TRANSACTION_DETAIL_CONTENT)).isVisible();
     }
 
     public void assertSuccessMessageVisible() {
-        // Check for the success message on the transaction detail page
-        assertThat(page.locator("text=Transaksi berhasil dibuat dari template")).isVisible();
+        // In consolidated form, success is indicated by being on the detail page
+        // Check for "Transaksi" in page title or similar indicator
+        assertThat(page.locator(TRANSACTION_DETAIL_CONTENT)).isVisible();
     }
 
     public void assertErrorMessageVisible() {
-        assertThat(page.locator(ERROR_MESSAGE)).isVisible();
+        // Look for error message elements or validation messages
+        assertThat(page.locator(ERROR_MESSAGE).first()).isVisible();
     }
 
     public void assertErrorMessageText(String expectedText) {
-        assertThat(page.locator(ERROR_MESSAGE)).containsText(expectedText);
+        assertThat(page.locator("text=" + expectedText)).isVisible();
     }
 
     public int getPreviewRowCount() {
-        // Wait for Alpine.js to render the preview table rows
-        page.waitForTimeout(500);
-        return page.locator(PREVIEW_TABLE + " tbody tr.preview-row").count();
+        // Wait for preview rows to be loaded via HTMX
+        page.waitForSelector(PREVIEW_CONTENT + " .preview-row");
+        return page.locator(PREVIEW_CONTENT + " .preview-row").count();
     }
 
     public void assertAccountCodeVisible(int rowIndex) {
-        // Use nth-of-type instead of nth-child to avoid counting the <template> element
-        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-of-type(" + (rowIndex + 1) + ") .account-code";
-        // The account code should be present and have non-empty text
-        assertThat(page.locator(selector)).not().isEmpty();
+        // Preview rows have data-row-index attribute
+        String selector = PREVIEW_CONTENT + " [data-row-index='" + rowIndex + "'] .preview-account-code";
+        assertThat(page.locator(selector)).isVisible();
     }
 
     public void assertAccountNameVisible(int rowIndex) {
-        // Use nth-of-type instead of nth-child to avoid counting the <template> element  
-        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-of-type(" + (rowIndex + 1) + ") .account-name";
-        // The account name should be present and have non-empty text
-        assertThat(page.locator(selector)).not().isEmpty();
+        // Preview rows have data-row-index attribute
+        String selector = PREVIEW_CONTENT + " [data-row-index='" + rowIndex + "'] .preview-account-name";
+        assertThat(page.locator(selector)).isVisible();
     }
 
     public String getAccountCode(int rowIndex) {
-        // Use nth-of-type instead of nth-child to avoid counting the <template> element
-        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-of-type(" + (rowIndex + 1) + ") .account-code";
+        String selector = PREVIEW_CONTENT + " [data-row-index='" + rowIndex + "'] .preview-account-code";
         return page.locator(selector).textContent().trim();
     }
 
     public String getAccountName(int rowIndex) {
-        // Use nth-of-type instead of nth-child to avoid counting the <template> element
-        String selector = PREVIEW_TABLE + " tbody tr.preview-row:nth-of-type(" + (rowIndex + 1) + ") .account-name";
+        String selector = PREVIEW_CONTENT + " [data-row-index='" + rowIndex + "'] .preview-account-name";
         return page.locator(selector).textContent().trim();
     }
 

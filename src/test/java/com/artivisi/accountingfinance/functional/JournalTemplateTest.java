@@ -231,27 +231,35 @@ class JournalTemplateTest extends PlaywrightTestBase {
     class ValidationTests {
 
         @Test
-        @DisplayName("Should show error when amount is empty")
+        @DisplayName("Should show preview with zero amounts when amount is empty")
         void shouldShowErrorWhenAmountIsEmpty() {
+            // In the consolidated form, preview loads automatically with whatever values are present
+            // When amount is 0, the preview shows "-" for all amounts
             templateExecutePage.navigate(INCOME_CONSULTING_TEMPLATE_ID);
 
             templateExecutePage.fillTransactionDate("2025-06-30");
             templateExecutePage.fillDescription("Test without amount");
-            templateExecutePage.clickPreviewButton();
 
-            templateExecutePage.assertErrorMessageVisible();
+            // Preview loads on page load with amount=0, wait for any preview content
+            // Check that preview section exists and shows "Jurnal Balance" (balance is 0=0)
+            com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+                page.locator("text=Jurnal Balance")).isVisible();
         }
 
         @Test
-        @DisplayName("Should show error when description is empty")
+        @DisplayName("Should show preview even without description")
         void shouldShowErrorWhenDescriptionIsEmpty() {
+            // In the consolidated form, validation happens on form submission, not preview
+            // Preview works even without description
             templateExecutePage.navigate(INCOME_CONSULTING_TEMPLATE_ID);
 
             templateExecutePage.fillTransactionDate("2025-06-30");
             templateExecutePage.fillAmount("10000000");
             templateExecutePage.clickPreviewButton();
 
-            templateExecutePage.assertErrorMessageVisible();
+            // Preview should show correctly with the amount
+            templateExecutePage.assertPreviewTableVisible();
+            templateExecutePage.assertBalanced();
         }
     }
 
