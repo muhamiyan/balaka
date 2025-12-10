@@ -71,7 +71,7 @@ Indonesian accounting application for small businesses. Spring Boot 4.0 + Thymel
 ## Database
 
 - PostgreSQL via Testcontainers (tests)
-- Flyway migrations: V001-V010
+- Flyway migrations: V001-V004
 - Seed data: IT Services COA, admin user (admin/admin)
 
 ## Architecture
