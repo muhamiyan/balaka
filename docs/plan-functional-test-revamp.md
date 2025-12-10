@@ -6,7 +6,11 @@ Two-part reorganization:
 1. **Production Migrations** - Slim down to minimal bootstrap (admin user only, no seed data)
 2. **Functional Tests** - Industry-specific test suites that load seed data, avoiding duplication
 
-Three industry packs: Service/PKP (simple), Online Seller (medium), Coffee & Pastry Shop (complex).
+Four industry packs:
+- Service/PKP (simple) - PT ArtiVisi Intermedia
+- Online Seller (medium) - Toko Gadget Murah
+- Coffee & Pastry Shop (manufacturing) - Kedai Kopi Nusantara
+- Campus (education) - STMIK Tazkia
 
 ---
 
@@ -160,6 +164,31 @@ Grouped by feature area but not by industry/complexity.
 - Inventory valuation (raw materials + WIP + finished goods)
 - Product profitability analysis per category
 
+#### 4. Campus Industry (Education Sector)
+**Business Model**: Private University - "STMIK Tazkia"
+- Tuition fee revenue (SPP per semester)
+- Multi-period revenue recognition (semester-based)
+- Student receivables management
+- Scholarship deductions
+- Payroll for lecturers and staff
+- Operating grants and donations
+
+**Revenue Streams**:
+- SPP (Sumbangan Pembinaan Pendidikan) - tuition fees
+- Uang Pangkal - enrollment fees
+- Biaya Praktikum - lab fees
+- Wisuda - graduation fees
+
+**Test Scenarios**:
+- Student billing per semester
+- Payment collection (full, installment, scholarship)
+- Revenue recognition per academic period
+- Lecturer payroll with honorarium
+- Operating expense management
+- Scholarship fund allocation
+- Financial reports by academic year
+- Receivables aging by student/batch
+
 ---
 
 ## Test Data Organization
@@ -184,7 +213,10 @@ src/test/resources/db/
 │   ├── V821__seller_transactions.sql         # Products, purchases, sales
 │   │
 │   ├── V830__load_coffee_seed.sql            # COPY from industry-seed/coffee-shop/
-│   └── V831__coffee_production.sql           # BOM, production orders, sales
+│   ├── V831__coffee_production.sql           # BOM, production orders, sales
+│   │
+│   ├── V840__load_campus_seed.sql            # COPY from industry-seed/campus/
+│   └── V841__campus_transactions.sql         # Students, billing, payments
 ```
 
 ### Loading Seed Data in Test Migrations
@@ -315,6 +347,42 @@ Sales:
 - Total Revenue: Rp 5,940,000 | COGS: Rp 1,873,435 | Margin: 68.5%
 ```
 
+#### Campus Test Data (V840-V841)
+
+**V840 - Load Seed Data**
+- Loads from `industry-seed/campus/seed-data/` (NEW - to be created)
+- COA with education-specific accounts (SPP receivables, scholarship funds, etc.)
+- Templates for tuition billing, payment collection, payroll
+
+**V841 - Test Transactions**
+```
+Institution: STMIK Tazkia
+Academic Year: 2024/2025
+
+Programs:
+- S1 Teknik Informatika (TI)
+- S1 Sistem Informasi (SI)
+- D3 Manajemen Informatika (MI)
+
+Students (sample):
+- STD001: Ahmad Fauzi (TI, Semester 3) - SPP Rp 7,500,000
+- STD002: Siti Aminah (SI, Semester 1) - SPP Rp 7,500,000 + Uang Pangkal Rp 5,000,000
+- STD003: Budi Hartono (MI, Semester 5) - SPP Rp 6,000,000, Beasiswa 50%
+
+Transactions (Semester Ganjil 2024):
+- Billing: Generate SPP for all active students
+- Payment: STD001 bayar lunas Rp 7,500,000
+- Payment: STD002 bayar cicilan 1 Rp 4,000,000
+- Payment: STD003 bayar setelah potongan beasiswa Rp 3,000,000
+- Payroll: Gaji dosen + honorarium mengajar
+- Expense: Biaya operasional kampus
+
+Reports:
+- Receivables aging per angkatan
+- Revenue per program studi
+- Scholarship fund utilization
+```
+
 ---
 
 ## CSV-Driven Transaction Tests
@@ -362,9 +430,13 @@ src/test/resources/testdata/
 ├── seller/
 │   ├── transactions.csv          # Marketplace transactions
 │   └── expected-inventory.csv    # Expected inventory levels
-└── coffee/
-    ├── transactions.csv          # Production + sales transactions
-    └── production-orders.csv     # BOM/production specific sequences
+├── coffee/
+│   ├── transactions.csv          # Production + sales transactions
+│   └── production-orders.csv     # BOM/production specific sequences
+└── campus/
+    ├── transactions.csv          # Tuition billing and payments
+    ├── expected-receivables.csv  # Expected receivables per student/batch
+    └── expected-revenue.csv      # Expected revenue per program
 ```
 
 ### Test Execution Code
@@ -454,6 +526,12 @@ src/test/java/com/artivisi/accountingfinance/functional/
 │   ├── MfgProductionTest.java           # Production order execution
 │   └── MfgCostingTest.java              # COGM, inventory valuation
 │
+├── campus/                               # Campus/Education Tests
+│   ├── CampusBillingTest.java           # Student billing per semester
+│   ├── CampusPaymentTest.java           # Payment collection, installments
+│   ├── CampusScholarshipTest.java       # Scholarship allocation
+│   └── CampusReportsTest.java           # Receivables, revenue per program
+│
 ├── common/                               # Cross-industry Tests
 │   ├── SecurityTest.java                # Login, RBAC, audit
 │   ├── UserManagementTest.java          # User CRUD
@@ -529,7 +607,18 @@ src/test/java/com/artivisi/accountingfinance/functional/
 - 2 migration files (V830, V831)
 - New coffee-shop seed pack
 
-### Phase 4: Cleanup & Documentation
+### Phase 4: Campus Tests
+1. Create `industry-seed/campus/seed-data/` (NEW)
+2. Create V840 (load Campus seed)
+3. Create V841 (test transactions: billing, payments, scholarships)
+4. Create campus test classes
+
+**Deliverables**:
+- 4 test files in `campus/` package
+- 2 migration files (V840, V841)
+- New campus seed pack
+
+### Phase 5: Cleanup & Documentation
 1. Delete old V900-V912 files
 2. Update common tests to use base infrastructure (V800)
 3. Update CLAUDE.md with new test structure
@@ -545,6 +634,7 @@ Hierarchical structure with industry prefix + entity type for self-documenting I
 s = Service (IT Services / PKP)
 e = E-commerce (Online Seller)
 c = Coffee Shop (Manufacturing)
+u = University/Campus (Education)
 b = Base/Common
 ```
 
@@ -558,6 +648,7 @@ r = Product (raw material / finished good)
 o = Production Order
 m = Template
 a = Account (COA)
+s = Student (campus only)
 ```
 
 **Examples:**
@@ -571,6 +662,9 @@ et000001-0000-0000-0000-000000000001  → Seller Transaction #1
 
 cr000001-0000-0000-0000-000000000001  → Coffee Raw Material #1 (Biji Kopi)
 co000001-0000-0000-0000-000000000001  → Coffee Production Order #1
+
+us000001-0000-0000-0000-000000000001  → Campus Student #1 (Ahmad Fauzi)
+ut000001-0000-0000-0000-000000000001  → Campus Transaction #1 (SPP payment)
 
 be000001-0000-0000-0000-000000000001  → Base Employee (test operator user)
 ```
@@ -598,6 +692,7 @@ Approach: Create base page object with common functionality, extend for industry
 ./mvnw test -Dtest="com.artivisi.accountingfinance.functional.service.*"
 ./mvnw test -Dtest="com.artivisi.accountingfinance.functional.seller.*"
 ./mvnw test -Dtest="com.artivisi.accountingfinance.functional.manufacturing.*"
+./mvnw test -Dtest="com.artivisi.accountingfinance.functional.campus.*"
 ```
 
 ---
