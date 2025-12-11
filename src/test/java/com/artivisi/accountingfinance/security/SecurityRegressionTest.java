@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 import java.util.Map;
@@ -23,8 +24,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * are properly mitigated.
  *
  * Run with: ./mvnw test -Dtest=SecurityRegressionTest
+ *
+ * Uses @ActiveProfiles("test") to load V800-V912 integration test data.
  */
 @DisplayName("Security Regression Tests")
+@ActiveProfiles("test")
 class SecurityRegressionTest extends PlaywrightTestBase {
 
     @BeforeEach
