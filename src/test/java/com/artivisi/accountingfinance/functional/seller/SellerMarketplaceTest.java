@@ -1,64 +1,88 @@
 package com.artivisi.accountingfinance.functional.seller;
 
+import com.artivisi.accountingfinance.functional.page.CashFlowPage;
+import com.artivisi.accountingfinance.functional.page.ClientListPage;
+import com.artivisi.accountingfinance.functional.page.TransactionListPage;
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /**
  * Online Seller Marketplace Tests
- * Tests marketplace-specific clients and flows.
+ * Tests marketplace-specific clients (Tokopedia, Shopee) and suppliers.
+ * Uses Page Object Pattern with ID-based locators.
+ *
+ * Expected Data (from SellerTestDataInitializer):
+ * - Marketplace clients: Tokopedia, Shopee
+ * - Supplier clients: Erajaya, Samsung Indonesia
  */
 @DisplayName("Online Seller - Marketplace")
+@Import(SellerTestDataInitializer.class)
 public class SellerMarketplaceTest extends PlaywrightTestBase {
 
+    // Page Objects
+    private ClientListPage clientListPage;
+    private TransactionListPage transactionListPage;
+    private CashFlowPage cashFlowPage;
+
+    private void initPageObjects() {
+        String baseUrl = "http://localhost:" + port;
+        clientListPage = new ClientListPage(page, baseUrl);
+        transactionListPage = new TransactionListPage(page, baseUrl);
+        cashFlowPage = new CashFlowPage(page, baseUrl);
+    }
+
     @Test
-    @DisplayName("Should display marketplace clients")
+    @DisplayName("Should display marketplace and supplier clients")
     void shouldDisplayMarketplaceClients() {
         loginAsAdmin();
-        navigateTo("/clients");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify clients page loads
-        assertThat(page.locator("h1")).containsText("Klien");
+        clientListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible();
 
-        // Verify marketplace entities exist (using first() to avoid strict mode violation)
-        assertThat(page.locator("text=Tokopedia").first()).isVisible();
-        assertThat(page.locator("text=Shopee").first()).isVisible();
+        // Verify marketplace clients exist using table search
+        assertThat(page.locator("#client-table tr:has-text('Tokopedia')").first()).isVisible();
+        assertThat(page.locator("#client-table tr:has-text('Shopee')").first()).isVisible();
     }
 
     @Test
     @DisplayName("Should display suppliers")
     void shouldDisplaySuppliers() {
         loginAsAdmin();
-        navigateTo("/clients");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify supplier clients exist from V820 (using first() to avoid strict mode violation)
-        assertThat(page.locator("text=Erajaya").first()).isVisible();
-        assertThat(page.locator("text=Samsung").first()).isVisible();
+        clientListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible();
+
+        // Verify supplier clients exist using table search
+        assertThat(page.locator("#client-table tr:has-text('Erajaya')").first()).isVisible();
+        assertThat(page.locator("#client-table tr:has-text('Samsung')").first()).isVisible();
     }
 
     @Test
     @DisplayName("Should display transaction list")
     void shouldDisplayTransactionList() {
         loginAsAdmin();
-        navigateTo("/transactions");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify transactions page loads
-        assertThat(page.locator("h1")).containsText("Transaksi");
+        transactionListPage.navigate()
+            .verifyPageTitle()
+            .verifyContentVisible();
     }
 
     @Test
     @DisplayName("Should display cash flow report")
     void shouldDisplayCashFlowReport() {
         loginAsAdmin();
-        navigateTo("/reports/cash-flow");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify cash flow report loads
-        assertThat(page.locator("h1")).containsText("Arus Kas");
+        cashFlowPage.navigate()
+            .verifyPageTitle();
     }
 }

@@ -1,0 +1,3 @@
+employee_id,name,email,nik_ktp,npwp,ptkp_status,job_title,department,employment_type,hire_date,resign_date,bank_name,bank_account,bpjs_kesehatan_number,bpjs_ketenagakerjaan_number,employment_status,username
+EMP-S001,Ahmad Zaki,ahmad@majubersama.com,3201234567890001,12.345.678.9-015.000,K_1,Store Manager,Operations,PERMANENT,2020-01-01,,BCA,1234567890,0001234567893,BPU1234567893,ACTIVE,
+EMP-S002,Rina Wijaya,rina@majubersama.com,3201234567890002,12.345.678.9-016.000,TK_0,Marketing Staff,Marketing,PERMANENT,2021-06-01,,Mandiri,1234567891,0001234567894,BPU1234567894,ACTIVE,

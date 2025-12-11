@@ -37,7 +37,8 @@ Indonesian accounting application for small businesses. Spring Boot 4.0 + Thymel
 | Tax Compliance | `docs/04-tax-compliance.md` |
 | Implementation Plan | `docs/06-implementation-plan.md` |
 | ADRs | `docs/adr/` |
-| User Manual | `docs/user-manual/*.md` |
+| User Manual | `docs/user-manual/*.md` (15 files, 12-section structure) |
+| User Manual Guidelines | `docs/user-manual-creation-guidelines.md` |
 | Entities | `src/main/java/.../entity/` |
 | Services | `src/main/java/.../service/` |
 | Controllers | `src/main/java/.../controller/` |
@@ -108,6 +109,20 @@ Phase 6 highlights (in progress):
 - DevSecOps: CodeQL, SonarCloud, OWASP Dependency-Check, ZAP DAST
 - Security regression tests (Playwright + JUnit)
 
-Next: Complete Phase 6 remaining items (consent management, container security)
+User Manual (12-section structure complete):
+- 01-setup-awal.md: Setup & Administration
+- 02-tutorial-akuntansi.md: Basic Accounting Tutorial (crown jewel)
+- 03-aset-tetap.md: Fixed Assets & Depreciation
+- 04-perpajakan.md: Tax Compliance
+- 05-penggajian.md: Payroll & BPJS
+- 06-pengantar-industri.md: Industry Overview
+- 07-industri-jasa.md: Service Industry
+- 08-industri-dagang.md: Trading Industry
+- 09-industri-manufaktur.md: Manufacturing [TBD - pending tests]
+- 10-industri-pendidikan.md: Education [TBD - pending tests]
+- 11-keamanan-kepatuhan.md: Security & Compliance
+- 12-lampiran-*.md: Appendices (glosarium, template, amortisasi, akun)
+
+Next: Phase 4 Manufacturing Tests (V830-V831) + coffee-shop seed
 
 See `docs/06-implementation-plan.md` for full plan

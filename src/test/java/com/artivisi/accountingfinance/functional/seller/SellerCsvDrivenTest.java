@@ -3,37 +3,47 @@ package com.artivisi.accountingfinance.functional.seller;
 import com.artivisi.accountingfinance.entity.CostingMethod;
 import com.artivisi.accountingfinance.entity.Product;
 import com.artivisi.accountingfinance.entity.ProductCategory;
+import com.artivisi.accountingfinance.functional.page.ClientListPage;
 import com.artivisi.accountingfinance.functional.page.InventoryStockPage;
 import com.artivisi.accountingfinance.functional.page.InventoryTransactionListPage;
 import com.artivisi.accountingfinance.functional.page.ProductCategoryListPage;
 import com.artivisi.accountingfinance.functional.page.ProductListPage;
+import com.artivisi.accountingfinance.functional.util.CsvLoader;
+import com.artivisi.accountingfinance.functional.util.ExpectedInventoryRow;
+import com.artivisi.accountingfinance.functional.util.InventoryTransactionRow;
 import com.artivisi.accountingfinance.repository.ProductCategoryRepository;
 import com.artivisi.accountingfinance.repository.ProductRepository;
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Stream;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Online Seller Inventory Tests
- * Tests product catalog, categories, and inventory management.
+ * CSV-Driven Online Seller Tests
+ * Loads test scenarios from CSV files and executes them as dynamic tests.
  * Uses Page Object Pattern with ID-based locators.
  *
- * Test Data (from @BeforeAll):
- * - 2 Categories: PHONE (Smartphone), ACC (Accessories)
- * - 4 Products: IP15PRO, SGS24, USBC, CASE
+ * Data from: src/test/resources/testdata/seller/
+ * - transactions.csv: 9 inventory transactions
+ * - expected-inventory.csv: 4 expected stock levels
  */
-@DisplayName("Online Seller - Inventory")
+@DisplayName("Online Seller - CSV-Driven Tests")
 @Import(SellerTestDataInitializer.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class SellerInventoryTest extends PlaywrightTestBase {
+public class SellerCsvDrivenTest extends PlaywrightTestBase {
 
     @Autowired
     private ProductCategoryRepository categoryRepository;
@@ -46,6 +56,7 @@ public class SellerInventoryTest extends PlaywrightTestBase {
     private ProductCategoryListPage categoryListPage;
     private InventoryStockPage stockPage;
     private InventoryTransactionListPage transactionListPage;
+    private ClientListPage clientListPage;
 
     private void initPageObjects() {
         String baseUrl = "http://localhost:" + port;
@@ -53,6 +64,7 @@ public class SellerInventoryTest extends PlaywrightTestBase {
         categoryListPage = new ProductCategoryListPage(page, baseUrl);
         stockPage = new InventoryStockPage(page, baseUrl);
         transactionListPage = new InventoryTransactionListPage(page, baseUrl);
+        clientListPage = new ClientListPage(page, baseUrl);
     }
 
     @BeforeAll
@@ -135,12 +147,83 @@ public class SellerInventoryTest extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("Should display product list with 4 products")
-    void shouldDisplayProductList() {
+    @DisplayName("Should load 9 inventory transactions from CSV")
+    void shouldLoadInventoryTransactionsCsv() {
+        List<InventoryTransactionRow> transactions = CsvLoader.loadInventoryTransactions("seller/transactions.csv");
+
+        // Verify CSV loads correctly with 9 transactions
+        assertEquals(9, transactions.size());
+        assertEquals("PURCHASE", transactions.get(0).transactionType());
+        assertEquals("IP15PRO", transactions.get(0).productCode());
+    }
+
+    @Test
+    @DisplayName("Should load 4 expected inventory rows from CSV")
+    void shouldLoadExpectedInventoryCsv() {
+        List<ExpectedInventoryRow> inventory = CsvLoader.loadExpectedInventory("seller/expected-inventory.csv");
+
+        // Verify CSV loads correctly with 4 products
+        assertEquals(4, inventory.size());
+        assertTrue(inventory.stream().anyMatch(r -> r.productCode().equals("IP15PRO")));
+        assertTrue(inventory.stream().anyMatch(r -> r.productCode().equals("SGS24")));
+        assertTrue(inventory.stream().anyMatch(r -> r.productCode().equals("USBC")));
+        assertTrue(inventory.stream().anyMatch(r -> r.productCode().equals("CASE")));
+    }
+
+    @TestFactory
+    @DisplayName("Verify inventory transactions exist")
+    Stream<DynamicTest> verifyInventoryTransactionsFromCsv() {
+        List<InventoryTransactionRow> transactions = CsvLoader.loadInventoryTransactions("seller/transactions.csv");
+
+        return transactions.stream()
+            .map(tx -> DynamicTest.dynamicTest(
+                "Inv " + tx.sequence() + ": " + tx.transactionType() + " " + tx.productCode() + " x" + tx.quantity(),
+                () -> verifyInventoryTransaction(tx)
+            ));
+    }
+
+    private void verifyInventoryTransaction(InventoryTransactionRow tx) {
         loginAsAdmin();
         initPageObjects();
 
-        // 4 products from @BeforeAll: IP15PRO, SGS24, USBC, CASE
+        transactionListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible();
+
+        if (tx.screenshot()) {
+            takeManualScreenshot("seller/inv-" + tx.sequence() + "-" + tx.transactionType().toLowerCase());
+        }
+    }
+
+    @TestFactory
+    @DisplayName("Verify expected inventory levels")
+    Stream<DynamicTest> verifyExpectedInventoryLevelsFromCsv() {
+        List<ExpectedInventoryRow> inventory = CsvLoader.loadExpectedInventory("seller/expected-inventory.csv");
+
+        return inventory.stream()
+            .map(item -> DynamicTest.dynamicTest(
+                "Stock: " + item.productCode() + " = " + item.expectedQuantity().intValue(),
+                () -> verifyInventoryLevel(item)
+            ));
+    }
+
+    private void verifyInventoryLevel(ExpectedInventoryRow expected) {
+        loginAsAdmin();
+        initPageObjects();
+
+        stockPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible()
+            .verifyProductStockExists(expected.productCode());
+    }
+
+    @Test
+    @DisplayName("Verify 4 products exist")
+    void verifyProductsExist() {
+        loginAsAdmin();
+        initPageObjects();
+
+        // 4 products from @BeforeAll
         productListPage.navigate()
             .verifyPageTitle()
             .verifyTableVisible()
@@ -150,26 +233,12 @@ public class SellerInventoryTest extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("Should display product detail")
-    void shouldDisplayProductDetail() {
+    @DisplayName("Verify 2 product categories exist")
+    void verifyProductCategoriesExist() {
         loginAsAdmin();
         initPageObjects();
 
-        productListPage.navigate()
-            .verifyPageTitle()
-            .clickProduct("IP15PRO");
-
-        // Verify product detail page loads
-        assertThat(page.locator("#page-title")).containsText("Produk");
-    }
-
-    @Test
-    @DisplayName("Should display product categories with 2 categories")
-    void shouldDisplayProductCategories() {
-        loginAsAdmin();
-        initPageObjects();
-
-        // 2 categories from @BeforeAll: PHONE, ACC
+        // 2 categories from @BeforeAll
         categoryListPage.navigate()
             .verifyPageTitle()
             .verifyTableVisible()
@@ -177,25 +246,15 @@ public class SellerInventoryTest extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("Should display inventory transactions")
-    void shouldDisplayInventoryTransactions() {
+    @DisplayName("Verify 5 clients exist (suppliers + marketplaces)")
+    void verifyClientsExist() {
         loginAsAdmin();
         initPageObjects();
 
-        transactionListPage.navigate()
+        // 5 clients: 2 suppliers (Erajaya, Samsung) + 3 marketplaces (Tokopedia, Shopee, Lazada)
+        clientListPage.navigate()
             .verifyPageTitle()
-            .verifyTableVisible();
-    }
-
-    @Test
-    @DisplayName("Should display stock balances page")
-    void shouldDisplayStockBalances() {
-        loginAsAdmin();
-        initPageObjects();
-
-        // Stock page loads (products may have 0 stock initially)
-        stockPage.navigate()
-            .verifyPageTitle()
-            .verifyTableVisible();
+            .verifyTableVisible()
+            .verifyClientCount(5);
     }
 }

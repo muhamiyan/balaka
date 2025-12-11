@@ -1,0 +1,6 @@
+code,name,contact_person,email,phone,address,npwp,nik,nitku,active,created_at
+TOKPED,Tokopedia,CS Tokopedia,cs@tokopedia.com,021-5055588,Jl. MH Thamrin Jakarta,01.234.567.8-901.000,,,true,2024-01-01T08:00:00
+SHOPEE,Shopee Indonesia,CS Shopee,cs@shopee.co.id,021-5055599,Jl. Sudirman Jakarta,01.234.567.8-902.000,,,true,2024-01-01T08:00:00
+LAZADA,Lazada Indonesia,CS Lazada,cs@lazada.co.id,021-5055577,Jl. Gatot Subroto Jakarta,01.234.567.8-903.000,,,true,2024-01-01T08:00:00
+ERAJAYA,PT Erajaya Swasembada,Supplier Erajaya,supplier@erajaya.com,021-5055566,Jl. Mega Kuningan Jakarta,01.234.567.8-904.000,,,true,2024-01-01T08:00:00
+SAMSUNG,PT Samsung Electronics Indonesia,Supplier Samsung,supplier@samsung.com,021-5055555,Jl. Jababeka Cikarang,01.234.567.8-905.000,,,true,2024-01-01T08:00:00
