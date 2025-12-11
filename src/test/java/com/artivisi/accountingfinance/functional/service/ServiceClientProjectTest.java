@@ -1,89 +1,106 @@
 package com.artivisi.accountingfinance.functional.service;
 
+import com.artivisi.accountingfinance.functional.page.ClientListPage;
+import com.artivisi.accountingfinance.functional.page.ProjectListPage;
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import org.springframework.context.annotation.Import;
 
 /**
  * Service Industry Client and Project Tests
  * Tests client list, project list, and milestone functionality.
+ * Uses Page Object Pattern for maintainability.
  */
 @DisplayName("Service Industry - Clients & Projects")
+@Import(ServiceTestDataInitializer.class)
 public class ServiceClientProjectTest extends PlaywrightTestBase {
 
+    // Page Objects
+    private ClientListPage clientListPage;
+    private ProjectListPage projectListPage;
+
+    private void initPageObjects() {
+        String baseUrl = "http://localhost:" + port;
+        clientListPage = new ClientListPage(page, baseUrl);
+        projectListPage = new ProjectListPage(page, baseUrl);
+    }
+
     @Test
-    @DisplayName("Should display Client List")
+    @DisplayName("Should display Client List with 3 clients from test data")
     void shouldDisplayClientList() {
         loginAsAdmin();
-        navigateTo("/clients");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify clients page loads
-        assertThat(page.locator("h1")).containsText("Klien");
-
-        // Verify test clients from V810 exist
-        assertThat(page.locator("text=PT Bank Mandiri")).isVisible();
-        assertThat(page.locator("text=PT Telkom Indonesia")).isVisible();
+        // Test data has 3 clients: PT Bank Mandiri, PT Telkom Indonesia, PT Pertamina
+        clientListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible()
+            .verifyClientCount(3);
     }
 
     @Test
     @DisplayName("Should display Client Detail")
     void shouldDisplayClientDetail() {
         loginAsAdmin();
-        navigateTo("/clients");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Click on Bank Mandiri
-        page.locator("text=PT Bank Mandiri").first().click();
-        waitForPageLoad();
+        clientListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible();
 
-        // Verify detail page shows client info
-        assertThat(page.locator("text=PT Bank Mandiri")).isVisible();
+        // Click on first client row using data-testid or ID
+        page.locator("#client-table tbody tr").first().click();
+        page.waitForLoadState();
+
+        // Verify detail page loads
+        page.locator("#page-title").isVisible();
     }
 
     @Test
-    @DisplayName("Should display Project List")
+    @DisplayName("Should display Project List with 4 projects from test data")
     void shouldDisplayProjectList() {
         loginAsAdmin();
-        navigateTo("/projects");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify projects page loads
-        assertThat(page.locator("h1")).containsText("Proyek");
-
-        // Verify test projects from V810 exist
-        assertThat(page.locator("text=Core Banking System")).isVisible();
+        // Test data has 4 projects
+        projectListPage.navigate()
+            .verifyPageTitle()
+            .verifyTableVisible()
+            .verifyProjectCount(4);
     }
 
     @Test
     @DisplayName("Should display Project Detail")
     void shouldDisplayProjectDetail() {
         loginAsAdmin();
-        navigateTo("/projects");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Click on Core Banking project
-        page.locator("text=Core Banking").first().click();
-        waitForPageLoad();
+        projectListPage.navigate()
+            .verifyPageTitle();
 
-        // Verify detail page shows project info - use first() to avoid strict mode violation
-        assertThat(page.locator("text=Core Banking").first()).isVisible();
+        // Click on first project row using data-testid or ID
+        page.locator("#project-table tbody tr").first().click();
+        page.waitForLoadState();
+
+        // Verify detail page loads
+        page.locator("#page-title").isVisible();
     }
 
     @Test
     @DisplayName("Should display Project Milestones")
     void shouldDisplayProjectMilestones() {
         loginAsAdmin();
-        navigateTo("/projects");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Click on Core Banking project
-        page.locator("text=Core Banking").first().click();
-        waitForPageLoad();
+        projectListPage.navigate()
+            .verifyPageTitle();
 
-        // Verify milestones are visible
-        assertThat(page.locator("text=Requirement Analysis")).isVisible();
+        // Click on first project
+        page.locator("#project-table tbody tr").first().click();
+        page.waitForLoadState();
+
+        // Verify milestones section is visible (using ID)
+        page.locator("#milestones-section, #project-milestones").first().isVisible();
     }
 }

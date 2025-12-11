@@ -775,3 +775,83 @@ Approach: Create base page object with common functionality, extend for industry
 3. **Data Coherence**: Each industry's test data tells a complete, believable business story
 4. **Clear Ownership**: Each test class knows exactly which seed pack it depends on
 5. **Coverage**: All existing functionality still tested
+
+---
+
+## Test Data Verification Requirements
+
+**IMPORTANT**: All functional tests MUST verify actual data values, not just page visibility.
+
+### Verification Categories
+
+| Category | What to Verify | Example |
+|----------|---------------|---------|
+| **Financial Amounts** | Report totals match calculated values | `verifyTotalRevenue("359.700.000")` |
+| **Row Counts** | Entity counts match seed data | `verifyClientCount(3)` |
+| **Journal Entries** | Account codes and amounts from CSV | `verifyJournalEntryAccountCode(0, "1.1.01")` |
+
+### Required Patterns
+
+**Transaction Execution Tests:**
+```java
+// After saveAndPost(), verify journal entries
+transactionDetailPage.verifyJournalEntriesVisible()
+    .verifyJournalEntryCount(2)
+    .verifyJournalEntryAccountCode(0, tx.expectedDebitAccount())
+    .verifyJournalEntryDebit(0, tx.expectedAmount())
+    .verifyJournalEntryAccountCode(1, tx.expectedCreditAccount())
+    .verifyJournalEntryCredit(1, tx.expectedAmount())
+    .verifyJournalBalanced();
+```
+
+**Report Tests:**
+```java
+// Verify calculated amounts, not just visibility
+incomeStatementPage.navigate("2024-01-01", "2024-02-28")
+    .verifyTotalRevenue("359.700.000")
+    .verifyTotalExpense("8.880.000")
+    .verifyNetIncome("350.820.000");
+```
+
+**List Tests:**
+```java
+// Verify row counts from seed data
+clientListPage.navigate()
+    .verifyClientCount(3);  // Not just .not().hasCount(0)
+```
+
+### CSV Format for Expected Values
+
+Include expected journal entry data in transaction CSV:
+```csv
+sequence,date,templateName,inputs,description,...,expectedDebitAccount,expectedCreditAccount,expectedAmount
+1,2024-01-01,Setoran Modal,amount:500000000,Setoran Modal,...,1.1.01,3.1.01,500.000.000
+```
+
+### Anti-Patterns to Avoid
+
+❌ **DO NOT** only verify page title or visibility:
+```java
+// BAD - doesn't verify actual data
+incomeStatementPage.navigate().verifyPageTitle();
+```
+
+❌ **DO NOT** use generic non-zero checks:
+```java
+// BAD - doesn't verify expected count
+assertThat(page.locator("#client-table tbody tr")).not().hasCount(0);
+```
+
+✅ **DO** verify specific expected values:
+```java
+// GOOD - verifies actual data matches test data
+incomeStatementPage.verifyNetIncome("350.820.000");
+clientListPage.verifyClientCount(3);
+```
+
+### Acceptable Page-Load-Only Tests
+
+Some tests may only verify page loads when:
+- No seed data exists for that feature (e.g., payroll runs)
+- Testing UI controls existence (e.g., filter dropdowns, export buttons)
+- Testing navigation flows (e.g., detail page loads after click)

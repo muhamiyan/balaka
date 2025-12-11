@@ -1,0 +1,5 @@
+code,name,client_code,status,start_date,end_date,budget_amount,contract_value,description,created_at
+PRJ-2024-001,Core Banking System Consultation,MANDIRI,ACTIVE,2024-01-01,2024-06-30,,600000000,Konsultasi arsitektur sistem core banking,2024-01-01
+PRJ-2024-002,IT Security Training,MANDIRI,COMPLETED,2024-02-01,2024-02-28,,150000000,Pelatihan keamanan IT untuk tim internal,2024-02-01
+PRJ-2024-003,Digital Transformation Roadmap,TELKOM,ACTIVE,2024-01-15,2024-04-15,,450000000,Penyusunan roadmap transformasi digital,2024-01-15
+PRJ-2024-004,ERP Implementation Support,PERTAMINA,ACTIVE,2024-03-01,2024-12-31,,1200000000,Pendampingan implementasi SAP S/4HANA,2024-03-01

@@ -1,0 +1,4 @@
+code,name,contact_person,email,phone,address,npwp,nik,nitku,active,created_at
+MANDIRI,PT Bank Mandiri Tbk,Budi Gunawan,info@mandiri.co.id,021-5249797,Jl. Jend. Gatot Subroto Kav. 36-38 Jakarta,01.310.523.4-091.000,,,true,2024-01-01T08:00:00
+TELKOM,PT Telkom Indonesia Tbk,Ririek Adriansyah,info@telkom.co.id,022-4521234,Jl. Japati No. 1 Bandung,01.000.013.1-093.000,,,true,2024-01-01T08:00:00
+PERTAMINA,PT Pertamina,Nicke Widyawati,pcc@pertamina.com,021-3815111,Jl. Medan Merdeka Timur No. 1A Jakarta,01.002.028.1-093.000,,,true,2024-01-01T08:00:00

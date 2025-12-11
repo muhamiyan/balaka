@@ -1,0 +1,5 @@
+accountCode,accountName,expectedDebit,expectedCredit,notes
+1.1.02,Bank BCA,850820000,0,Cash received from transactions
+1.1.25,PPN Masukan,7480000,0,PPN input from expenses + PPh23 receivable
+2.1.03,Hutang PPN,0,36300000,PPN output from revenue
+3.1.01,Modal Disetor,0,500000000,Capital injection

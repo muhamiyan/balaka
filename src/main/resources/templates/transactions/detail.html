@@ -247,37 +247,38 @@
                             </div>
                         </div>
                         
-                        <div th:each="entry : ${transaction.journalEntries}"
+                        <div th:each="entry, iterStat : ${transaction.journalEntries}"
+                             th:id="'journal-entry-' + ${iterStat.index}"
                              th:classappend="${transaction.status.name() == 'VOID'} ? 'opacity-50'"
-                             class="grid grid-cols-12 gap-4 px-6 py-4 items-center">
+                             class="grid grid-cols-12 gap-4 px-6 py-4 items-center journal-entry-row">
                             <div class="col-span-6">
                                 <p>
-                                    <span class="text-sm text-gray-500" th:text="${entry.account?.accountCode}">1.1.01</span>
+                                    <span th:id="'entry-account-code-' + ${iterStat.index}" class="text-sm text-gray-500" th:text="${entry.account?.accountCode}">1.1.01</span>
                                     <span class="text-sm text-gray-500 mx-2">-</span>
-                                    <span th:classappend="${transaction.status.name() == 'VOID'} ? 'line-through'"
+                                    <span th:id="'entry-account-name-' + ${iterStat.index}" th:classappend="${transaction.status.name() == 'VOID'} ? 'line-through'"
                                           class="text-sm text-gray-900" th:text="${entry.account?.accountName}">Account Name</span>
                                 </p>
                                 <p class="text-xs text-gray-500 mt-1" th:text="${entry.account?.accountType?.indonesianName}">Account Type</p>
                             </div>
                             <div class="col-span-3 text-right text-sm font-mono"
                                  th:classappend="${entry.debitAmount != null and entry.debitAmount > 0} ? 'text-gray-900' : 'text-gray-400'">
-                                <span th:if="${entry.debitAmount != null and entry.debitAmount > 0}" th:text="'Rp ' + ${#numbers.formatDecimal(entry.debitAmount, 0, 'POINT', 0, 'COMMA')}">Rp 0</span>
+                                <span th:id="'entry-debit-' + ${iterStat.index}" th:if="${entry.debitAmount != null and entry.debitAmount > 0}" th:text="'Rp ' + ${#numbers.formatDecimal(entry.debitAmount, 0, 'POINT', 0, 'COMMA')}">Rp 0</span>
                                 <span th:unless="${entry.debitAmount != null and entry.debitAmount > 0}">-</span>
                             </div>
                             <div class="col-span-3 text-right text-sm font-mono"
                                  th:classappend="${entry.creditAmount != null and entry.creditAmount > 0} ? 'text-gray-900' : 'text-gray-400'">
-                                <span th:if="${entry.creditAmount != null and entry.creditAmount > 0}" th:text="'Rp ' + ${#numbers.formatDecimal(entry.creditAmount, 0, 'POINT', 0, 'COMMA')}">Rp 0</span>
+                                <span th:id="'entry-credit-' + ${iterStat.index}" th:if="${entry.creditAmount != null and entry.creditAmount > 0}" th:text="'Rp ' + ${#numbers.formatDecimal(entry.creditAmount, 0, 'POINT', 0, 'COMMA')}">Rp 0</span>
                                 <span th:unless="${entry.creditAmount != null and entry.creditAmount > 0}">-</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Journal Totals -->
-                    <div th:if="${!transaction.journalEntries.isEmpty()}" class="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <div id="journal-totals" th:if="${!transaction.journalEntries.isEmpty()}" class="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-t border-gray-200">
                         <div class="col-span-6 text-sm font-semibold text-gray-700">Total</div>
-                        <div class="col-span-3 text-right text-sm font-mono font-semibold text-gray-900"
+                        <div id="total-debit" class="col-span-3 text-right text-sm font-mono font-semibold text-gray-900"
                              th:text="'Rp ' + ${#numbers.formatDecimal(totalDebit, 0, 'POINT', 0, 'COMMA')}">Rp 0</div>
-                        <div class="col-span-3 text-right text-sm font-mono font-semibold text-gray-900"
+                        <div id="total-credit" class="col-span-3 text-right text-sm font-mono font-semibold text-gray-900"
                              th:text="'Rp ' + ${#numbers.formatDecimal(totalCredit, 0, 'POINT', 0, 'COMMA')}">Rp 0</div>
                     </div>
                 </div>

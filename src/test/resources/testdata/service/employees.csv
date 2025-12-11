@@ -1,0 +1,4 @@
+employee_id,name,email,nik_ktp,npwp,ptkp_status,job_title,department,employment_type,hire_date,resign_date,bank_name,bank_account,bpjs_kesehatan_number,bpjs_ketenagakerjaan_number,employment_status,username
+EMP-001,Budi Santoso,budi@artivisi.com,3276012345670001,12.345.678.9-012.000,K_2,Senior Developer,Engineering,PERMANENT,2020-01-15,,BCA,1234567890,0001234567890,BPU1234567890,ACTIVE,
+EMP-002,Dewi Lestari,dewi@artivisi.com,3276012345670002,12.345.678.9-013.000,TK_0,Project Manager,Management,PERMANENT,2021-03-01,,BCA,1234567891,0001234567891,BPU1234567891,ACTIVE,
+EMP-003,Agus Wijaya,agus@artivisi.com,3276012345670003,12.345.678.9-014.000,TK_0,Business Analyst,Business,PERMANENT,2023-06-01,,Mandiri,9876543210,0001234567892,BPU1234567892,ACTIVE,

@@ -1,0 +1,5 @@
+accountCode,accountName,expectedAmount,period,notes
+4.1.01,Pendapatan Jasa Konsultasi,180000000,2024-Q1,Core Banking project revenue (ex-PPN)
+4.1.03,Pendapatan Jasa Training,150000000,2024-Q1,Security training revenue (ex-PPN)
+5.1.02,Beban Server & Cloud,5000000,2024-Q1,AWS cloud services
+5.1.03,Beban Software & Lisensi,3000000,2024-Q1,JetBrains license

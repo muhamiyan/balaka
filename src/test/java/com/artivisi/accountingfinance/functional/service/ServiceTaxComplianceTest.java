@@ -1,27 +1,38 @@
 package com.artivisi.accountingfinance.functional.service;
 
+import com.artivisi.accountingfinance.functional.page.TaxCalendarPage;
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Import;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 /**
  * Service Industry Tax Compliance Tests
  * Tests PKP tax compliance: PPN, PPh 21, PPh 23, tax calendar.
+ * Uses Page Object Pattern for maintainability.
  */
 @DisplayName("Service Industry - Tax Compliance")
+@Import(ServiceTestDataInitializer.class)
 public class ServiceTaxComplianceTest extends PlaywrightTestBase {
+
+    // Page Objects
+    private TaxCalendarPage taxCalendarPage;
+
+    private void initPageObjects() {
+        String baseUrl = "http://localhost:" + port;
+        taxCalendarPage = new TaxCalendarPage(page, baseUrl);
+    }
 
     @Test
     @DisplayName("Should display tax calendar")
     void shouldDisplayTaxCalendar() {
         loginAsAdmin();
-        navigateTo("/tax-calendar");
-        waitForPageLoad();
+        initPageObjects();
 
-        // Verify tax calendar page loads
-        assertThat(page.locator("h1")).containsText("Kalender Pajak");
+        taxCalendarPage.navigate()
+            .verifyPageTitle();
     }
 
     @Test
@@ -31,8 +42,8 @@ public class ServiceTaxComplianceTest extends PlaywrightTestBase {
         navigateTo("/reports/ppn-summary");
         waitForPageLoad();
 
-        // Verify PPN report page loads
-        assertThat(page.locator("h1")).containsText("PPN");
+        // Verify PPN report page loads using ID
+        assertThat(page.locator("#page-title")).containsText("PPN");
     }
 
     @Test
@@ -42,8 +53,8 @@ public class ServiceTaxComplianceTest extends PlaywrightTestBase {
         navigateTo("/reports/pph23-withholding");
         waitForPageLoad();
 
-        // Verify PPh 23 report page loads
-        assertThat(page.locator("h1")).containsText("PPh 23");
+        // Verify PPh 23 report page loads using ID
+        assertThat(page.locator("#page-title")).containsText("PPh 23");
     }
 
     @Test
@@ -53,8 +64,8 @@ public class ServiceTaxComplianceTest extends PlaywrightTestBase {
         navigateTo("/reports/tax-export");
         waitForPageLoad();
 
-        // Verify tax export page loads
-        assertThat(page.locator("h1")).containsText("Export");
+        // Verify tax export page loads using ID
+        assertThat(page.locator("#page-title")).containsText("Export");
     }
 
     @Test
@@ -64,7 +75,7 @@ public class ServiceTaxComplianceTest extends PlaywrightTestBase {
         navigateTo("/reports/tax-summary");
         waitForPageLoad();
 
-        // Verify tax summary page loads
-        assertThat(page.locator("h1")).containsText("Pajak");
+        // Verify tax summary page loads using ID
+        assertThat(page.locator("#page-title")).containsText("Pajak");
     }
 }
