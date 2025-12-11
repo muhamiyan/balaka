@@ -103,6 +103,7 @@ public class TransactionFormPage {
     /**
      * Fill inputs from a pipe-separated string.
      * Format: "field1:value1|field2:value2|..."
+     * Special handling for account hints: "BANK:1.1.01" will select account 1.1.01 in the BANK dropdown
      */
     public TransactionFormPage fillInputs(String inputs) {
         Map<String, String> inputMap = parseInputs(inputs);
@@ -116,9 +117,50 @@ public class TransactionFormPage {
                 fillAmount(value);
             } else if (fieldId.startsWith("var_")) {
                 page.locator("#" + fieldId).fill(value);
+            } else if (isAccountHint(fieldId)) {
+                // Handle account hints like "BANK:1.1.01"
+                selectAccountByHint(fieldId, value);
             }
         }
         return this;
+    }
+
+    /**
+     * Check if field is a known account hint.
+     */
+    private boolean isAccountHint(String fieldId) {
+        return fieldId.equals("BANK") || fieldId.equals("PENDAPATAN") ||
+               fieldId.equals("BEBAN") || fieldId.equals("PIUTANG") ||
+               fieldId.equals("HUTANG");
+    }
+
+    /**
+     * Select account by hint and account code.
+     * Finds the select element whose label contains the hint text.
+     */
+    private void selectAccountByHint(String hint, String accountCode) {
+        // Find all select elements that start with accountMapping_
+        var selects = page.locator("select[id^='accountMapping_']").all();
+
+        for (var select : selects) {
+            String selectId = select.getAttribute("id");
+            // Find the label for this select
+            var label = page.locator("label[for='" + selectId + "']");
+            String labelText = label.textContent();
+
+            // Check if label contains the hint
+            if (labelText != null && labelText.contains(hint)) {
+                // Select the option with the matching account code
+                var options = select.locator("option").all();
+                for (var option : options) {
+                    String optionText = option.textContent();
+                    if (optionText != null && optionText.startsWith(accountCode)) {
+                        select.selectOption(option.getAttribute("value"));
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     /**

@@ -1,6 +1,6 @@
 sequence,date,templateName,inputs,description,reference,project,notes,screenshot,expectedDebitAccount,expectedCreditAccount,expectedAmount
-1,2024-01-01,Setoran Modal,amount:500000000,Setoran Modal Awal 2024,CAP-2024-001,,Capital injection,true,1.1.01,3.1.01,500.000.000
-2,2024-01-15,Pendapatan Jasa Konsultasi,amount:196200000,Konsultasi Core Banking - Milestone 1,INV-2024-001,,PKP revenue,true,1.1.01,4.1.02,196.200.000
-3,2024-01-15,Bayar Beban Software & Lisensi,amount:3330000,JetBrains IntelliJ License 2024,JB-2024-001,,Operating expense,false,5.1.21,1.1.01,3.330.000
-4,2024-01-31,Bayar Beban Cloud & Server,amount:5550000,AWS Cloud Services Jan 2024,AWS-2024-001,,Operating expense,false,5.1.20,1.1.01,5.550.000
-5,2024-02-28,Pendapatan Jasa Training,amount:163500000,IT Security Training - Full Payment,INV-2024-002,,Training revenue,true,1.1.01,4.1.01,163.500.000
+1,2024-01-01,Setoran Modal,amount:500000000|BANK:1.1.02,Setoran Modal Awal 2024,CAP-2024-001,,Capital injection,true,1.1.02,3.1.01,500.000.000
+2,2024-01-15,Pendapatan Jasa Konsultasi,amount:196200000|BANK:1.1.02,Konsultasi Core Banking - Milestone 1,INV-2024-001,,PKP revenue,true,1.1.02,4.1.02,196.200.000
+3,2024-01-15,Bayar Beban Software & Lisensi,amount:3330000|BANK:1.1.02,JetBrains IntelliJ License 2024,JB-2024-001,,Operating expense,true,5.1.21,1.1.02,3.330.000
+4,2024-01-31,Bayar Beban Cloud & Server,amount:5550000|BANK:1.1.02,AWS Cloud Services Jan 2024,AWS-2024-001,,Operating expense,true,5.1.20,1.1.02,5.550.000
+5,2024-02-28,Pendapatan Jasa Training,amount:163500000|BANK:1.1.02,IT Security Training - Full Payment,INV-2024-002,,Training revenue,true,1.1.02,4.1.01,163.500.000

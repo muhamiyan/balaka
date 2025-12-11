@@ -141,6 +141,122 @@ Setiap kali Anda **menerima uang**:
 
 ![Detail Transaksi](screenshots/transactions-detail.png)
 
+---
+
+### Contoh Lengkap: Setoran Modal
+
+Mari kita catat setoran modal awal perusahaan sebesar Rp 500.000.000.
+
+**Langkah 1: Buka Form Transaksi**
+
+1. Klik menu **Transaksi** > **Transaksi Baru**
+2. Pilih template **Setoran Modal**
+
+![Form Setoran Modal](screenshots/service/01-setoran-modal-awal-20-form.png)
+
+**Langkah 2: Isi Data Transaksi**
+
+- **Tanggal:** 1 Januari 2024
+- **Jumlah:** Rp 500.000.000
+- **Keterangan:** Setoran Modal Awal 2024
+- **Referensi:** CAP-2024-001
+
+**Preview Jurnal:**
+```
+Dr. 1.1.01 Kas/Bank           Rp 500.000.000
+    Cr. 3.1.01 Modal Saham        Rp 500.000.000
+```
+
+**Langkah 3: Simpan & Posting**
+
+Klik tombol **Simpan & Posting**. Sistem akan menampilkan detail transaksi.
+
+![Detail Transaksi Setoran Modal](screenshots/service/01-setoran-modal-awal-20-result.png)
+
+**Hasil:**
+- Status: **Posted**
+- Jurnal otomatis dibuat
+- Saldo Kas bertambah Rp 500.000.000
+- Ekuitas bertambah Rp 500.000.000
+
+---
+
+### Contoh Lengkap: Pendapatan dengan PPN
+
+Mencatat pendapatan jasa konsultasi sebesar Rp 196.200.000 (termasuk PPN 11%).
+
+**Langkah 1: Pilih Template**
+
+Template: **Pendapatan Jasa Konsultasi** (dengan PPN)
+
+![Form Pendapatan Konsultasi](screenshots/service/02-konsultasi-core-banking-milest-form.png)
+
+**Langkah 2: Isi Data**
+
+- **Tanggal:** 15 Januari 2024
+- **Jumlah Total:** Rp 196.200.000
+- **Keterangan:** Konsultasi Core Banking - Milestone 1
+- **Referensi:** INV-2024-001
+
+**Perhitungan Otomatis:**
+```
+DPP (Dasar Pengenaan Pajak) = 196.200.000 / 1.11 = Rp 176.756.757
+PPN 11%                      = 176.756.757 × 11% = Rp 19.443.243
+Total                        = Rp 196.200.000
+```
+
+**Preview Jurnal:**
+```
+Dr. 1.1.01 Kas/Bank           Rp 196.200.000
+    Cr. 4.1.02 Pendapatan Jasa    Rp 176.756.757
+    Cr. 2.2.01 Hutang PPN         Rp  19.443.243
+```
+
+**Langkah 3: Simpan & Posting**
+
+![Detail Transaksi Pendapatan](screenshots/service/02-konsultasi-core-banking-milest-result.png)
+
+**Verifikasi:**
+- Kas bertambah Rp 196.200.000
+- Pendapatan diakui Rp 176.756.757
+- Hutang PPN Rp 19.443.243 (akan disetor ke Dirjen Pajak)
+
+---
+
+### Contoh Lengkap: Bayar Beban Operasional
+
+Mencatat pembayaran lisensi software JetBrains IntelliJ.
+
+**Langkah 1: Pilih Template**
+
+Template: **Bayar Beban Software & Lisensi**
+
+![Form Bayar Software](screenshots/service/03-jetbrains-intellij-license-2-form.png)
+
+**Langkah 2: Isi Data**
+
+- **Tanggal:** 15 Januari 2024
+- **Jumlah:** Rp 3.330.000
+- **Keterangan:** JetBrains IntelliJ License 2024
+- **Referensi:** JB-2024-001
+
+**Preview Jurnal:**
+```
+Dr. 5.1.21 Beban Software & Lisensi  Rp 3.330.000
+    Cr. 1.1.01 Kas/Bank                  Rp 3.330.000
+```
+
+**Langkah 3: Simpan & Posting**
+
+![Detail Transaksi Beban](screenshots/service/03-jetbrains-intellij-license-2-result.png)
+
+**Hasil:**
+- Beban bertambah Rp 3.330.000
+- Kas berkurang Rp 3.330.000
+- Mempengaruhi laba rugi (mengurangi laba)
+
+---
+
 ### Mencatat Pengeluaran
 
 Setiap kali Anda **mengeluarkan uang**:

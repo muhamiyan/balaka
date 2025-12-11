@@ -17,6 +17,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.MethodOrderer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 
 import java.util.Comparator;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.stream.Stream;
  */
 @DisplayName("Service Industry - Transaction Execution")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Import(ServiceTestDataInitializer.class)
 public class ServiceTransactionExecutionTest extends PlaywrightTestBase {
 
     @Autowired

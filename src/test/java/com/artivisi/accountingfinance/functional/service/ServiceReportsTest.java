@@ -83,6 +83,10 @@ public class ServiceReportsTest extends PlaywrightTestBase {
 
     @BeforeAll
     public void setupTestTransactions() {
+        // Clear any existing transactions (in case ServiceTransactionExecutionTest ran first)
+        journalEntryRepository.deleteAll();
+        transactionRepository.deleteAll();
+
         // Load transactions from CSV (same data as ServiceTransactionExecutionTest)
         List<TransactionRow> transactions = CsvLoader.loadTransactions("service/transactions.csv");
 
@@ -112,10 +116,13 @@ public class ServiceReportsTest extends PlaywrightTestBase {
     }
 
     private BigDecimal parseAmount(String inputs) {
-        // Parse "amount:500000000" format
-        String[] parts = inputs.split(":");
-        if (parts.length == 2 && parts[0].equals("amount")) {
-            return new BigDecimal(parts[1]);
+        // Parse "amount:500000000" or "amount:500000000|BANK:1.1.02" format
+        String[] pipeParts = inputs.split("\\|");
+        for (String part : pipeParts) {
+            String[] kvParts = part.split(":", 2);
+            if (kvParts.length == 2 && kvParts[0].trim().equals("amount")) {
+                return new BigDecimal(kvParts[1].trim());
+            }
         }
         throw new RuntimeException("Cannot parse amount from inputs: " + inputs);
     }
@@ -257,13 +264,13 @@ public class ServiceReportsTest extends PlaywrightTestBase {
         loginAsAdmin();
         initPageObjects();
 
-        // Get Cash account to view its ledger
-        ChartOfAccount cash = accountRepository.findByAccountCode("1.1.01")
-            .orElseThrow(() -> new RuntimeException("Cash account not found"));
+        // Get Bank BCA account to view its ledger (all transactions use 1.1.02)
+        ChartOfAccount bankBCA = accountRepository.findByAccountCode("1.1.02")
+            .orElseThrow(() -> new RuntimeException("Bank BCA account not found"));
 
-        journalLedgerPage.navigate(cash.getId(), "2024-01-01", "2024-02-28")
+        journalLedgerPage.navigate(bankBCA.getId(), "2024-01-01", "2024-02-28")
             .verifyPageTitle()
-            .verifyAccountNameVisible("1.1.01", "Kas")
+            .verifyAccountNameVisible("1.1.02", "Bank BCA")
             .verifyEntriesContentVisible()
             .verifyOpeningBalanceVisible()
             .verifyClosingBalance("850,820,000");

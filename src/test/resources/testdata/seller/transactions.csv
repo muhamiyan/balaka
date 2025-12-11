@@ -1,10 +1,10 @@
 sequence,date,transactionType,productCode,quantity,unitCost,unitPrice,reference,notes,screenshot
 1,2024-01-05,PURCHASE,IP15PRO,10,15000000,0,PO-001,Purchase iPhone from Erajaya,true
 2,2024-01-08,PURCHASE,SGS24,20,12000000,0,PO-002,Purchase Samsung from Samsung Indonesia,true
-3,2024-01-10,PURCHASE,USBC,100,25000,0,PO-003,Purchase USB cables,false
-4,2024-01-10,PURCHASE,CASE,200,15000,0,PO-004,Purchase phone cases,false
+3,2024-01-10,PURCHASE,USBC,100,25000,0,PO-003,Purchase USB cables,true
+4,2024-01-10,PURCHASE,CASE,200,15000,0,PO-004,Purchase phone cases,true
 5,2024-01-15,SALE,IP15PRO,5,15000000,19000000,TOPED-001,Sale iPhone via Tokopedia,true
 6,2024-01-20,SALE,SGS24,8,12000000,14000000,SHOPEE-001,Sale Samsung via Shopee,true
-7,2024-01-22,SALE,USBC,30,25000,50000,TOPED-002,Sale USB Cable via Tokopedia,false
-8,2024-01-25,SALE,CASE,50,15000,35000,SHOPEE-002,Sale Phone Case via Shopee,false
+7,2024-01-22,SALE,USBC,30,25000,50000,TOPED-002,Sale USB Cable via Tokopedia,true
+8,2024-01-25,SALE,CASE,50,15000,35000,SHOPEE-002,Sale Phone Case via Shopee,true
 9,2024-01-28,ADJUSTMENT_IN,USBC,5,25000,0,SO-001,Stock opname adjustment,false
