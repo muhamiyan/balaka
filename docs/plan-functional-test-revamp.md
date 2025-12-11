@@ -206,18 +206,35 @@ Master data (COA, templates, products, salary, tax) is loaded from **industry se
 src/test/resources/db/
 ├── migration/                    # Production migrations (V001-V004)
 └── test/
-    ├── functional/               # V800 only (base test users: admin, operator, auditor)
-    └── integration/              # V900-V912 (for unit/service/security tests)
+    └── integration/              # V900-V912 (for unit/service/security tests ONLY)
+                                  # Functional tests DO NOT use migration files
 
 industry-seed/                    # Industry seed packs (imported by initializers)
 ├── it-service/seed-data/         # IT Service COA, templates, etc.
 ├── online-seller/seed-data/      # Online Seller COA, products, etc.
-└── coffee-shop/seed-data/        # Coffee Shop COA, BOM, etc.
+└── coffee-shop/seed-data/        # Coffee Shop COA, BOM, etc. (NEW)
 
-src/test/resources/testdata/      # Additional test-specific data
-├── service/transactions.csv      # Service transactions for CSV-driven tests
-├── seller/transactions.csv       # Seller inventory transactions
-└── seller/expected-inventory.csv # Expected stock levels after transactions
+src/test/resources/testdata/      # Test-specific data (clients, employees, transactions)
+├── service/
+│   ├── company-config.csv        # Company settings
+│   ├── clients.csv               # Test clients
+│   ├── projects.csv              # Test projects
+│   ├── fiscal-periods.csv        # Fiscal periods
+│   ├── employees.csv             # Test employees
+│   └── transactions.csv          # Transaction sequences (CSV-driven)
+├── seller/
+│   ├── company-config.csv
+│   ├── clients.csv
+│   ├── fiscal-periods.csv
+│   ├── employees.csv
+│   ├── transactions.csv          # Inventory transactions
+│   └── expected-inventory.csv    # Expected stock levels
+└── coffee/
+    ├── company-config.csv        # (NEW)
+    ├── fiscal-periods.csv        # (NEW)
+    ├── employees.csv             # (NEW)
+    ├── production-orders.csv     # (existing)
+    └── expected-inventory.csv    # (existing)
 ```
 
 ### Loading Master Data via Initializers
@@ -247,9 +264,10 @@ public class SellerTestDataInitializer {
 
 **Key Benefits:**
 - Uses production `DataImportService` (validates import functionality)
-- No SQL migrations needed for master data (V810/V820 eliminated)
-- Industry seed packs are identical to what users import
-- Test-specific data (clients, employees) in testdata/ directory
+- No SQL migrations needed for functional test master data
+- Industry seed packs are identical to what users import in production
+- Test-specific data (clients, employees, transactions) in testdata/ directory
+- Single source of truth for seed data (no duplication between migrations and seeds)
 
 ### Test Data Design per Industry
 
@@ -286,13 +304,13 @@ Payroll Runs: Jan, Feb, Mar 2024 (APPROVED status)
 Tax Completions: Jan, Feb (completed), Mar (pending)
 ```
 
-#### Online Seller Test Data (V820-V821)
+#### Online Seller Test Data
 
-**V820 - Load Seed Data**
-- Loads from `industry-seed/online-seller/seed-data/`
-- 87 COA accounts (includes marketplace saldo, inventory), 37 templates, 17 salary, 8 tax
+**Master Data (loaded by SellerTestDataInitializer)**
+- Industry seed: `industry-seed/online-seller/seed-data/` (87 COA accounts, 37 templates, 17 salary, 8 tax, products, categories)
+- Test data: `testdata/seller/` (company config, clients, fiscal periods, employees)
 
-**V821 - Test Transactions**
+**Transaction Data (loaded from CSV in tests)**
 ```
 Company: Toko Gadget Murah (Electronics Reseller)
 Fiscal Year: 2024
@@ -313,14 +331,13 @@ Inventory Transactions (Jan-Mar 2024):
 - Withdraw: Shopee to BCA - Rp 13,580,000
 ```
 
-#### Manufacturing Test Data (V830-V831)
+#### Manufacturing Test Data
 
-**V830 - Load Seed Data**
-- Loads from `industry-seed/coffee-shop/seed-data/` (NEW - to be created)
-- COA with raw materials, WIP, finished goods, sub-assembly accounts
-- Templates for production, COGS, sales
+**Master Data (loaded by CoffeeTestDataInitializer)**
+- Industry seed: `industry-seed/coffee-shop/seed-data/` (NEW - COA with raw materials/WIP/finished goods accounts, templates for production/COGS/sales, product categories, products, BOMs)
+- Test data: `testdata/coffee/` (company config, fiscal periods, employees)
 
-**V831 - Test Transactions**
+**Products & BOM (loaded from industry seed pack)**
 ```
 Company: Kedai Kopi Nusantara (Coffee & Pastry Shop)
 Fiscal Year: 2024
@@ -328,42 +345,41 @@ Fiscal Year: 2024
 Raw Materials:
 - Biji Kopi Arabica, Susu Segar, Gula Aren, Es Batu
 - Tepung, Butter, Telur, Ragi, Garam
-- Mascarpone, Ladyfinger, Whipping Cream, Cocoa
-
-Sub-Assemblies:
-- SUB001: Sirup Gula Aren (500ml bottle)
-- SUB002: Mascarpone Cream Mix (batch)
+- Coklat Blok
 
 Finished Goods:
 - Drinks: Kopi Susu Gula Aren, Es Kopi Susu, Americano
 - Pastries: Croissant, Roti Bakar Coklat
-- Cakes: Tiramisu Slice, Cheesecake Slice
-```
 
 BOM Examples (defined in seed data):
 - Simple: Kopi Susu Gula Aren (4 ingredients) → Rp 8,575/cup, sell Rp 28,000
-- Medium: Croissant (6 ingredients) → Rp 6,276/piece, sell Rp 25,000
-- Complex: Tiramisu with Mascarpone Mix sub-assembly → Rp 13,315/slice, sell Rp 45,000
-
-Production Orders:
-- PO001: Produce Sirup Gula Aren sub-assembly (batch of 5 bottles)
-- PO002: Produce 48 Croissant (batch production)
-- PO003: Produce Mascarpone Cream Mix (sub-assembly batch)
-- PO004: Produce 10 Tiramisu Slices (uses sub-assembly)
-
-Sales:
-- 85x Kopi Susu, 70x Es Kopi, 40x Croissant, 25x Roti Bakar, 8x Tiramisu
-- Total Revenue: Rp 5,940,000 | COGS: Rp 1,873,435 | Margin: 68.5%
+- Medium: Croissant (6 ingredients) → Rp 4,455/piece, sell Rp 25,000
+- Medium: Roti Bakar Coklat (5 ingredients) → Rp 4,388/piece, sell Rp 20,000
 ```
 
-#### Campus Test Data (V840-V841)
+**Test Scenarios (from production-orders.csv and expected-inventory.csv)**
+```
+Production Orders:
+- PROD-001: 24 Croissant (batch production)
+- PROD-002: 20 Roti Bakar Coklat (batch production)
 
-**V840 - Load Seed Data**
-- Loads from `industry-seed/campus/seed-data/` (NEW - to be created)
-- COA with education-specific accounts (SPP receivables, scholarship funds, etc.)
-- Templates for tuition billing, payment collection, payroll
+Sales (executed via UI in tests):
+- 15x Croissant sold
+- 12x Roti Bakar sold
 
-**V841 - Test Transactions**
+Expected Inventory After Production & Sales:
+- Croissant: 24 produced - 15 sold = 9 remaining @ Rp 4,455 each
+- Roti Bakar Coklat: 20 produced - 12 sold = 8 remaining @ Rp 4,388 each
+- Raw materials: Updated balances after component consumption
+```
+
+#### Campus Test Data
+
+**Master Data (loaded by CampusTestDataInitializer - TBD)**
+- Industry seed: `industry-seed/campus/seed-data/` (NEW - COA with education-specific accounts for SPP receivables, scholarship funds, templates for tuition billing/payment collection/payroll)
+- Test data: `testdata/campus/` (company config, fiscal periods, employees, students, programs)
+
+**Test Scenarios (from CSV files - TBD)**
 ```
 Institution: STMIK Tazkia
 Academic Year: 2024/2025
@@ -378,7 +394,7 @@ Students (sample):
 - STD002: Siti Aminah (SI, Semester 1) - SPP Rp 7,500,000 + Uang Pangkal Rp 5,000,000
 - STD003: Budi Hartono (MI, Semester 5) - SPP Rp 6,000,000, Beasiswa 50%
 
-Transactions (Semester Ganjil 2024):
+Transactions (executed via UI in tests):
 - Billing: Generate SPP for all active students
 - Payment: STD001 bayar lunas Rp 7,500,000
 - Payment: STD002 bayar cicilan 1 Rp 4,000,000
@@ -635,59 +651,66 @@ src/test/java/com/artivisi/accountingfinance/functional/
 - Minimal V004 (~20 lines)
 - App runs with empty COA/templates
 
-### Phase 1: Service Industry Tests
-1. Create V810 (load IT Service seed via COPY or Java migration)
-2. Create V811 (test transactions: clients, projects, payroll, PKP taxes)
-3. Create V800 (base test users: operator, auditor, etc.)
-4. Consolidate existing service-related tests into `service/` package
-5. Delete old V901-V907 after migration
+### Phase 1: Service Industry Tests (✅ COMPLETE)
+1. ✅ Create `ServiceTestDataInitializer.java`
+2. ✅ Create testdata/service/ CSV files (company-config, clients, projects, employees, fiscal-periods)
+3. ✅ Consolidate existing service-related tests into `service/` package
+4. ✅ Implement CSV-driven transaction execution tests
 
 **Deliverables**:
-- 5 test files in `service/` package
-- 3 migration files (V800, V810, V811)
+- ✅ ServiceTestDataInitializer.java
+- ✅ 5+ test files in `service/` package
+- ✅ Test CSV files in `testdata/service/`
 
-### Phase 2: Online Seller Tests
-1. Create V820 (load Online Seller seed)
-2. Create V821 (test transactions: products, inventory, marketplace sales)
-3. Create seller test classes
-4. Test FIFO costing and auto-COGS
-
-**Deliverables**:
-- 4 test files in `seller/` package
-- 2 migration files (V820, V821)
-
-### Phase 3: Manufacturing Tests
-1. Create `industry-seed/coffee-shop/seed-data/` (NEW)
-2. Create V830 (load Coffee Shop seed)
-3. Create V831 (test transactions: BOM, production, sales)
-4. Create manufacturing test classes
+### Phase 2: Online Seller Tests (✅ COMPLETE)
+1. ✅ Create `SellerTestDataInitializer.java`
+2. ✅ Create testdata/seller/ CSV files (company-config, clients, employees, fiscal-periods, transactions, expected-inventory)
+3. ✅ Create seller test classes
+4. ✅ Test FIFO costing and auto-COGS with CSV-driven tests
 
 **Deliverables**:
-- 4 test files in `manufacturing/` package
-- 2 migration files (V830, V831)
-- New coffee-shop seed pack
+- ✅ SellerTestDataInitializer.java
+- ✅ 5+ test files in `seller/` package
+- ✅ Test CSV files in `testdata/seller/`
 
-### Phase 4: Campus Tests
-1. Create `industry-seed/campus/seed-data/` (NEW)
-2. Create V840 (load Campus seed)
-3. Create V841 (test transactions: billing, payments, scholarships)
-4. Create campus test classes
+### Phase 3: Manufacturing Tests (🔄 IN PROGRESS)
+1. 🔄 Extend `DataImportService` to support manufacturing entities (ProductCategory, Product, BOM, ProductionOrder, InventoryTransaction)
+2. ⏳ Create `industry-seed/coffee-shop/seed-data/` (COA, templates, product categories, products, BOMs)
+3. ⏳ Create `CoffeeTestDataInitializer.java`
+4. ⏳ Create testdata/coffee/ CSV files (company-config, fiscal-periods, employees)
+5. ⏳ Update manufacturing test classes with data verification
+6. ⏳ Implement CSV-driven production order tests
 
 **Deliverables**:
-- 4 test files in `campus/` package
-- 2 migration files (V840, V841)
-- New campus seed pack
+- ⏳ DataImportService methods for manufacturing entities (35_product_categories.csv, 36_products.csv, 37_bill_of_materials.csv, 38_bom_lines.csv, 39_production_orders.csv, 40_inventory_transactions.csv)
+- ⏳ Coffee shop seed pack
+- ⏳ CoffeeTestDataInitializer.java
+- ⏳ Test CSV files in `testdata/coffee/`
+- ⏳ 5+ test files in `manufacturing/` package with real data verification
 
-### Phase 5: Cleanup & Documentation
-1. Delete old V900-V912 files
-2. Update common tests to use base infrastructure (V800)
-3. Update CLAUDE.md with new test structure
+### Phase 4: Campus Tests (⏳ NOT STARTED)
+1. ⏳ Create `industry-seed/campus/seed-data/` (COA, templates)
+2. ⏳ Create `CampusTestDataInitializer.java`
+3. ⏳ Create testdata/campus/ CSV files
+4. ⏳ Create campus test classes
+
+**Deliverables**:
+- ⏳ Campus seed pack
+- ⏳ CampusTestDataInitializer.java
+- ⏳ 4+ test files in `campus/` package
+
+### Phase 5: Cleanup & Documentation (⏳ PENDING)
+1. ⏳ Delete old V900-V912 files (keep only for integration tests if still needed)
+2. ⏳ Update CLAUDE.md with new test structure
+3. ⏳ Document TestDataInitializer pattern in plan
 
 ---
 
-## ID Convention
+## ID Convention (Not Currently Used)
 
-Hierarchical structure using **numeric hex prefixes** for valid PostgreSQL UUIDs.
+This section documents a proposed UUID convention for test data, but is **not actively used** in the current implementation. Functional tests rely on DataImportService auto-generating UUIDs.
+
+If needed in the future, hierarchical structure using **numeric hex prefixes** for valid PostgreSQL UUIDs:
 
 **IMPORTANT**: PostgreSQL UUIDs only accept hex characters (0-9, a-f). Letters like 's', 'c', 'u' are invalid.
 
@@ -697,7 +720,7 @@ Hierarchical structure using **numeric hex prefixes** for valid PostgreSQL UUIDs
 52 = Seller (E-commerce / Online Seller)
 53 = Coffee (Manufacturing)
 54 = Campus (University/Education)
-00 = Base/Common (used by V800)
+00 = Base/Common
 ```
 
 **Entity Type (digits 3-4):**
