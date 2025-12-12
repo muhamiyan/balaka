@@ -343,7 +343,7 @@ Untuk beban yang dibayar dimuka (sewa tahunan, asuransi, dll):
 
 Daftar saldo semua akun. Total debit harus sama dengan total kredit.
 
-![Neraca Saldo](screenshots/service/reports-trial-balance.png)
+![Neraca Saldo](screenshots/service/report-trial-balance.png)
 
 **Kapan digunakan**: Untuk validasi bahwa pembukuan balance.
 
@@ -351,7 +351,7 @@ Daftar saldo semua akun. Total debit harus sama dengan total kredit.
 
 Menampilkan pendapatan, beban, dan laba/rugi periode tertentu.
 
-![Laba Rugi](screenshots/service/reports-income-statement.png)
+![Laba Rugi](screenshots/service/report-income-statement.png)
 
 **Struktur**:
 ```
@@ -365,7 +365,7 @@ LABA BERSIH         Rp 20.000.000
 
 Menampilkan posisi keuangan pada tanggal tertentu.
 
-![Neraca](screenshots/service/reports-balance-sheet.png)
+![Neraca](screenshots/service/report-balance-sheet.png)
 
 **Struktur**:
 ```

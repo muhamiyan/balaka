@@ -276,7 +276,7 @@ public class ServiceReportsTest extends PlaywrightTestBase {
             .verifyClosingBalance("850,820,000");
 
         // Take screenshot for verification
-        takeManualScreenshot("service/journal-list");
+        takeManualScreenshot("service/journals-list");
     }
 
     @Test

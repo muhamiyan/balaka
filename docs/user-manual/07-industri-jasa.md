@@ -515,7 +515,7 @@ Menampilkan semua akun dengan saldo debit dan kredit. Total Debit = Total Kredit
 
 ### Daftar Jurnal
 
-![Daftar Jurnal](screenshots/service/journal-list.png)
+![Daftar Jurnal](screenshots/service/journals-list.png)
 
 Menampilkan semua jurnal entry yang dibuat dari transaksi yang telah diposting. Setiap transaksi menghasilkan jurnal entry dengan detail debit dan kredit yang seimbang.
 
