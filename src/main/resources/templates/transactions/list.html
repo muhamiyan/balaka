@@ -132,5 +132,19 @@
         <!-- Transaction Table (loaded via fragment) -->
         <th:block th:insert="~{fragments/transaction-table :: table}"/>
     </div>
+
+    <!-- Page Scripts -->
+    <th:block layout:fragment="scripts">
+        <script>
+            // Auto-reload transaction list when transactions are updated (e.g., from Quick Transaction)
+            document.addEventListener('transactionsUpdated', function() {
+                // Trigger HTMX request to reload the transaction table
+                const filterForm = document.getElementById('filter-form');
+                if (filterForm) {
+                    htmx.trigger(filterForm, 'submit');
+                }
+            });
+        </script>
+    </th:block>
 </body>
 </html>
