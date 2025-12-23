@@ -15,6 +15,7 @@ import org.testcontainers.utility.DockerImageName;
 import org.zaproxy.clientapi.core.*;
 import org.zaproxy.clientapi.gen.Alert;
 import org.zaproxy.clientapi.gen.Pscan;
+import org.zaproxy.clientapi.gen.Reports;
 import org.zaproxy.clientapi.gen.Spider;
 
 import java.net.URI;
@@ -63,6 +64,7 @@ class ZapDastTest {
 
     private static final Logger log = LoggerFactory.getLogger(ZapDastTest.class);
     private static final Path REPORTS_DIR = Paths.get("target/security-reports");
+    private static final String CONTAINER_REPORTS_DIR = "/zap/reports";
     private static final int ZAP_PORT = 8080;
 
     // Severity thresholds - fail test if vulnerabilities exceed these
@@ -91,9 +93,10 @@ class ZapDastTest {
         // Expose the Spring Boot port to Docker containers
         Testcontainers.exposeHostPorts(port);
 
-        // Start ZAP container
+        // Start ZAP container with reports volume mount
         zapContainer = new GenericContainer<>(DockerImageName.parse("ghcr.io/zaproxy/zaproxy:stable"))
                 .withExposedPorts(ZAP_PORT)
+                .withFileSystemBind(REPORTS_DIR.toAbsolutePath().toString(), CONTAINER_REPORTS_DIR)
                 .withCommand("zap.sh", "-daemon", "-host", "0.0.0.0", "-port", String.valueOf(ZAP_PORT),
                         "-config", "api.addrs.addr.name=.*",
                         "-config", "api.addrs.addr.regex=true",
@@ -392,14 +395,29 @@ class ZapDastTest {
     }
 
     private void generateHtmlReport(String filename, String targetUrl) throws Exception {
-        Path reportPath = REPORTS_DIR.resolve(filename);
+        String reportName = filename.replace(".html", "");
 
-        // Use core.htmlreport API to get HTML report as bytes
-        byte[] htmlReportBytes = zapClient.core.htmlreport();
+        // Use reports.generate API (replaces deprecated core.htmlreport)
+        // Reports are written to container path which is mounted to host REPORTS_DIR
+        Reports reports = new Reports(zapClient);
+        ApiResponse response = reports.generate(
+                "ZAP Security Scan Report",  // title
+                "traditional-html",           // template
+                null,                         // theme
+                null,                         // description
+                null,                         // contexts
+                targetUrl,                    // sites
+                null,                         // sections
+                null,                         // includedConfidences
+                null,                         // includedRisks
+                reportName,                   // reportFileName
+                null,                         // reportFileNamePattern
+                CONTAINER_REPORTS_DIR,        // reportDir (container path, mounted to host)
+                null                          // display
+        );
 
-        // Write report to file
-        Files.write(reportPath, htmlReportBytes);
-
-        log.info("HTML report saved to {}", reportPath);
+        String generatedPath = ((ApiResponseElement) response).getValue();
+        log.info("HTML report generated at container path: {}", generatedPath);
+        log.info("Report available on host at: {}", REPORTS_DIR.resolve(filename));
     }
 }
