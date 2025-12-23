@@ -44,29 +44,26 @@ jobs:
           name: dependency-check-report
           path: target/dependency-check-report.*
 
-  # SpotBugs disabled until Java 25 support is available
-  # Track progress: https://github.com/spotbugs/spotbugs/issues/3564
-  # Re-enable when SpotBugs releases version with BCEL 6.11+ (Java 25 support)
-  # spotbugs:
-  #   name: SpotBugs Security Analysis
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #     - name: Set up JDK 25
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         java-version: '25'
-  #         distribution: 'temurin'
-  #         cache: maven
-  #     - name: Compile project
-  #       run: ./mvnw compile -DskipTests
-  #     - name: Run SpotBugs with FindSecBugs
-  #       run: ./mvnw spotbugs:check
-  #       continue-on-error: true
-  #     - name: Upload SpotBugs report
-  #       uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         name: spotbugs-report
-  #         path: target/spotbugsXml.xml
+  spotbugs:
+    name: SpotBugs Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+      - name: Compile project
+        run: ./mvnw compile -DskipTests
+      - name: Run SpotBugs with FindSecBugs
+        run: ./mvnw spotbugs:spotbugs
+        continue-on-error: true
+      - name: Upload SpotBugs report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spotbugs-report
+          path: target/spotbugsXml.xml

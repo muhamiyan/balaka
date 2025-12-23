@@ -328,18 +328,25 @@
 					<includeLicenseText>false</includeLicenseText>
 					<outputFormat>all</outputFormat>
 					<outputName>sbom</outputName>
+					<outputDirectory>${project.build.directory}</outputDirectory>
 				</configuration>
 			</plugin>
 			<!-- SpotBugs with FindSecBugs for static security analysis
-			     NOTE: Disabled until Java 25 support available (BCEL 6.11+)
-			     Track: https://github.com/spotbugs/spotbugs/issues/3564 -->
+			     ENABLED: Java 25 support available since SpotBugs 4.9.7 (October 2024)
+			     - SpotBugs 4.9.8 with BCEL 6.11.0 and ASM 9.8
+			     - FindSecBugs 1.13.0 for security-specific detectors
+			     References:
+			     - https://github.com/spotbugs/spotbugs/releases/tag/4.9.8
+			     - https://commons.apache.org/bcel/ (BCEL 6.11.0 released Oct 2025)
+			-->
 			<plugin>
 				<groupId>com.github.spotbugs</groupId>
 				<artifactId>spotbugs-maven-plugin</artifactId>
-				<version>4.9.3.0</version>
+				<version>4.9.8.2</version>
 				<configuration>
 					<effort>Max</effort>
 					<threshold>Medium</threshold>
+					<xmlOutput>true</xmlOutput>
 					<plugins>
 						<plugin>
 							<groupId>com.h3xstream.findsecbugs</groupId>
@@ -348,6 +355,15 @@
 						</plugin>
 					</plugins>
 				</configuration>
+				<executions>
+					<execution>
+						<id>spotbugs-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

@@ -1,0 +1,122 @@
+rules:
+  - id: jpa-native-query-injection
+    message: >-
+      Potential SQL injection via JPA native query with string concatenation.
+      Use parameterized queries with setParameter() instead.
+    severity: ERROR
+    metadata:
+      category: security
+      technology:
+        - spring
+        - jpa
+        - hibernate
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-89: SQL Injection'
+      confidence: HIGH
+    languages:
+      - java
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $EM.createNativeQuery($SQL + $VAR, ...)
+          - pattern: |
+              $EM.createNativeQuery(String.format(...), ...)
+          - pattern: |
+              $EM.createQuery($SQL + $VAR, ...)
+    fix-regex:
+      regex: (.*)\+\s*(\w+)
+      replacement: $1 WHERE field = :param").setParameter("param", $2
+    paths:
+      include:
+        - '**/repository/**'
+        - '**/service/**'
+
+  - id: jdbc-template-concatenation
+    message: >-
+      Potential SQL injection via JdbcTemplate with string concatenation.
+      Use PreparedStatement with ? placeholders instead.
+    severity: ERROR
+    metadata:
+      category: security
+      technology:
+        - spring
+        - jdbc
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-89: SQL Injection'
+      confidence: HIGH
+    languages:
+      - java
+    patterns:
+      - pattern-either:
+          - pattern: $JDBC.query($SQL + $VAR, ...)
+          - pattern: $JDBC.update($SQL + $VAR, ...)
+          - pattern: $JDBC.execute($SQL + $VAR, ...)
+          - pattern: $JDBC.queryForObject($SQL + $VAR, ...)
+          - pattern: $JDBC.queryForList($SQL + $VAR, ...)
+    paths:
+      include:
+        - '**/repository/**'
+        - '**/dao/**'
+        - '**/service/**'
+
+  - id: unsafe-table-name-in-query
+    message: >-
+      Dynamic table name in SQL query without whitelist validation. This could
+      enable SQL injection. Validate table name against a whitelist before use.
+    severity: WARNING
+    metadata:
+      category: security
+      technology:
+        - spring
+        - jpa
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-89: SQL Injection'
+      confidence: MEDIUM
+    languages:
+      - java
+    patterns:
+      - pattern-either:
+          - pattern: |
+              String $SQL = "... FROM " + $TABLE + ...;
+          - pattern: |
+              String $SQL = "... INTO " + $TABLE + ...;
+          - pattern: |
+              String $SQL = String.format("... FROM %s ...", $TABLE);
+      - pattern-not-inside: |
+          if (ALLOWED_TABLES.contains($TABLE)) {
+            ...
+          }
+    paths:
+      include:
+        - '**/service/**'
+        - '**/repository/**'
+
+  - id: hibernate-setstring-with-concat
+    message: >-
+      Using setString() with concatenated value. While setString() prevents SQL
+      injection, concatenation before the call could introduce vulnerabilities.
+      Pass the raw value to setString() directly.
+    severity: WARNING
+    metadata:
+      category: security
+      technology:
+        - hibernate
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-89: SQL Injection'
+      confidence: MEDIUM
+    languages:
+      - java
+    patterns:
+      - pattern: $QUERY.setString($POS, $VAR1 + $VAR2)
+    paths:
+      include:
+        - '**/repository/**'
+        - '**/dao/**'

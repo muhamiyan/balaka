@@ -1,0 +1,8 @@
+# Semgrep configuration for CI/CD integration
+# Used by .github/workflows/codeql.yml
+
+# Include custom rules
+rules:
+  - .semgrep/spring-security-auth-bypass.yml
+  - .semgrep/sql-injection.yml
+  - .semgrep/xss-prevention.yml

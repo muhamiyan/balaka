@@ -1,0 +1,112 @@
+rules:
+  - id: thymeleaf-unescape-text
+    message: >-
+      Using th:utext or [(${...})] renders unescaped HTML, which can lead to XSS.
+      Use th:text or [[${...}]] to escape HTML entities, or sanitize input first.
+    severity: WARNING
+    metadata:
+      category: security
+      technology:
+        - thymeleaf
+        - spring
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-79: Cross-site Scripting (XSS)'
+      confidence: HIGH
+    languages:
+      - generic
+    patterns:
+      - pattern-either:
+          - pattern-regex: 'th:utext\s*=\s*"\$\{[^}]+\}"'
+          - pattern-regex: '\[\(\$\{[^}]+\}\)\]'
+    paths:
+      include:
+        - '**/*.html'
+      exclude:
+        - '**/test/**'
+        - '**/fragments/**'
+
+  - id: direct-html-writing-to-response
+    message: >-
+      Writing user input directly to HTTP response without encoding. This can
+      lead to XSS. Use HtmlUtils.htmlEscape() or response.setContentType("text/plain").
+    severity: ERROR
+    metadata:
+      category: security
+      technology:
+        - spring
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-79: Cross-site Scripting (XSS)'
+      confidence: HIGH
+    languages:
+      - java
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $RESPONSE.getWriter().write($INPUT)
+          - pattern: |
+              $RESPONSE.getWriter().print($INPUT)
+      - pattern-not: |
+          $RESPONSE.getWriter().write(HtmlUtils.htmlEscape($INPUT))
+    paths:
+      include:
+        - '**/controller/**'
+
+  - id: javascript-innerhtml-assignment
+    message: >-
+      Assigning to innerHTML with user-controlled data can lead to DOM-based XSS.
+      Use textContent for plain text or sanitize HTML with DOMPurify.
+    severity: WARNING
+    metadata:
+      category: security
+      technology:
+        - javascript
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-79: Cross-site Scripting (XSS)'
+      confidence: MEDIUM
+    languages:
+      - javascript
+    patterns:
+      - pattern-either:
+          - pattern: $EL.innerHTML = $VAR
+          - pattern: document.write($VAR)
+          - pattern: $EL.outerHTML = $VAR
+      - pattern-not: $EL.innerHTML = $CONST
+    paths:
+      include:
+        - '**/*.js'
+        - '**/*.html'
+      exclude:
+        - '**/node_modules/**'
+
+  - id: missing-html-escape-in-model
+    message: >-
+      Model attribute added without HTML escaping. If this data comes from user
+      input and is rendered with th:utext, it could lead to XSS. Escape with
+      HtmlUtils.htmlEscape() or use th:text in template.
+    severity: INFO
+    metadata:
+      category: security
+      technology:
+        - spring
+      owasp:
+        - A03:2021 - Injection
+      cwe:
+        - 'CWE-79: Cross-site Scripting (XSS)'
+      confidence: LOW
+    languages:
+      - java
+    patterns:
+      - pattern: $MODEL.addAttribute($KEY, $VALUE)
+      - pattern-not: $MODEL.addAttribute($KEY, HtmlUtils.htmlEscape($VALUE))
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: .*(message|description|comment|note|text|html|content).*
+    paths:
+      include:
+        - '**/controller/**'

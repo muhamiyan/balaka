@@ -23,8 +23,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build JAR
+      - name: Build JAR and SBOM
         run: ./mvnw package -DskipTests
+
+      - name: Verify SBOM generation
+        run: |
+          echo "Checking for SBOM files..."
+          ls -lh target/sbom.*
+          echo "SBOM files generated successfully"
 
       - name: Get release notes
         id: release_notes
@@ -50,3 +56,5 @@ jobs:
           generate_release_notes: ${{ steps.release_notes.outputs.notes == '' }}
           files: |
             target/*.jar
+            target/sbom.json
+            target/sbom.xml

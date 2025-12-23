@@ -730,15 +730,22 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
   - [x] Add `.github/workflows/codeql.yml`
   - [x] Configure security queries for Java
   - [x] Enable SARIF upload to GitHub Security tab
-- [ ] Semgrep rules for Spring Security patterns
-  - [ ] Custom rules for authentication bypass
-  - [ ] SQL injection detection
-  - [ ] XSS pattern detection
+- [x] Semgrep rules for Spring Security patterns
+  - [x] Custom rules for authentication bypass (`.semgrep/spring-security-auth-bypass.yml` - 6 rules)
+  - [x] SQL injection detection (`.semgrep/sql-injection.yml` - 4 rules)
+  - [x] XSS pattern detection (`.semgrep/xss-prevention.yml` - 4 rules)
+  - [x] CI integration - added to `.github/workflows/codeql.yml`
+  - [x] Documentation - `.semgrep/README.md`
 - [x] SonarCloud integration (https://sonarcloud.io/project/overview?id=artivisi_aplikasi-akunting)
   - [x] Security hotspot analysis
   - [x] Code smell detection
   - [x] Quality gate configured
   - [x] sonar-project.properties configured
+- [x] SpotBugs with FindSecBugs (Java 25 support since Oct 2024)
+  - [x] Updated to SpotBugs 4.9.8.2 with BCEL 6.11.0 and ASM 9.8
+  - [x] FindSecBugs 1.13.0 for security-specific detectors
+  - [x] CI integration - `.github/workflows/security.yml`
+  - [x] Max effort, Medium threshold configured in pom.xml
 
 #### 6.9.2 Software Composition Analysis (SCA)
 - [x] OWASP Dependency-Check
@@ -751,15 +758,15 @@ Additive is ~3x simpler. Role switching only needed for strict audit trails or c
 - [x] SBOM generation (Software Bill of Materials)
   - [x] CycloneDX maven plugin (v2.9.1) - generates sbom.json and sbom.xml on package
   - [x] Includes compile, provided, runtime scopes
-  - [ ] Publish SBOM with releases (GitHub Actions)
+  - [x] Publish SBOM with releases (GitHub Actions) - added to `.github/workflows/release.yml`
 
 #### 6.9.3 Secret Detection
 - [x] GitLeaks configuration
   - [x] `.gitleaks.toml` configuration
   - [x] Custom patterns for Indonesian tax IDs, bank accounts
-- [ ] TruffleHog in CI pipeline
-  - [ ] Scan git history for leaked secrets
-  - [ ] Block PR if secrets detected
+- [x] TruffleHog in CI pipeline
+  - [x] Scan git history for leaked secrets
+  - [x] Block PR if secrets detected (`continue-on-error: false` in `.github/workflows/codeql.yml`)
 - [ ] GitHub secret scanning (enable in repo settings)
 
 #### 6.9.4 Dynamic Application Security Testing (DAST)
