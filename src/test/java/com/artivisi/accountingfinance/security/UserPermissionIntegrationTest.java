@@ -176,24 +176,4 @@ class UserPermissionIntegrationTest {
         );
     }
 
-    @Test
-    @DisplayName("Print all authorities for debugging")
-    void printAuthoritiesForDebugging() {
-        System.out.println("\n=== User Authorities Debug ===\n");
-
-        for (String username : new String[]{"admin", "staff", "employee", "auditor"}) {
-            try {
-                UserDetails details = userDetailsService.loadUserByUsername(username);
-                System.out.println("User: " + username);
-                System.out.println("Authorities (" + details.getAuthorities().size() + "):");
-                details.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .sorted()
-                        .forEach(a -> System.out.println("  - " + a));
-                System.out.println();
-            } catch (Exception e) {
-                System.out.println("User: " + username + " - ERROR: " + e.getMessage());
-            }
-        }
-    }
 }
