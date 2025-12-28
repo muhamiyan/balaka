@@ -51,6 +51,25 @@ Each exclusion must have a justification comment explaining the mitigation.
     </Match>
 
     <!--
+    SPRING_CSRF_UNRESTRICTED_REQUEST_MAPPING - Error Controller False Positive
+
+    CustomErrorController uses @RequestMapping("/error") without method restriction.
+    This is flagged as CSRF vulnerability, but it's a false positive because:
+
+    1. Error controllers MUST handle all HTTP methods - errors can occur on GET, POST, PUT, DELETE
+    2. The /error endpoint only displays error information (read-only, no state changes)
+    3. This is the same pattern used by Spring Boot's BasicErrorController
+    4. CSRF protection is irrelevant for error display - no sensitive operations performed
+    5. The endpoint is called by the servlet container on errors, not by user forms
+
+    Reference: Spring Boot BasicErrorController also uses unrestricted @RequestMapping
+    -->
+    <Match>
+        <Class name="com.artivisi.accountingfinance.controller.CustomErrorController"/>
+        <Bug pattern="SPRING_CSRF_UNRESTRICTED_REQUEST_MAPPING"/>
+    </Match>
+
+    <!--
     UUF_UNUSED_FIELD - Framework-managed fields (JPA, Spring, etc.)
     These fields appear unused to static analysis but are used by frameworks via reflection.
     Only exclude after verifying the field is actually used by the framework.
