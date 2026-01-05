@@ -191,11 +191,11 @@
     <th:block layout:fragment="scripts">
         <script th:inline="javascript" th:attr="nonce=${cspNonce}">
             document.getElementById('btn-copy-commit')?.addEventListener('click', function() {
-                var button = this;
-                var value = button.getAttribute('data-value');
+                const button = this;
+                const value = button.dataset.value;
                 navigator.clipboard.writeText(value).then(function() {
                     // Show temporary success feedback
-                    var originalHTML = button.innerHTML;
+                    const originalHTML = button.innerHTML;
                     button.innerHTML = '<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
                     setTimeout(function() {
                         button.innerHTML = originalHTML;

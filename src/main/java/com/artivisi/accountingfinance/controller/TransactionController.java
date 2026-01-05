@@ -595,7 +595,7 @@ public class TransactionController {
             List<JournalTemplate> matchingTemplates = allTemplates.stream()
                     .filter(t -> t.getTemplateName().toLowerCase().contains(query))
                     .limit(8)
-                    .collect(Collectors.toList());
+                    .toList();
 
             model.addAttribute("templates", matchingTemplates);
             model.addAttribute("showRecent", false);

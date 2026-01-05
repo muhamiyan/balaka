@@ -340,13 +340,6 @@ public class CoretaxExportService {
         return style;
     }
 
-    private CellStyle createDateStyle(Workbook workbook) {
-        CellStyle style = workbook.createCellStyle();
-        CreationHelper createHelper = workbook.getCreationHelper();
-        style.setDataFormat(createHelper.createDataFormat().getFormat("dd/MM/yyyy"));
-        return style;
-    }
-
     private CellStyle createNumberStyle(Workbook workbook) {
         CellStyle style = workbook.createCellStyle();
         CreationHelper createHelper = workbook.getCreationHelper();

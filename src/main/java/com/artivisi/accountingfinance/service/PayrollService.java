@@ -181,8 +181,10 @@ public class PayrollService {
         payrollRun.setCancelledAt(LocalDateTime.now());
         payrollRun.setCancelReason(reason);
 
-        log.info("Cancelled payroll for period {}, reason: {}",
-                payrollRun.getPayrollPeriod(), LogSanitizer.sanitize(reason));
+        if (log.isInfoEnabled()) {
+            log.info("Cancelled payroll for period {}, reason: {}",
+                    payrollRun.getPayrollPeriod(), LogSanitizer.sanitize(reason));
+        }
 
         return payrollRunRepository.save(payrollRun);
     }

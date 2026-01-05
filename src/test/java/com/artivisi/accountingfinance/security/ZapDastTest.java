@@ -83,8 +83,8 @@ class ZapDastTest extends ZapDastTestBase {
     };
 
     // Form pages (GET /new or /create for form, POST for submission)
+    // Array format: {GET form path, POST path, field1, field2, field3...}
     private static final String[][] FORM_ENDPOINTS = {
-            // {GET form path, POST path, field1, field2, field3...}
             {"/accounts/new", "/accounts/new", "accountCode", "accountName", "accountType"},
             {"/employees/new", "/employees/new", "employeeNumber", "name", "email", "phone"},
             {"/products/new", "/products/new", "code", "name", "description"},

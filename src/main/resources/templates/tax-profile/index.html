@@ -37,8 +37,8 @@
                     </div>
 
                     <!-- PKP Status -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Status PKP</label>
+                    <fieldset>
+                        <legend class="block text-sm font-medium text-gray-700 mb-1">Status PKP</legend>
                         <div class="flex items-center gap-4 mt-2">
                             <label class="inline-flex items-center">
                                 <input type="radio" name="isPkp" value="true"
@@ -58,7 +58,7 @@
                             </label>
                         </div>
                         <p class="mt-1 text-xs text-gray-500">Pengusaha Kena Pajak (wajib pungut PPN)</p>
-                    </div>
+                    </fieldset>
 
                     <!-- PKP Since (only shown if PKP is true) -->
                     <div x-show="isPkp === 'true'" x-transition>

@@ -31,11 +31,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimitService rateLimitService;
 
-    // Pattern for valid IPv4 and IPv6 addresses (basic validation)
+    // Pattern for valid IPv4 addresses (simplified - format validation only)
+    // Strict 0-255 range validation is handled by InetAddress parsing
     private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$");
+            "^(\\d{1,3}\\.){3}\\d{1,3}$");
+    // Pattern for valid IPv6 addresses (common formats)
     private static final Pattern IPV6_PATTERN = Pattern.compile(
-            "^([\\da-fA-F]{1,4}:){7}[\\da-fA-F]{1,4}$|^::$|^::1$|^([\\da-fA-F]{1,4}:){1,7}:$");
+            "^[\\da-fA-F:]+$");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
