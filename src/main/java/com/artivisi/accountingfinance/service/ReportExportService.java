@@ -49,6 +49,8 @@ public class ReportExportService {
     private static final String PDF_GENERATION_ERROR = "Failed to generate PDF: ";
     private static final String EXCEL_GENERATION_ERROR = "Failed to generate Excel: ";
     private static final String TOTAL_LABEL = "TOTAL";
+    private static final String COL_KATEGORI = "Kategori";
+    private static final String COL_NAMA_PRODUK = "Nama Produk";
     private static final DecimalFormat NUMBER_FORMAT;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.of("id", "ID"));
 
@@ -624,7 +626,7 @@ public class ReportExportService {
             CellStyle headerStyle = createHeaderStyle(workbook);
             createCell(headerRow, 0, "No", headerStyle);
             createCell(headerRow, 1, "Nama Aset", headerStyle);
-            createCell(headerRow, 2, "Kategori", headerStyle);
+            createCell(headerRow, 2, COL_KATEGORI, headerStyle);
             createCell(headerRow, 3, "Tgl Perolehan", headerStyle);
             createCell(headerRow, 4, "Harga Perolehan", headerStyle);
             createCell(headerRow, 5, "Masa Manfaat", headerStyle);
@@ -759,8 +761,8 @@ public class ReportExportService {
             CellStyle headerStyle = createHeaderStyle(workbook);
             createCell(headerRow, 0, "No", headerStyle);
             createCell(headerRow, 1, "Kode", headerStyle);
-            createCell(headerRow, 2, "Nama Produk", headerStyle);
-            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 2, COL_NAMA_PRODUK, headerStyle);
+            createCell(headerRow, 3, COL_KATEGORI, headerStyle);
             createCell(headerRow, 4, "Satuan", headerStyle);
             createCell(headerRow, 5, "Qty", headerStyle);
             createCell(headerRow, 6, "Harga Rata-rata", headerStyle);
@@ -879,7 +881,7 @@ public class ReportExportService {
             createCell(headerRow, 0, "No", headerStyle);
             createCell(headerRow, 1, "Tanggal", headerStyle);
             createCell(headerRow, 2, "Kode", headerStyle);
-            createCell(headerRow, 3, "Nama Produk", headerStyle);
+            createCell(headerRow, 3, COL_NAMA_PRODUK, headerStyle);
             createCell(headerRow, 4, "Tipe", headerStyle);
             createCell(headerRow, 5, "Qty", headerStyle);
             createCell(headerRow, 6, "Harga", headerStyle);
@@ -1008,8 +1010,8 @@ public class ReportExportService {
             CellStyle headerStyle = createHeaderStyle(workbook);
             createCell(headerRow, 0, "No", headerStyle);
             createCell(headerRow, 1, "Kode", headerStyle);
-            createCell(headerRow, 2, "Nama Produk", headerStyle);
-            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 2, COL_NAMA_PRODUK, headerStyle);
+            createCell(headerRow, 3, COL_KATEGORI, headerStyle);
             createCell(headerRow, 4, "Satuan", headerStyle);
             createCell(headerRow, 5, "Qty", headerStyle);
             createCell(headerRow, 6, "Harga Rata-rata", headerStyle);
@@ -1150,8 +1152,8 @@ public class ReportExportService {
             CellStyle headerStyle = createHeaderStyle(workbook);
             createCell(headerRow, 0, "No", headerStyle);
             createCell(headerRow, 1, "Kode", headerStyle);
-            createCell(headerRow, 2, "Nama Produk", headerStyle);
-            createCell(headerRow, 3, "Kategori", headerStyle);
+            createCell(headerRow, 2, COL_NAMA_PRODUK, headerStyle);
+            createCell(headerRow, 3, COL_KATEGORI, headerStyle);
             createCell(headerRow, 4, "Qty Terjual", headerStyle);
             createCell(headerRow, 5, "Pendapatan", headerStyle);
             createCell(headerRow, 6, "HPP", headerStyle);

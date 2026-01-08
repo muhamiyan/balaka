@@ -44,6 +44,8 @@ import java.util.Locale;
 public class PayrollReportService {
 
     private static final String COMPANY_NAME = "PT ArtiVisi Intermedia";
+    private static final String TOTAL_LABEL = "TOTAL";
+    private static final String TOTAL_POTONGAN = "Total Potongan";
     private static final DecimalFormat NUMBER_FORMAT;
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.of("id", "ID"));
 
@@ -76,7 +78,7 @@ public class PayrollReportService {
             table.setWidths(new float[]{5, 20, 15, 12, 12, 12, 12, 12});
             table.setSpacingBefore(15);
 
-            addTableHeader(table, "No", "Nama Karyawan", "NIK", "Gaji Bruto", "BPJS Karyawan", "PPh 21", "Total Potongan", "Gaji Neto");
+            addTableHeader(table, "No", "Nama Karyawan", "NIK", "Gaji Bruto", "BPJS Karyawan", "PPh 21", TOTAL_POTONGAN, "Gaji Neto");
 
             int no = 1;
             for (PayrollDetail detail : details) {
@@ -120,7 +122,7 @@ public class PayrollReportService {
             // Headers
             Row headerRow = sheet.createRow(rowNum++);
             CellStyle headerStyle = createHeaderStyle(workbook);
-            String[] headers = {"No", "Nama Karyawan", "NIK", "Gaji Bruto", "BPJS Karyawan", "PPh 21", "Total Potongan", "Gaji Neto"};
+            String[] headers = {"No", "Nama Karyawan", "NIK", "Gaji Bruto", "BPJS Karyawan", "PPh 21", TOTAL_POTONGAN, "Gaji Neto"};
             for (int i = 0; i < headers.length; i++) {
                 createCell(headerRow, i, headers[i], headerStyle);
             }
@@ -145,7 +147,7 @@ public class PayrollReportService {
             Row totalRow = sheet.createRow(rowNum);
             CellStyle totalStyle = createTotalStyle(workbook);
             createCell(totalRow, 0, "", totalStyle);
-            createCell(totalRow, 1, "TOTAL", totalStyle);
+            createCell(totalRow, 1, TOTAL_LABEL, totalStyle);
             createCell(totalRow, 2, "", totalStyle);
             createNumericCell(totalRow, 3, payrollRun.getTotalGross(), totalStyle);
 
@@ -198,7 +200,7 @@ public class PayrollReportService {
             PdfPCell emptyCell = createEmptyCell();
             table.addCell(emptyCell);
 
-            PdfPCell labelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+            PdfPCell labelCell = new PdfPCell(new Phrase(TOTAL_LABEL, getBoldFont()));
             labelCell.setPadding(5);
             labelCell.setBackgroundColor(new Color(230, 230, 230));
             labelCell.setBorderWidth(1f);
@@ -275,7 +277,7 @@ public class PayrollReportService {
             Row totalRow = sheet.createRow(rowNum);
             CellStyle totalStyle = createTotalStyle(workbook);
             createCell(totalRow, 0, "", totalStyle);
-            createCell(totalRow, 1, "TOTAL", totalStyle);
+            createCell(totalRow, 1, TOTAL_LABEL, totalStyle);
             createCell(totalRow, 2, "", totalStyle);
             createNumericCell(totalRow, 3, payrollRun.getTotalGross(), totalStyle);
             createNumericCell(totalRow, 4, payrollRun.getTotalPph21(), totalStyle);
@@ -420,7 +422,7 @@ public class PayrollReportService {
             Row kesTotalRow = kesSheet.createRow(rowNum);
             CellStyle totalStyle = createTotalStyle(workbook);
             createCell(kesTotalRow, 0, "", totalStyle);
-            createCell(kesTotalRow, 1, "TOTAL", totalStyle);
+            createCell(kesTotalRow, 1, TOTAL_LABEL, totalStyle);
             createCell(kesTotalRow, 2, "", totalStyle);
             createNumericCell(kesTotalRow, 3, totalKesCompany, totalStyle);
             createNumericCell(kesTotalRow, 4, totalKesEmployee, totalStyle);
@@ -465,7 +467,7 @@ public class PayrollReportService {
 
             Row tkTotalRow = tkSheet.createRow(rowNum);
             createCell(tkTotalRow, 0, "", totalStyle);
-            createCell(tkTotalRow, 1, "TOTAL", totalStyle);
+            createCell(tkTotalRow, 1, TOTAL_LABEL, totalStyle);
             createCell(tkTotalRow, 2, "", totalStyle);
             createNumericCell(tkTotalRow, 3, totalJkk, totalStyle);
             createNumericCell(tkTotalRow, 4, totalJkm, totalStyle);
@@ -541,7 +543,7 @@ public class PayrollReportService {
             addPayslipRow(deductionsTable, "BPJS JHT", detail.getBpjsJhtEmployee());
             addPayslipRow(deductionsTable, "BPJS JP", detail.getBpjsJpEmployee());
             addPayslipRow(deductionsTable, "PPh 21", detail.getPph21());
-            addPayslipRow(deductionsTable, "Total Potongan", detail.getTotalDeductions());
+            addPayslipRow(deductionsTable, TOTAL_POTONGAN, detail.getTotalDeductions());
             document.add(deductionsTable);
 
             // Net Pay
@@ -792,7 +794,7 @@ public class PayrollReportService {
 
         addSummaryRow(summary, "Jumlah Karyawan", String.valueOf(payrollRun.getEmployeeCount()));
         addSummaryRow(summary, "Total Bruto", "Rp " + formatNumber(payrollRun.getTotalGross()));
-        addSummaryRow(summary, "Total Potongan", "Rp " + formatNumber(payrollRun.getTotalDeductions()));
+        addSummaryRow(summary, TOTAL_POTONGAN, "Rp " + formatNumber(payrollRun.getTotalDeductions()));
         addSummaryRow(summary, "Total Neto", "Rp " + formatNumber(payrollRun.getTotalNetPay()));
 
         document.add(summary);
@@ -844,7 +846,7 @@ public class PayrollReportService {
         PdfPCell emptyCell = createEmptyCell();
         table.addCell(emptyCell);
 
-        PdfPCell labelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+        PdfPCell labelCell = new PdfPCell(new Phrase(TOTAL_LABEL, getBoldFont()));
         labelCell.setPadding(5);
         labelCell.setBackgroundColor(new Color(230, 230, 230));
         labelCell.setBorderWidth(1f);
@@ -892,7 +894,7 @@ public class PayrollReportService {
         PdfPCell emptyCell = createEmptyCell();
         table.addCell(emptyCell);
 
-        PdfPCell labelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+        PdfPCell labelCell = new PdfPCell(new Phrase(TOTAL_LABEL, getBoldFont()));
         labelCell.setPadding(5);
         labelCell.setBackgroundColor(new Color(230, 230, 230));
         labelCell.setBorderWidth(1f);
@@ -920,7 +922,7 @@ public class PayrollReportService {
         PdfPCell emptyCell = createEmptyCell();
         table.addCell(emptyCell);
 
-        PdfPCell labelCell = new PdfPCell(new Phrase("TOTAL", getBoldFont()));
+        PdfPCell labelCell = new PdfPCell(new Phrase(TOTAL_LABEL, getBoldFont()));
         labelCell.setPadding(5);
         labelCell.setBackgroundColor(new Color(230, 230, 230));
         labelCell.setBorderWidth(1f);
@@ -1006,7 +1008,7 @@ public class PayrollReportService {
         createCell(grossRow, 0, "Total Bruto: Rp " + formatNumber(payrollRun.getTotalGross()), textStyle);
 
         Row dedRow = sheet.createRow(startRow++);
-        createCell(dedRow, 0, "Total Potongan: Rp " + formatNumber(payrollRun.getTotalDeductions()), textStyle);
+        createCell(dedRow, 0, TOTAL_POTONGAN + ": Rp " + formatNumber(payrollRun.getTotalDeductions()), textStyle);
 
         Row netRow = sheet.createRow(startRow++);
         createCell(netRow, 0, "Total Neto: Rp " + formatNumber(payrollRun.getTotalNetPay()), textStyle);
