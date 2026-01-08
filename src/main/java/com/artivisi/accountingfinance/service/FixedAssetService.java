@@ -297,7 +297,10 @@ public class FixedAssetService {
     public DepreciationEntry postDepreciationEntry(UUID entryId, String postedBy) {
         DepreciationEntry entry = depreciationEntryRepository.findById(entryId)
                 .orElseThrow(() -> new EntityNotFoundException("Entri penyusutan tidak ditemukan"));
+        return doPostDepreciationEntry(entry, postedBy);
+    }
 
+    private DepreciationEntry doPostDepreciationEntry(DepreciationEntry entry, String postedBy) {
         if (!entry.isPending()) {
             throw new IllegalStateException("Hanya entri dengan status PENDING yang dapat di-posting");
         }
@@ -378,7 +381,7 @@ public class FixedAssetService {
 
         int count = 0;
         for (DepreciationEntry entry : pendingEntries) {
-            postDepreciationEntry(entry.getId(), postedBy);
+            doPostDepreciationEntry(entry, postedBy);
             count++;
         }
 

@@ -335,7 +335,6 @@ public class PayrollService {
     /**
      * Calculate yearly totals for an employee (for 1721-A1).
      */
-    @Transactional(readOnly = true)
     public YearlyPayrollSummary getYearlyPayrollSummary(UUID employeeId, int year) {
         List<PayrollDetail> details = getYearlyPayrollDetails(employeeId, year);
         if (details.isEmpty()) {
