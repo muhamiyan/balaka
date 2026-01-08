@@ -40,6 +40,11 @@ import static com.artivisi.accountingfinance.controller.ViewConstants.*;
 @Slf4j
 public class InventoryTransactionController {
 
+    private static final String ATTR_PRODUCTS = "products";
+    private static final String ATTR_TRANSACTIONS = "transactions";
+    private static final String ATTR_TRANSACTION = "transaction";
+    private static final String REDIRECT_INVENTORY_TRANSACTIONS = "redirect:/inventory/transactions/";
+
     private final InventoryService inventoryService;
     private final ProductRepository productRepository;
     private final ProductCategoryService categoryService;
@@ -109,13 +114,13 @@ public class InventoryTransactionController {
         Page<InventoryTransaction> transactions = inventoryService.findTransactions(
                 productId, transactionType, startDate, endDate, pageable);
 
-        model.addAttribute("transactions", transactions);
+        model.addAttribute(ATTR_TRANSACTIONS, transactions);
         model.addAttribute("productId", productId);
         model.addAttribute("transactionType", transactionType);
         model.addAttribute("startDate", startDate);
         model.addAttribute("endDate", endDate);
         model.addAttribute("transactionTypes", InventoryTransactionType.values());
-        model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+        model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_TRANSACTIONS);
 
         return "inventory/transaction-list";
@@ -136,7 +141,7 @@ public class InventoryTransactionController {
         Page<InventoryTransaction> transactions = inventoryService.findTransactions(
                 productId, transactionType, startDate, endDate, pageable);
 
-        model.addAttribute("transactions", transactions);
+        model.addAttribute(ATTR_TRANSACTIONS, transactions);
         model.addAttribute("productId", productId);
         model.addAttribute("transactionType", transactionType);
         model.addAttribute("startDate", startDate);
@@ -155,7 +160,7 @@ public class InventoryTransactionController {
         InventoryTransaction transaction = inventoryService.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Transaksi tidak ditemukan: " + id));
 
-        model.addAttribute("transaction", transaction);
+        model.addAttribute(ATTR_TRANSACTION, transaction);
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_TRANSACTIONS);
 
         return "inventory/transaction-detail";
@@ -169,7 +174,7 @@ public class InventoryTransactionController {
     @PreAuthorize("hasAuthority('" + Permission.INVENTORY_PURCHASE + "')")
     public String showPurchaseForm(Model model) {
         model.addAttribute("form", new InventoryTransactionForm());
-        model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+        model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_PURCHASE);
 
         return "inventory/purchase-form";
@@ -184,7 +189,7 @@ public class InventoryTransactionController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_PURCHASE);
             return "inventory/purchase-form";
         }
@@ -200,11 +205,11 @@ public class InventoryTransactionController {
             );
 
             redirectAttributes.addFlashAttribute("success", "Pembelian berhasil dicatat");
-            return "redirect:/inventory/transactions/" + transaction.getId();
+            return REDIRECT_INVENTORY_TRANSACTIONS + transaction.getId();
         } catch (Exception e) {
             log.error("Error recording purchase", e);
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_PURCHASE);
             return "inventory/purchase-form";
         }
@@ -218,7 +223,7 @@ public class InventoryTransactionController {
     @PreAuthorize("hasAuthority('" + Permission.INVENTORY_SALE + "')")
     public String showSaleForm(Model model) {
         model.addAttribute("form", new InventoryTransactionForm());
-        model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+        model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_SALE);
 
         return "inventory/sale-form";
@@ -233,7 +238,7 @@ public class InventoryTransactionController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_SALE);
             return "inventory/sale-form";
         }
@@ -249,11 +254,11 @@ public class InventoryTransactionController {
             );
 
             redirectAttributes.addFlashAttribute("success", "Penjualan berhasil dicatat");
-            return "redirect:/inventory/transactions/" + transaction.getId();
+            return REDIRECT_INVENTORY_TRANSACTIONS + transaction.getId();
         } catch (Exception e) {
             log.error("Error recording sale", e);
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_SALE);
             return "inventory/sale-form";
         }
@@ -267,7 +272,7 @@ public class InventoryTransactionController {
     @PreAuthorize("hasAuthority('" + Permission.INVENTORY_ADJUST + "')")
     public String showAdjustmentForm(Model model) {
         model.addAttribute("form", new InventoryTransactionForm());
-        model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+        model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_ADJUSTMENT);
 
         return "inventory/adjustment-form";
@@ -282,7 +287,7 @@ public class InventoryTransactionController {
             RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_ADJUSTMENT);
             return "inventory/adjustment-form";
         }
@@ -309,11 +314,11 @@ public class InventoryTransactionController {
             }
 
             redirectAttributes.addFlashAttribute("success", "Penyesuaian berhasil dicatat");
-            return "redirect:/inventory/transactions/" + transaction.getId();
+            return REDIRECT_INVENTORY_TRANSACTIONS + transaction.getId();
         } catch (Exception e) {
             log.error("Error recording adjustment", e);
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("products", productRepository.findAllActiveOrderByCode());
+            model.addAttribute(ATTR_PRODUCTS, productRepository.findAllActiveOrderByCode());
             model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_ADJUSTMENT);
             return "inventory/adjustment-form";
         }
@@ -337,7 +342,7 @@ public class InventoryTransactionController {
 
         model.addAttribute("product", product);
         model.addAttribute("balance", balance);
-        model.addAttribute("transactions", transactions);
+        model.addAttribute(ATTR_TRANSACTIONS, transactions);
         model.addAttribute("fifoLayers", fifoLayers);
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVENTORY_STOCK);
 

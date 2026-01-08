@@ -43,6 +43,12 @@ import static com.artivisi.accountingfinance.controller.ViewConstants.*;
 @PreAuthorize("hasAuthority('" + Permission.ASSET_VIEW + "')")
 public class FixedAssetController {
 
+    private static final String ATTR_ASSET = "asset";
+    private static final String ATTR_ASSETS = "assets";
+    private static final String ATTR_SUCCESS_MESSAGE = "successMessage";
+    private static final String REDIRECT_ASSETS = "redirect:/assets";
+    private static final String REDIRECT_ASSETS_DEPRECIATION = "redirect:/assets/depreciation";
+
     private final FixedAssetService fixedAssetService;
     private final AssetCategoryService assetCategoryService;
 
@@ -57,7 +63,7 @@ public class FixedAssetController {
 
         Page<FixedAsset> assets = fixedAssetService.findByFilters(search, status, categoryId, pageable);
 
-        model.addAttribute("assets", assets);
+        model.addAttribute(ATTR_ASSETS, assets);
         model.addAttribute("search", search);
         model.addAttribute("status", status);
         model.addAttribute("categoryId", categoryId);
@@ -87,7 +93,7 @@ public class FixedAssetController {
         asset.setPurchaseDate(LocalDate.now());
         asset.setDepreciationStartDate(LocalDate.now().withDayOfMonth(1));
 
-        model.addAttribute("asset", asset);
+        model.addAttribute(ATTR_ASSET, asset);
         addFormAttributes(model);
         return "assets/form";
     }
@@ -107,8 +113,8 @@ public class FixedAssetController {
 
         try {
             FixedAsset saved = fixedAssetService.create(asset);
-            redirectAttributes.addFlashAttribute("successMessage", "Aset berhasil ditambahkan");
-            return "redirect:/assets/" + saved.getId();
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE, "Aset berhasil ditambahkan");
+            return REDIRECT_ASSETS + "/" + saved.getId();
         } catch (IllegalArgumentException e) {
             if (e.getMessage().contains("Kode aset")) {
                 bindingResult.rejectValue("assetCode", "duplicate", e.getMessage());
@@ -125,7 +131,7 @@ public class FixedAssetController {
         FixedAsset asset = fixedAssetService.findByIdWithDetails(id);
         List<DepreciationEntry> depreciationHistory = fixedAssetService.getDepreciationHistory(id);
 
-        model.addAttribute("asset", asset);
+        model.addAttribute(ATTR_ASSET, asset);
         model.addAttribute("depreciationHistory", depreciationHistory);
         model.addAttribute("monthlyDepreciation", fixedAssetService.calculateMonthlyDepreciation(asset));
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_ASSETS);
@@ -136,7 +142,7 @@ public class FixedAssetController {
     @PreAuthorize("hasAuthority('" + Permission.ASSET_EDIT + "')")
     public String editForm(@PathVariable UUID id, Model model) {
         FixedAsset asset = fixedAssetService.findByIdWithDetails(id);
-        model.addAttribute("asset", asset);
+        model.addAttribute(ATTR_ASSET, asset);
         addFormAttributes(model);
         return "assets/form";
     }
@@ -158,8 +164,8 @@ public class FixedAssetController {
 
         try {
             fixedAssetService.update(id, asset);
-            redirectAttributes.addFlashAttribute("successMessage", "Aset berhasil diperbarui");
-            return "redirect:/assets/" + id;
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE, "Aset berhasil diperbarui");
+            return REDIRECT_ASSETS + "/" + id;
         } catch (IllegalArgumentException | IllegalStateException e) {
             bindingResult.reject("error", e.getMessage());
             asset.setId(id);
@@ -176,11 +182,11 @@ public class FixedAssetController {
 
         try {
             fixedAssetService.delete(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Aset berhasil dihapus");
-            return "redirect:/assets";
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE, "Aset berhasil dihapus");
+            return REDIRECT_ASSETS;
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/assets/" + id;
+            return REDIRECT_ASSETS + "/" + id;
         }
     }
 
@@ -207,10 +213,10 @@ public class FixedAssetController {
         if (entries.isEmpty()) {
             redirectAttributes.addFlashAttribute("infoMessage", "Tidak ada aset yang perlu disusutkan untuk periode " + period);
         } else {
-            redirectAttributes.addFlashAttribute("successMessage",
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE,
                     "Berhasil generate " + entries.size() + " entri penyusutan untuk periode " + period);
         }
-        return "redirect:/assets/depreciation";
+        return REDIRECT_ASSETS_DEPRECIATION;
     }
 
     @PostMapping("/depreciation/{entryId}/post")
@@ -222,12 +228,12 @@ public class FixedAssetController {
 
         try {
             DepreciationEntry entry = fixedAssetService.postDepreciationEntry(entryId, authentication.getName());
-            redirectAttributes.addFlashAttribute("successMessage",
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE,
                     "Penyusutan untuk " + entry.getFixedAsset().getName() + " berhasil di-posting");
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
-        return "redirect:/assets/depreciation";
+        return REDIRECT_ASSETS_DEPRECIATION;
     }
 
     @PostMapping("/depreciation/{entryId}/skip")
@@ -237,8 +243,8 @@ public class FixedAssetController {
             RedirectAttributes redirectAttributes) {
 
         fixedAssetService.skipDepreciationEntry(entryId);
-        redirectAttributes.addFlashAttribute("successMessage", "Entri penyusutan di-skip");
-        return "redirect:/assets/depreciation";
+        redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE, "Entri penyusutan di-skip");
+        return REDIRECT_ASSETS_DEPRECIATION;
     }
 
     @PostMapping("/depreciation/post-all")
@@ -253,10 +259,10 @@ public class FixedAssetController {
         if (count == 0) {
             redirectAttributes.addFlashAttribute("infoMessage", "Tidak ada entri penyusutan yang perlu di-posting");
         } else {
-            redirectAttributes.addFlashAttribute("successMessage",
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE,
                     "Berhasil posting " + count + " entri penyusutan");
         }
-        return "redirect:/assets/depreciation";
+        return REDIRECT_ASSETS_DEPRECIATION;
     }
 
     // Asset Disposal
@@ -267,10 +273,10 @@ public class FixedAssetController {
         FixedAsset asset = fixedAssetService.findByIdWithDetails(id);
 
         if (asset.isDisposed()) {
-            return "redirect:/assets/" + id;
+            return REDIRECT_ASSETS + "/" + id;
         }
 
-        model.addAttribute("asset", asset);
+        model.addAttribute(ATTR_ASSET, asset);
         model.addAttribute("disposalTypes", DisposalType.values());
         model.addAttribute("disposalDate", LocalDate.now());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_ASSETS);
@@ -291,12 +297,12 @@ public class FixedAssetController {
         try {
             FixedAsset disposed = fixedAssetService.disposeAsset(
                     id, disposalType, proceeds, notes, disposalDate, authentication.getName());
-            redirectAttributes.addFlashAttribute("successMessage",
+            redirectAttributes.addFlashAttribute(ATTR_SUCCESS_MESSAGE,
                     "Aset " + disposed.getName() + " berhasil dilepas");
-            return "redirect:/assets/" + id;
+            return REDIRECT_ASSETS + "/" + id;
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/assets/" + id + "/dispose";
+            return REDIRECT_ASSETS + "/" + id + "/dispose";
         }
     }
 
