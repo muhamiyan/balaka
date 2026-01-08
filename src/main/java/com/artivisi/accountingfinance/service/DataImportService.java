@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -85,6 +86,9 @@ public class DataImportService {
 
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    // Import function registry (initialized lazily to allow instance method references)
+    private Map<String, Function<String, Integer>> importFunctions;
 
     // Reference maps for O(1) lookups (populated during import)
     private Map<String, ChartOfAccount> accountMap;
@@ -173,31 +177,42 @@ public class DataImportService {
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zipData))) {
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.isDirectory()) continue;
-
-                String name = entry.getName();
-
-                // Zip slip protection: reject entries with path traversal
-                if (name.contains("..") || name.startsWith("/") || name.startsWith("\\")) {
-                    log.warn("Rejected potentially malicious zip entry: {}", LogSanitizer.filename(name));
-                    zis.closeEntry();
-                    continue;
-                }
-
-                byte[] content = zis.readAllBytes();
-
-                if (name.endsWith(".csv") && !name.startsWith("documents/") && !name.startsWith("company_logo/")) {
-                    csvFiles.put(name, new String(content, StandardCharsets.UTF_8));
-                } else if (name.startsWith("documents/") && !name.equals("documents/index.csv")) {
-                    documentFiles.put(name.substring("documents/".length()), content);
-                } else if (name.equals("documents/index.csv")) {
-                    csvFiles.put(name, new String(content, StandardCharsets.UTF_8));
-                } else if (name.startsWith("company_logo/")) {
-                    // Company logo - store with same key structure as documents
-                    documentFiles.put("company_logo:" + name.substring("company_logo/".length()), content);
-                }
+                processZipEntry(entry, zis, csvFiles, documentFiles);
                 zis.closeEntry();
             }
+        }
+    }
+
+    private void processZipEntry(ZipEntry entry, ZipInputStream zis, Map<String, String> csvFiles, Map<String, byte[]> documentFiles) throws IOException {
+        if (entry.isDirectory()) {
+            return;
+        }
+
+        String name = entry.getName();
+
+        // Zip slip protection: reject entries with path traversal
+        if (isPathTraversal(name)) {
+            log.warn("Rejected potentially malicious zip entry: {}", LogSanitizer.filename(name));
+            return;
+        }
+
+        byte[] content = zis.readAllBytes();
+        classifyAndStoreEntry(name, content, csvFiles, documentFiles);
+    }
+
+    private boolean isPathTraversal(String name) {
+        return name.contains("..") || name.startsWith("/") || name.startsWith("\\");
+    }
+
+    private void classifyAndStoreEntry(String name, byte[] content, Map<String, String> csvFiles, Map<String, byte[]> documentFiles) {
+        if (name.endsWith(".csv") && !name.startsWith("documents/") && !name.startsWith("company_logo/")) {
+            csvFiles.put(name, new String(content, StandardCharsets.UTF_8));
+        } else if (name.startsWith("documents/") && !name.equals("documents/index.csv")) {
+            documentFiles.put(name.substring("documents/".length()), content);
+        } else if (name.equals("documents/index.csv")) {
+            csvFiles.put(name, new String(content, StandardCharsets.UTF_8));
+        } else if (name.startsWith("company_logo/")) {
+            documentFiles.put("company_logo:" + name.substring("company_logo/".length()), content);
         }
     }
 
@@ -382,61 +397,93 @@ public class DataImportService {
         for (ProjectMilestone m : milestoneRepository.findAll()) {
             milestoneMap.put(m.getProject().getCode() + "_" + m.getSequence(), m);
         }
+
+        // Initialize import functions registry
+        initializeImportFunctions();
+    }
+
+    private void initializeImportFunctions() {
+        importFunctions = new HashMap<>();
+        // Core data (01-10)
+        registerCoreDataImports();
+        // Financial data (11-20)
+        registerFinancialDataImports();
+        // Payroll and admin (21-35)
+        registerPayrollAndAdminImports();
+        // Manufacturing (35-41)
+        registerManufacturingImports();
+    }
+
+    private void registerCoreDataImports() {
+        importFunctions.put("01_company_config.csv", this::importCompanyConfig);
+        importFunctions.put("02_chart_of_accounts.csv", this::importChartOfAccounts);
+        importFunctions.put("03_salary_components.csv", this::importSalaryComponents);
+        importFunctions.put("04_journal_templates.csv", this::importJournalTemplates);
+        importFunctions.put("05_journal_template_lines.csv", this::importJournalTemplateLines);
+        importFunctions.put("06_journal_template_tags.csv", this::importJournalTemplateTags);
+        importFunctions.put("07_clients.csv", this::importClients);
+        importFunctions.put("08_projects.csv", this::importProjects);
+        importFunctions.put("09_project_milestones.csv", this::importProjectMilestones);
+        importFunctions.put("10_project_payment_terms.csv", this::importProjectPaymentTerms);
+    }
+
+    private void registerFinancialDataImports() {
+        importFunctions.put("11_fiscal_periods.csv", this::importFiscalPeriods);
+        importFunctions.put("12_tax_deadlines.csv", this::importTaxDeadlines);
+        importFunctions.put("13_company_bank_accounts.csv", this::importCompanyBankAccounts);
+        importFunctions.put("14_merchant_mappings.csv", this::importMerchantMappings);
+        importFunctions.put("15_employees.csv", this::importEmployees);
+        importFunctions.put("16_employee_salary_components.csv", this::importEmployeeSalaryComponents);
+        importFunctions.put("17_invoices.csv", this::importInvoices);
+        importFunctions.put("18_transactions.csv", this::importTransactions);
+        importFunctions.put("19_transaction_account_mappings.csv", this::importTransactionAccountMappings);
+        importFunctions.put("19a_transaction_variables.csv", this::importTransactionVariables);
+        importFunctions.put("20_journal_entries.csv", this::importJournalEntries);
+    }
+
+    private void registerPayrollAndAdminImports() {
+        importFunctions.put("21_payroll_runs.csv", this::importPayrollRuns);
+        importFunctions.put("22_payroll_details.csv", this::importPayrollDetails);
+        importFunctions.put("23_amortization_schedules.csv", this::importAmortizationSchedules);
+        importFunctions.put("24_amortization_entries.csv", this::importAmortizationEntries);
+        importFunctions.put("25_tax_transaction_details.csv", this::importTaxTransactionDetails);
+        importFunctions.put("26_tax_deadline_completions.csv", this::importTaxDeadlineCompletions);
+        importFunctions.put("27_draft_transactions.csv", this::importDraftTransactions);
+        importFunctions.put("28_users.csv", this::importUsers);
+        importFunctions.put("29_user_roles.csv", this::importUserRoles);
+        importFunctions.put("30_user_template_preferences.csv", this::importUserTemplatePreferences);
+        importFunctions.put("31_telegram_user_links.csv", this::importTelegramUserLinks);
+        importFunctions.put("32_audit_logs.csv", this::importAuditLogs);
+        importFunctions.put("33_transaction_sequences.csv", this::importTransactionSequences);
+        importFunctions.put("34_asset_categories.csv", this::importAssetCategories);
+    }
+
+    private void registerManufacturingImports() {
+        importFunctions.put("35_product_categories.csv", this::importProductCategories);
+        importFunctions.put("36_products.csv", this::importProducts);
+        importFunctions.put("37_bill_of_materials.csv", this::importBillOfMaterials);
+        importFunctions.put("38_bom_lines.csv", this::importBomLines);
+        importFunctions.put("39_production_orders.csv", this::importProductionOrders);
+        importFunctions.put("40_inventory_transactions.csv", this::importInventoryTransactions);
+        importFunctions.put("41_inventory_balances.csv", this::importInventoryBalances);
     }
 
     private int importCsvFile(String filename, String content) {
         try {
-            return switch (filename) {
-                case "01_company_config.csv" -> importCompanyConfig(content);
-                case "02_chart_of_accounts.csv" -> importChartOfAccounts(content);
-                case "03_salary_components.csv" -> importSalaryComponents(content);
-                case "04_journal_templates.csv" -> importJournalTemplates(content);
-                case "05_journal_template_lines.csv" -> importJournalTemplateLines(content);
-                case "06_journal_template_tags.csv" -> importJournalTemplateTags(content);
-                case "07_clients.csv" -> importClients(content);
-                case "08_projects.csv" -> importProjects(content);
-                case "09_project_milestones.csv" -> importProjectMilestones(content);
-                case "10_project_payment_terms.csv" -> importProjectPaymentTerms(content);
-                case "11_fiscal_periods.csv" -> importFiscalPeriods(content);
-                case "12_tax_deadlines.csv" -> importTaxDeadlines(content);
-                case "13_company_bank_accounts.csv" -> importCompanyBankAccounts(content);
-                case "14_merchant_mappings.csv" -> importMerchantMappings(content);
-                case "15_employees.csv" -> importEmployees(content);
-                case "16_employee_salary_components.csv" -> importEmployeeSalaryComponents(content);
-                case "17_invoices.csv" -> importInvoices(content);
-                case "18_transactions.csv" -> importTransactions(content);
-                case "19_transaction_account_mappings.csv" -> importTransactionAccountMappings(content);
-                case "19a_transaction_variables.csv" -> importTransactionVariables(content);
-                case "20_journal_entries.csv" -> importJournalEntries(content);
-                case "21_payroll_runs.csv" -> importPayrollRuns(content);
-                case "22_payroll_details.csv" -> importPayrollDetails(content);
-                case "23_amortization_schedules.csv" -> importAmortizationSchedules(content);
-                case "24_amortization_entries.csv" -> importAmortizationEntries(content);
-                case "25_tax_transaction_details.csv" -> importTaxTransactionDetails(content);
-                case "26_tax_deadline_completions.csv" -> importTaxDeadlineCompletions(content);
-                case "27_draft_transactions.csv" -> importDraftTransactions(content);
-                case "28_users.csv" -> importUsers(content);
-                case "29_user_roles.csv" -> importUserRoles(content);
-                case "30_user_template_preferences.csv" -> importUserTemplatePreferences(content);
-                case "31_telegram_user_links.csv" -> importTelegramUserLinks(content);
-                case "32_audit_logs.csv" -> importAuditLogs(content);
-                case "33_transaction_sequences.csv" -> importTransactionSequences(content);
-                case "34_asset_categories.csv" -> importAssetCategories(content);
-                case "35_product_categories.csv" -> importProductCategories(content);
-                case "36_products.csv" -> importProducts(content);
-                case "37_bill_of_materials.csv" -> importBillOfMaterials(content);
-                case "38_bom_lines.csv" -> importBomLines(content);
-                case "39_production_orders.csv" -> importProductionOrders(content);
-                case "40_inventory_transactions.csv" -> importInventoryTransactions(content);
-                case "41_inventory_balances.csv" -> importInventoryBalances(content);
-                case "documents/index.csv" -> 0; // Handled separately
-                default -> {
-                    if (!filename.equals("MANIFEST.md")) {
-                        log.warn("Unknown file in import: {}", LogSanitizer.filename(filename));
-                    }
-                    yield 0;
-                }
-            };
+            // Skip document index (handled separately) and manifest
+            if ("documents/index.csv".equals(filename)) {
+                return 0;
+            }
+
+            Function<String, Integer> importFunction = importFunctions.get(filename);
+            if (importFunction != null) {
+                return importFunction.apply(content);
+            }
+
+            if (!"MANIFEST.md".equals(filename)) {
+                log.warn("Unknown file in import: {}", LogSanitizer.filename(filename));
+            }
+            return 0;
         } catch (Exception e) {
             log.error("Error importing file {}: {}", LogSanitizer.filename(filename), e.getMessage(), e);
             throw new RuntimeException("Failed to import " + filename + ": " + e.getMessage(), e);
@@ -735,34 +782,38 @@ public class DataImportService {
         int imported = 0;
 
         for (String[] row : rows) {
-            String templateName = getField(row, 0);
-            boolean isSystem = parseBoolean(getField(row, 5));
-
-            // Check if system template already exists (preserved from seed data)
-            JournalTemplate existing = templateMap.get(templateName);
-            if (existing != null && existing.getIsSystem()) {
-                // Keep existing system template, don't overwrite
-                log.debug("Skipping existing system template: {}", templateName);
-                continue;
+            if (importSingleTemplate(row)) {
+                imported++;
             }
-
-            JournalTemplate t = new JournalTemplate();
-            t.setTemplateName(templateName);
-            t.setCategory(TemplateCategory.valueOf(getField(row, 1)));
-            t.setCashFlowCategory(CashFlowCategory.valueOf(getField(row, 2)));
-            t.setTemplateType(TemplateType.valueOf(getField(row, 3)));
-            t.setDescription(getField(row, 4));
-            t.setIsSystem(isSystem);
-            t.setActive(parseBoolean(getField(row, 6)));
-            t.setVersion(parseInteger(getField(row, 7)));
-            t.setUsageCount(parseInteger(getField(row, 8)));
-            t.setLastUsedAt(parseDateTime(getField(row, 9)));
-
-            templateRepository.save(t);
-            templateMap.put(t.getTemplateName(), t);
-            imported++;
         }
         return imported;
+    }
+
+    private boolean importSingleTemplate(String[] row) {
+        String templateName = getField(row, 0);
+
+        // Check if system template already exists (preserved from seed data)
+        JournalTemplate existing = templateMap.get(templateName);
+        if (existing != null && existing.getIsSystem()) {
+            log.debug("Skipping existing system template: {}", templateName);
+            return false;
+        }
+
+        JournalTemplate t = new JournalTemplate();
+        t.setTemplateName(templateName);
+        t.setCategory(TemplateCategory.valueOf(getField(row, 1)));
+        t.setCashFlowCategory(CashFlowCategory.valueOf(getField(row, 2)));
+        t.setTemplateType(TemplateType.valueOf(getField(row, 3)));
+        t.setDescription(getField(row, 4));
+        t.setIsSystem(parseBoolean(getField(row, 5)));
+        t.setActive(parseBoolean(getField(row, 6)));
+        t.setVersion(parseInteger(getField(row, 7)));
+        t.setUsageCount(parseInteger(getField(row, 8)));
+        t.setLastUsedAt(parseDateTime(getField(row, 9)));
+
+        templateRepository.save(t);
+        templateMap.put(t.getTemplateName(), t);
+        return true;
     }
 
     private int importJournalTemplateLines(String content) {
@@ -770,35 +821,42 @@ public class DataImportService {
         int imported = 0;
 
         for (String[] row : rows) {
-            String templateName = getField(row, 0);
-            JournalTemplate template = templateMap.get(templateName);
-            if (template == null) {
-                log.warn("Template not found for line: {}", templateName);
-                continue;
+            if (importSingleTemplateLine(row)) {
+                imported++;
             }
-
-            // Skip lines for system templates (they already have lines from seed data)
-            if (template.getIsSystem()) {
-                continue;
-            }
-
-            JournalTemplateLine line = new JournalTemplateLine();
-            line.setJournalTemplate(template);
-            line.setLineOrder(parseInteger(getField(row, 1)));
-
-            String accountCode = getField(row, 2);
-            if (!accountCode.isEmpty()) {
-                line.setAccount(accountMap.get(accountCode));
-            }
-            line.setAccountHint(getField(row, 3));
-            line.setPosition(JournalPosition.valueOf(getField(row, 4)));
-            line.setFormula(getField(row, 5));
-            line.setDescription(getField(row, 6));
-
-            templateLineRepository.save(line);
-            imported++;
         }
         return imported;
+    }
+
+    private boolean importSingleTemplateLine(String[] row) {
+        String templateName = getField(row, 0);
+        JournalTemplate template = templateMap.get(templateName);
+
+        if (template == null) {
+            log.warn("Template not found for line: {}", templateName);
+            return false;
+        }
+
+        // Skip lines for system templates (they already have lines from seed data)
+        if (template.getIsSystem()) {
+            return false;
+        }
+
+        JournalTemplateLine line = new JournalTemplateLine();
+        line.setJournalTemplate(template);
+        line.setLineOrder(parseInteger(getField(row, 1)));
+
+        String accountCode = getField(row, 2);
+        if (!accountCode.isEmpty()) {
+            line.setAccount(accountMap.get(accountCode));
+        }
+        line.setAccountHint(getField(row, 3));
+        line.setPosition(JournalPosition.valueOf(getField(row, 4)));
+        line.setFormula(getField(row, 5));
+        line.setDescription(getField(row, 6));
+
+        templateLineRepository.save(line);
+        return true;
     }
 
     private int importJournalTemplateTags(String content) {
@@ -806,20 +864,24 @@ public class DataImportService {
         int imported = 0;
 
         for (String[] row : rows) {
-            String templateName = getField(row, 0);
-            JournalTemplate template = templateMap.get(templateName);
-            if (template == null) continue;
-
-            // Skip tags for system templates
-            if (template.getIsSystem()) {
-                continue;
+            if (importSingleTemplateTag(row)) {
+                imported++;
             }
-
-            JournalTemplateTag tag = new JournalTemplateTag(template, getField(row, 1));
-            templateTagRepository.save(tag);
-            imported++;
         }
         return imported;
+    }
+
+    private boolean importSingleTemplateTag(String[] row) {
+        String templateName = getField(row, 0);
+        JournalTemplate template = templateMap.get(templateName);
+
+        if (template == null || template.getIsSystem()) {
+            return false;
+        }
+
+        JournalTemplateTag tag = new JournalTemplateTag(template, getField(row, 1));
+        templateTagRepository.save(tag);
+        return true;
     }
 
     private int importClients(String content) {
