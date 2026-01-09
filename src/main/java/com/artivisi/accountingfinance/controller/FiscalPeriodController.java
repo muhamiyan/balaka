@@ -92,7 +92,7 @@ public class FiscalPeriodController {
             try {
                 fiscalPeriodService.create(year, month);
                 created++;
-            } catch (IllegalArgumentException e) {
+            } catch (IllegalArgumentException _) {
                 // Period already exists, skip
             }
         }

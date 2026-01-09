@@ -208,12 +208,12 @@ public class ReceiptParserService {
             }
 
             return new BigDecimal(normalized);
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             // Try alternative parsing
             try {
                 String cleaned = amountStr.replaceAll("[^\\d]", "");
                 return new BigDecimal(cleaned);
-            } catch (NumberFormatException e2) {
+            } catch (NumberFormatException _) {
                 log.debug("Amount parsing failed for: {}", amountStr);
                 return null;
             }
@@ -247,7 +247,7 @@ public class ReceiptParserService {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (Exception _) {
             log.debug("Date parsing failed for: {}", dateStr);
         }
         return null;
@@ -256,7 +256,7 @@ public class ReceiptParserService {
     private LocalDate tryParseWithPattern(String dateStr, String pattern) {
         try {
             return LocalDate.parse(dateStr, DateTimeFormatter.ofPattern(pattern));
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             return null;
         }
     }

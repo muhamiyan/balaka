@@ -352,7 +352,7 @@ public class PayrollController {
             .map(empId -> {
                 try {
                     return payrollService.getYearlyPayrollSummary(empId, selectedYear);
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException _) {
                     return null;
                 }
             })

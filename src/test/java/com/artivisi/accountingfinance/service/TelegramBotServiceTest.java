@@ -446,7 +446,7 @@ class TelegramBotServiceTest {
             // But it tests the flow up to that point
             try {
                 service.handleUpdate(update);
-            } catch (Exception e) {
+            } catch (Exception _) {
                 // Expected - can't mock URL download
             }
 

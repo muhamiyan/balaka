@@ -215,7 +215,7 @@ public class FormulaEvaluator {
     public BigDecimal preview(String formula, BigDecimal sampleAmount) {
         try {
             return evaluate(formula, FormulaContext.of(sampleAmount));
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return null;
         }
     }

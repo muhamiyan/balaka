@@ -112,7 +112,7 @@ public class TransactionController {
                 Project project = projectService.findByCode(projectCode);
                 projectId = project.getId();
                 model.addAttribute("selectedProjectId", projectId);
-            } catch (EntityNotFoundException e) {
+            } catch (EntityNotFoundException _) {
                 // Project not found, ignore filter
             }
         }
