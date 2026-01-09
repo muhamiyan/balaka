@@ -19,7 +19,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 public class SecurityConfig {
 
     @Bean
-    @SuppressWarnings("java:S112") // Spring Security API requires throws Exception
+    @SuppressWarnings({"java:S112", "java:S1130"}) // Spring Security API requires throws Exception
     public SecurityFilterChain securityFilterChain(HttpSecurity http, UserDetailsService userDetailsService) throws Exception {
         http
             .userDetailsService(userDetailsService)

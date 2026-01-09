@@ -239,7 +239,7 @@ public class DataExportService {
     /**
      * Export company logo file to ZIP archive.
      */
-    private void exportCompanyLogo(ZipOutputStream zos) throws IOException {
+    private void exportCompanyLogo(ZipOutputStream zos) {
         companyConfigRepository.findFirst().ifPresent(config -> {
             String logoPath = config.getCompanyLogoPath();
             if (logoPath != null && !logoPath.isBlank()) {

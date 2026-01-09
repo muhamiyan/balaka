@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.util.ArrayList;

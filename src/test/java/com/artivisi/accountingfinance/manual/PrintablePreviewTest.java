@@ -32,7 +32,7 @@ class PrintablePreviewTest extends PlaywrightTestBase {
 
     @Test
     @DisplayName("Generate Invoice Print Preview")
-    void generateInvoicePrintPreview() throws Exception {
+    void generateInvoicePrintPreview() {
         // Use the known invoice number from V906 test data
         String invoiceNumber = "INV-2024-001";
         navigateTo("/invoices/" + invoiceNumber + "/print");
@@ -48,7 +48,7 @@ class PrintablePreviewTest extends PlaywrightTestBase {
 
     @Test
     @DisplayName("Generate Balance Sheet Print Preview")
-    void generateBalanceSheetPrintPreview() throws Exception {
+    void generateBalanceSheetPrintPreview() {
         String today = LocalDate.now().format(DATE_FORMAT);
         navigateTo("/reports/balance-sheet/print?asOfDate=" + today);
         waitForPageLoad();
@@ -63,7 +63,7 @@ class PrintablePreviewTest extends PlaywrightTestBase {
 
     @Test
     @DisplayName("Generate Income Statement Print Preview")
-    void generateIncomeStatementPrintPreview() throws Exception {
+    void generateIncomeStatementPrintPreview() {
         LocalDate today = LocalDate.now();
         LocalDate startOfMonth = today.withDayOfMonth(1);
         String startDate = startOfMonth.format(DATE_FORMAT);
@@ -82,7 +82,7 @@ class PrintablePreviewTest extends PlaywrightTestBase {
 
     @Test
     @DisplayName("Generate Trial Balance Print Preview")
-    void generateTrialBalancePrintPreview() throws Exception {
+    void generateTrialBalancePrintPreview() {
         String today = LocalDate.now().format(DATE_FORMAT);
         navigateTo("/reports/trial-balance/print?asOfDate=" + today);
         waitForPageLoad();
