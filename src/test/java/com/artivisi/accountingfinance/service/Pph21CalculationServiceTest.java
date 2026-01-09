@@ -267,8 +267,7 @@ class Pph21CalculationServiceTest {
             BigDecimal effectiveRate = result.effectiveTaxRate();
 
             // Effective rate should be between 0 and 35%
-            assertThat(effectiveRate).isGreaterThan(BigDecimal.ZERO);
-            assertThat(effectiveRate).isLessThan(new BigDecimal("35"));
+            assertThat(effectiveRate).isGreaterThan(BigDecimal.ZERO).isLessThan(new BigDecimal("35"));
         }
 
         @Test

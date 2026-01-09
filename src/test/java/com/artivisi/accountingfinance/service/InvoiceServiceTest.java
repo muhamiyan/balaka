@@ -146,8 +146,7 @@ class InvoiceServiceTest {
 
             List<Invoice> invoices = invoiceService.findByClientId(testClient.getId());
 
-            assertThat(invoices).isNotEmpty();
-            assertThat(invoices).allMatch(i -> i.getClient().getId().equals(testClient.getId()));
+            assertThat(invoices).isNotEmpty().allMatch(i -> i.getClient().getId().equals(testClient.getId()));
         }
 
         @Test

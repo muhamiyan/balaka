@@ -35,8 +35,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.sanitize(input);
 
-            assertThat(sanitized).isEqualTo("Line1_Line2_Line3");
-            assertThat(sanitized).doesNotContain("\n");
+            assertThat(sanitized).isEqualTo("Line1_Line2_Line3").doesNotContain("\n");
         }
 
         @Test
@@ -46,8 +45,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.sanitize(input);
 
-            assertThat(sanitized).isEqualTo("Line1_Line2");
-            assertThat(sanitized).doesNotContain("\r");
+            assertThat(sanitized).isEqualTo("Line1_Line2").doesNotContain("\r");
         }
 
         @Test
@@ -87,8 +85,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.sanitize(input);
 
-            assertThat(sanitized).hasSize(500 + "...[truncated]".length());
-            assertThat(sanitized).endsWith("...[truncated]");
+            assertThat(sanitized).hasSize(500 + "...[truncated]".length()).endsWith("...[truncated]");
         }
 
         @Test
@@ -98,8 +95,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.sanitize(input);
 
-            assertThat(sanitized).hasSize(500);
-            assertThat(sanitized).doesNotContain("[truncated]");
+            assertThat(sanitized).hasSize(500).doesNotContain("[truncated]");
         }
 
         @Test
@@ -110,8 +106,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.sanitize(malicious);
 
-            assertThat(sanitized).doesNotContain("\n");
-            assertThat(sanitized).isEqualTo("user login_2024-01-01 12:00:00 WARN Admin logged in");
+            assertThat(sanitized).doesNotContain("\n").isEqualTo("user login_2024-01-01 12:00:00 WARN Admin logged in");
         }
     }
 
@@ -149,8 +144,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.username(longUsername);
 
-            assertThat(sanitized).hasSize(100 + "...[truncated]".length());
-            assertThat(sanitized).endsWith("...[truncated]");
+            assertThat(sanitized).hasSize(100 + "...[truncated]".length()).endsWith("...[truncated]");
         }
 
         @ParameterizedTest
@@ -192,8 +186,7 @@ class LogSanitizerTest {
 
             String sanitized = LogSanitizer.ipAddress(malicious);
 
-            assertThat(sanitized).doesNotContain("\n");
-            assertThat(sanitized).contains("192.168.1.1");
+            assertThat(sanitized).doesNotContain("\n").contains("192.168.1.1");
         }
 
         @Test

@@ -503,8 +503,7 @@ class TelegramBotServiceTest {
 
             String code = service.generateVerificationCode(user);
 
-            assertThat(code).matches("\\d{6}");
-            assertThat(code).isNotEqualTo("oldcode");
+            assertThat(code).matches("\\d{6}").isNotEqualTo("oldcode");
 
             ArgumentCaptor<TelegramUserLink> captor =
                     ArgumentCaptor.forClass(TelegramUserLink.class);

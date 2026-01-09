@@ -145,9 +145,7 @@ class TransactionServiceTest {
         void findByStatusShouldReturnOrderedTransactions() {
             List<Transaction> transactions = transactionService.findByStatus(TransactionStatus.POSTED);
 
-            assertThat(transactions).isNotEmpty();
-            // Verify all have POSTED status
-            assertThat(transactions).allMatch(t -> t.getStatus() == TransactionStatus.POSTED);
+            assertThat(transactions).isNotEmpty().allMatch(t -> t.getStatus() == TransactionStatus.POSTED);
         }
 
         @Test

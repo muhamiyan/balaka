@@ -162,9 +162,10 @@ class UserServiceTest {
 
             List<User> activeUsers = userService.findAllActive();
 
-            assertThat(activeUsers).allMatch(User::getActive);
-            assertThat(activeUsers).anyMatch(u -> u.getId().equals(active.getId()));
-            assertThat(activeUsers).noneMatch(u -> u.getId().equals(inactive.getId()));
+            assertThat(activeUsers)
+                    .allMatch(User::getActive)
+                    .anyMatch(u -> u.getId().equals(active.getId()))
+                    .noneMatch(u -> u.getId().equals(inactive.getId()));
         }
     }
 

@@ -130,9 +130,10 @@ class ClientServiceTest {
 
             List<Client> activeClients = clientService.findActiveClients();
 
-            assertThat(activeClients).allMatch(Client::isActive);
-            assertThat(activeClients).anyMatch(c -> c.getId().equals(active.getId()));
-            assertThat(activeClients).noneMatch(c -> c.getId().equals(inactive.getId()));
+            assertThat(activeClients)
+                    .allMatch(Client::isActive)
+                    .anyMatch(c -> c.getId().equals(active.getId()))
+                    .noneMatch(c -> c.getId().equals(inactive.getId()));
         }
     }
 

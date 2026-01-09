@@ -57,8 +57,7 @@ class JournalTemplateServiceTest {
         void findAllShouldReturnActiveTemplates() {
             List<JournalTemplate> templates = journalTemplateService.findAll();
 
-            assertThat(templates).isNotEmpty();
-            assertThat(templates).allMatch(JournalTemplate::getActive);
+            assertThat(templates).isNotEmpty().allMatch(JournalTemplate::getActive);
         }
 
         @Test
@@ -416,8 +415,7 @@ class JournalTemplateServiceTest {
 
             List<JournalTemplate> templates = journalTemplateService.findByTag(tag);
 
-            assertThat(templates).isNotEmpty();
-            assertThat(templates).anyMatch(t -> t.getId().equals(template.getId()));
+            assertThat(templates).isNotEmpty().anyMatch(t -> t.getId().equals(template.getId()));
         }
 
         @Test

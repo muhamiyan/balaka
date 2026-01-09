@@ -55,22 +55,19 @@ class UserPermissionIntegrationTest {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        // Staff SHOULD have these permissions
-        assertThat(authorities).contains(
-                "ROLE_STAFF",
-                Permission.DASHBOARD_VIEW,
-                Permission.TRANSACTION_VIEW,
-                Permission.TRANSACTION_CREATE
-        );
-
-        // Staff should NOT have these permissions
-        assertThat(authorities).doesNotContain(
-                Permission.USER_VIEW,
-                Permission.USER_CREATE,
-                Permission.PAYROLL_VIEW,
-                Permission.TRANSACTION_EDIT,
-                Permission.TRANSACTION_POST
-        );
+        // Staff SHOULD have these permissions, but NOT admin permissions
+        assertThat(authorities)
+                .contains(
+                        "ROLE_STAFF",
+                        Permission.DASHBOARD_VIEW,
+                        Permission.TRANSACTION_VIEW,
+                        Permission.TRANSACTION_CREATE)
+                .doesNotContain(
+                        Permission.USER_VIEW,
+                        Permission.USER_CREATE,
+                        Permission.PAYROLL_VIEW,
+                        Permission.TRANSACTION_EDIT,
+                        Permission.TRANSACTION_POST);
     }
 
     @Test
@@ -93,22 +90,19 @@ class UserPermissionIntegrationTest {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        // Employee SHOULD have these permissions (self-service only)
-        assertThat(authorities).contains(
-                "ROLE_EMPLOYEE",
-                Permission.OWN_PAYSLIP_VIEW,
-                Permission.OWN_PROFILE_VIEW,
-                Permission.OWN_PROFILE_EDIT
-        );
-
-        // Employee should NOT have these permissions
-        assertThat(authorities).doesNotContain(
-                Permission.DASHBOARD_VIEW,
-                Permission.TRANSACTION_VIEW,
-                Permission.PAYROLL_VIEW,
-                Permission.USER_VIEW,
-                Permission.EMPLOYEE_VIEW
-        );
+        // Employee SHOULD have self-service permissions only, NOT business permissions
+        assertThat(authorities)
+                .contains(
+                        "ROLE_EMPLOYEE",
+                        Permission.OWN_PAYSLIP_VIEW,
+                        Permission.OWN_PROFILE_VIEW,
+                        Permission.OWN_PROFILE_EDIT)
+                .doesNotContain(
+                        Permission.DASHBOARD_VIEW,
+                        Permission.TRANSACTION_VIEW,
+                        Permission.PAYROLL_VIEW,
+                        Permission.USER_VIEW,
+                        Permission.EMPLOYEE_VIEW);
     }
 
     @Test
@@ -118,8 +112,9 @@ class UserPermissionIntegrationTest {
                 .orElseThrow(() -> new AssertionError("Auditor user not found in database"));
 
         assertThat(auditor.getActive()).isTrue();
-        assertThat(auditor.getRoles()).contains(Role.AUDITOR);
-        assertThat(auditor.getRoles()).doesNotContain(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT);
+        assertThat(auditor.getRoles())
+                .contains(Role.AUDITOR)
+                .doesNotContain(Role.ADMIN, Role.OWNER, Role.ACCOUNTANT);
     }
 
     @Test
@@ -131,24 +126,21 @@ class UserPermissionIntegrationTest {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        // Auditor SHOULD have these permissions (read-only)
-        assertThat(authorities).contains(
-                "ROLE_AUDITOR",
-                Permission.DASHBOARD_VIEW,
-                Permission.TRANSACTION_VIEW,
-                Permission.REPORT_VIEW,
-                Permission.PAYROLL_VIEW,
-                Permission.AUDIT_LOG_VIEW
-        );
-
-        // Auditor should NOT have these permissions (no create/edit)
-        assertThat(authorities).doesNotContain(
-                Permission.TRANSACTION_CREATE,
-                Permission.TRANSACTION_EDIT,
-                Permission.TRANSACTION_POST,
-                Permission.USER_VIEW,
-                Permission.USER_CREATE
-        );
+        // Auditor SHOULD have read-only permissions, NOT create/edit permissions
+        assertThat(authorities)
+                .contains(
+                        "ROLE_AUDITOR",
+                        Permission.DASHBOARD_VIEW,
+                        Permission.TRANSACTION_VIEW,
+                        Permission.REPORT_VIEW,
+                        Permission.PAYROLL_VIEW,
+                        Permission.AUDIT_LOG_VIEW)
+                .doesNotContain(
+                        Permission.TRANSACTION_CREATE,
+                        Permission.TRANSACTION_EDIT,
+                        Permission.TRANSACTION_POST,
+                        Permission.USER_VIEW,
+                        Permission.USER_CREATE);
     }
 
     @Test

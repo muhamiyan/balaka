@@ -91,8 +91,7 @@ class MonthlyJournalSchedulerTest {
 
             List<DepreciationEntry> entries = fixedAssetService.generateDepreciationEntries(period);
 
-            assertThat(entries).isNotEmpty();
-            assertThat(entries).anyMatch(e -> e.getFixedAsset().getId().equals(testAsset.getId()));
+            assertThat(entries).isNotEmpty().anyMatch(e -> e.getFixedAsset().getId().equals(testAsset.getId()));
         }
 
         @Test
@@ -213,8 +212,7 @@ class MonthlyJournalSchedulerTest {
             // Verify entries were created and posted
             List<DepreciationEntry> entries = depreciationEntryRepository.findByAssetIdWithAsset(testAsset.getId());
 
-            assertThat(entries).isNotEmpty();
-            assertThat(entries).anyMatch(e -> e.getStatus() == DepreciationEntryStatus.POSTED);
+            assertThat(entries).isNotEmpty().anyMatch(e -> e.getStatus() == DepreciationEntryStatus.POSTED);
         }
     }
 }

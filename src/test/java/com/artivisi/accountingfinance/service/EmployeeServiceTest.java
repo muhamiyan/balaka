@@ -145,9 +145,11 @@ class EmployeeServiceTest {
 
             List<Employee> activeEmployees = employeeService.findActiveEmployees();
 
-            assertThat(activeEmployees).isNotEmpty().allMatch(Employee::isActive);
-            assertThat(activeEmployees).anyMatch(e -> e.getId().equals(active.getId()));
-            assertThat(activeEmployees).noneMatch(e -> e.getId().equals(inactive.getId()));
+            assertThat(activeEmployees)
+                    .isNotEmpty()
+                    .allMatch(Employee::isActive)
+                    .anyMatch(e -> e.getId().equals(active.getId()))
+                    .noneMatch(e -> e.getId().equals(inactive.getId()));
         }
 
         @Test

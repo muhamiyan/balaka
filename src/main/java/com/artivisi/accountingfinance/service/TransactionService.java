@@ -96,6 +96,7 @@ public class TransactionService {
     }
 
     // Delegates to the full create method which handles the transaction
+    @Transactional
     public Transaction create(Transaction transaction, Map<UUID, UUID> accountMappings) {
         return create(transaction, accountMappings, null);
     }
