@@ -117,7 +117,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode + "/milestones/" + milestone.get().getId() + "/edit");
         waitForPageLoad();
 
@@ -132,7 +138,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode + "/milestones/" + milestone.get().getId() + "/edit");
         waitForPageLoad();
 
@@ -160,7 +172,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode);
         waitForPageLoad();
 
@@ -183,7 +201,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode);
         waitForPageLoad();
 
@@ -207,7 +231,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode);
         waitForPageLoad();
 
@@ -230,7 +260,13 @@ class MilestoneControllerFunctionalTest extends PlaywrightTestBase {
             return;
         }
 
-        var projectCode = milestone.get().getProject().getCode();
+        // Get project separately to avoid LazyInitializationException
+        var projectId = milestone.get().getProject().getId();
+        var project = projectRepository.findById(projectId);
+        if (project.isEmpty()) {
+            return;
+        }
+        var projectCode = project.get().getCode();
         navigateTo("/projects/" + projectCode);
         waitForPageLoad();
 
