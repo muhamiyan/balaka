@@ -25,15 +25,23 @@ public interface InventoryBalanceRepository extends JpaRepository<InventoryBalan
            "WHERE p = :product")
     Optional<InventoryBalance> findByProduct(@Param("product") Product product);
 
-    @Query("SELECT b FROM InventoryBalance b " +
-           "LEFT JOIN FETCH b.product p " +
-           "LEFT JOIN FETCH p.category " +
-           "WHERE (COALESCE(:search, '') = '' OR " +
-           "       LOWER(p.code) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%')) OR " +
-           "       LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) " +
-           "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
+    @Query(value = "SELECT ib.* FROM inventory_balances ib " +
+           "LEFT JOIN products p ON ib.id_product = p.id " +
+           "LEFT JOIN product_categories pc ON p.id_category = pc.id " +
+           "WHERE (COALESCE(CAST(:search AS varchar), '') = '' OR " +
+           "       LOWER(p.code) LIKE LOWER(CONCAT('%', CAST(:search AS varchar), '%')) OR " +
+           "       LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS varchar), '%'))) " +
+           "AND (CAST(:categoryId AS uuid) IS NULL OR p.id_category = CAST(:categoryId AS uuid)) " +
            "AND p.active = true " +
-           "ORDER BY p.code")
+           "ORDER BY p.code",
+           countQuery = "SELECT COUNT(*) FROM inventory_balances ib " +
+           "LEFT JOIN products p ON ib.id_product = p.id " +
+           "WHERE (COALESCE(CAST(:search AS varchar), '') = '' OR " +
+           "       LOWER(p.code) LIKE LOWER(CONCAT('%', CAST(:search AS varchar), '%')) OR " +
+           "       LOWER(p.name) LIKE LOWER(CONCAT('%', CAST(:search AS varchar), '%'))) " +
+           "AND (CAST(:categoryId AS uuid) IS NULL OR p.id_category = CAST(:categoryId AS uuid)) " +
+           "AND p.active = true",
+           nativeQuery = true)
     Page<InventoryBalance> findByFilters(
             @Param("search") String search,
             @Param("categoryId") UUID categoryId,

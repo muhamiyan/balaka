@@ -179,7 +179,8 @@ public class InventoryService {
                                                        LocalDate startDate,
                                                        LocalDate endDate,
                                                        Pageable pageable) {
-        return transactionRepository.findByFilters(productId, transactionType, startDate, endDate, pageable);
+        String transactionTypeStr = transactionType != null ? transactionType.name() : null;
+        return transactionRepository.findByFilters(productId, transactionTypeStr, startDate, endDate, pageable);
     }
 
     /**

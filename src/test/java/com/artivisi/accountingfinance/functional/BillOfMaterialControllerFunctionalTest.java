@@ -49,14 +49,22 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
         }
 
         // Create one if needed
+        return createFreshBomForTest("TEST");
+    }
+
+    /**
+     * Creates a fresh BOM for tests that modify data.
+     * This avoids modifying seed data from CoffeeTestDataInitializer.
+     */
+    private BillOfMaterial createFreshBomForTest(String prefix) {
         List<Product> products = productRepository.findAll();
         if (products.isEmpty()) {
             throw new AssertionError("No products available for BOM test");
         }
 
         BillOfMaterial bom = new BillOfMaterial();
-        bom.setCode("TEST-BOM-" + System.currentTimeMillis());
-        bom.setName("Test Active BOM");
+        bom.setCode(prefix + "-BOM-" + System.currentTimeMillis());
+        bom.setName(prefix + " BOM " + System.currentTimeMillis());
         bom.setProduct(products.get(0));
         bom.setOutputQuantity(BigDecimal.ONE);
         bom.setActive(true);
@@ -179,7 +187,7 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should update BOM")
     void shouldUpdateBOM() {
-        var bom = ensureActiveBomExists();
+        var bom = createFreshBomForTest("UPDATE");
 
         navigateTo("/inventory/bom/" + bom.getId() + "/edit");
         waitForPageLoad();
@@ -334,7 +342,7 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should update BOM with active checkbox")
     void shouldUpdateBOMWithActiveCheckbox() {
-        var bom = ensureActiveBomExists();
+        var bom = createFreshBomForTest("ACTIVE");
 
         navigateTo("/inventory/bom/" + bom.getId() + "/edit");
         waitForPageLoad();
@@ -447,7 +455,7 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should update BOM description")
     void shouldUpdateBOMDescription() {
-        var bom = ensureActiveBomExists();
+        var bom = createFreshBomForTest("DESC");
 
         navigateTo("/inventory/bom/" + bom.getId() + "/edit");
         waitForPageLoad();
@@ -516,7 +524,7 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should update BOM output quantity")
     void shouldUpdateBOMOutputQuantity() {
-        var bom = ensureActiveBomExists();
+        var bom = createFreshBomForTest("OUTPUTQTY");
 
         navigateTo("/inventory/bom/" + bom.getId() + "/edit");
         waitForPageLoad();
@@ -576,7 +584,7 @@ class BillOfMaterialControllerFunctionalTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should submit update BOM form")
     void shouldSubmitUpdateBOMForm() {
-        var bom = ensureActiveBomExists();
+        var bom = createFreshBomForTest("FORMUPDATE");
 
         navigateTo("/inventory/bom/" + bom.getId() + "/edit");
         waitForPageLoad();

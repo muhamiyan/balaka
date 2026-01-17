@@ -229,7 +229,10 @@ public class DataImportService {
             "journal_entries", "payroll_runs", "payroll_details",
             "amortization_schedules", "amortization_entries", "draft_transactions",
             "users", "user_roles", "user_template_preferences", "telegram_user_links", "audit_logs",
-            "transaction_sequences", "asset_categories"
+            "transaction_sequences", "asset_categories",
+            // Manufacturing tables
+            "product_categories", "products", "bill_of_materials", "bill_of_material_lines",
+            "production_orders", "inventory_transactions", "inventory_fifo_layers", "inventory_balances"
     );
 
     // Mapping from CSV filename to table name(s) that should be truncated
@@ -261,7 +264,21 @@ public class DataImportService {
             Map.entry("27_draft_transactions.csv", List.of("draft_transactions")),
             Map.entry("28_users.csv", List.of("telegram_user_links", "user_template_preferences", "user_roles", "audit_logs", "users")),
             Map.entry("33_transaction_sequences.csv", List.of("transaction_sequences")),
-            Map.entry("34_asset_categories.csv", List.of("asset_categories"))
+            Map.entry("34_asset_categories.csv", List.of("asset_categories")),
+            // Manufacturing tables - with dependency order
+            Map.entry("35_product_categories.csv", List.of(
+                    "inventory_balances", "inventory_fifo_layers", "inventory_transactions",
+                    "production_orders", "bill_of_material_lines", "bill_of_materials",
+                    "products", "product_categories")),
+            Map.entry("36_products.csv", List.of(
+                    "inventory_balances", "inventory_fifo_layers", "inventory_transactions",
+                    "production_orders", "bill_of_material_lines", "bill_of_materials", "products")),
+            Map.entry("37_bill_of_materials.csv", List.of(
+                    "production_orders", "bill_of_material_lines", "bill_of_materials")),
+            Map.entry("39_production_orders.csv", List.of("production_orders")),
+            Map.entry("40_inventory_transactions.csv", List.of(
+                    "inventory_balances", "inventory_fifo_layers", "inventory_transactions")),
+            Map.entry("41_inventory_balances.csv", List.of("inventory_balances"))
     );
 
     private void truncateTablesForFiles(Set<String> filesWithData) {

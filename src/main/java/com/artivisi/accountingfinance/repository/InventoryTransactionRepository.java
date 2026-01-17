@@ -14,16 +14,22 @@ import java.util.UUID;
 
 public interface InventoryTransactionRepository extends JpaRepository<InventoryTransaction, UUID> {
 
-    @Query("SELECT t FROM InventoryTransaction t " +
-           "LEFT JOIN FETCH t.product p " +
-           "WHERE (:productId IS NULL OR t.product.id = :productId) " +
-           "AND (:transactionType IS NULL OR t.transactionType = :transactionType) " +
-           "AND (:startDate IS NULL OR t.transactionDate >= :startDate) " +
-           "AND (:endDate IS NULL OR t.transactionDate <= :endDate) " +
-           "ORDER BY t.transactionDate DESC, t.createdAt DESC")
+    @Query(value = "SELECT it.* FROM inventory_transactions it " +
+           "LEFT JOIN products p ON it.id_product = p.id " +
+           "WHERE (CAST(:productId AS uuid) IS NULL OR it.id_product = CAST(:productId AS uuid)) " +
+           "AND (CAST(:transactionType AS varchar) IS NULL OR it.transaction_type = CAST(:transactionType AS varchar)) " +
+           "AND (CAST(:startDate AS date) IS NULL OR it.transaction_date >= CAST(:startDate AS date)) " +
+           "AND (CAST(:endDate AS date) IS NULL OR it.transaction_date <= CAST(:endDate AS date)) " +
+           "ORDER BY it.transaction_date DESC, it.created_at DESC",
+           countQuery = "SELECT COUNT(*) FROM inventory_transactions it " +
+           "WHERE (CAST(:productId AS uuid) IS NULL OR it.id_product = CAST(:productId AS uuid)) " +
+           "AND (CAST(:transactionType AS varchar) IS NULL OR it.transaction_type = CAST(:transactionType AS varchar)) " +
+           "AND (CAST(:startDate AS date) IS NULL OR it.transaction_date >= CAST(:startDate AS date)) " +
+           "AND (CAST(:endDate AS date) IS NULL OR it.transaction_date <= CAST(:endDate AS date))",
+           nativeQuery = true)
     Page<InventoryTransaction> findByFilters(
             @Param("productId") UUID productId,
-            @Param("transactionType") InventoryTransactionType transactionType,
+            @Param("transactionType") String transactionType,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             Pageable pageable);
