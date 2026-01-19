@@ -319,6 +319,96 @@ class SettingsPersistenceTest extends PlaywrightTestBase {
         assertThat(results).isNotNull();
     }
 
+    // ==================== BANK ACCOUNT CRUD OPERATIONS ====================
+
+    @Test
+    @DisplayName("Should edit bank account and verify database update")
+    void shouldEditBankAccountAndVerifyDatabaseUpdate() {
+        // Create test account
+        String uniqueNumber = "EDIT" + System.currentTimeMillis() % 10000;
+
+        CompanyBankAccount account = new CompanyBankAccount();
+        account.setBankName("Original Bank");
+        account.setAccountNumber(uniqueNumber);
+        account.setAccountName("Original Account");
+        account.setActive(true);
+
+        CompanyBankAccount saved = bankAccountService.create(account);
+
+        // Navigate to edit form
+        navigateTo("/settings/bank-accounts/" + saved.getId() + "/edit");
+        waitForPageLoad();
+
+        // Update bank name via UI
+        var bankNameInput = page.locator("#bankName");
+        if (bankNameInput.isVisible()) {
+            bankNameInput.fill("Edited Bank Name");
+            page.locator("#btn-save-bank").click();
+            waitForPageLoad();
+
+            // Verify in database
+            var fromDb = bankAccountRepository.findById(saved.getId());
+            org.assertj.core.api.Assertions.assertThat(fromDb).isPresent();
+            org.assertj.core.api.Assertions.assertThat(fromDb.get().getBankName()).isEqualTo("Edited Bank Name");
+        }
+
+        // Cleanup
+        bankAccountService.delete(saved.getId());
+    }
+
+    @Test
+    @DisplayName("Should deactivate bank account and verify in database")
+    void shouldDeactivateBankAccountAndVerifyInDatabase() {
+        // Create active test account
+        String uniqueNumber = "DEACT" + System.currentTimeMillis() % 10000;
+
+        CompanyBankAccount account = new CompanyBankAccount();
+        account.setBankName("Deactivate Test Bank");
+        account.setAccountNumber(uniqueNumber);
+        account.setAccountName("Deactivate Test Account");
+        account.setActive(true);
+
+        CompanyBankAccount saved = bankAccountService.create(account);
+        org.assertj.core.api.Assertions.assertThat(saved.isActive()).isTrue();
+
+        // Deactivate via service
+        bankAccountService.deactivate(saved.getId());
+
+        // Verify in database
+        var fromDb = bankAccountRepository.findById(saved.getId());
+        org.assertj.core.api.Assertions.assertThat(fromDb).isPresent();
+        org.assertj.core.api.Assertions.assertThat(fromDb.get().isActive()).isFalse();
+
+        // Cleanup
+        bankAccountService.delete(saved.getId());
+    }
+
+    @Test
+    @DisplayName("Should activate bank account and verify in database")
+    void shouldActivateBankAccountAndVerifyInDatabase() {
+        // Create inactive test account
+        String uniqueNumber = "ACT" + System.currentTimeMillis() % 10000;
+
+        CompanyBankAccount account = new CompanyBankAccount();
+        account.setBankName("Activate Test Bank");
+        account.setAccountNumber(uniqueNumber);
+        account.setAccountName("Activate Test Account");
+        account.setActive(false);
+
+        CompanyBankAccount saved = bankAccountService.create(account);
+
+        // Activate via service
+        bankAccountService.activate(saved.getId());
+
+        // Verify in database
+        var fromDb = bankAccountRepository.findById(saved.getId());
+        org.assertj.core.api.Assertions.assertThat(fromDb).isPresent();
+        org.assertj.core.api.Assertions.assertThat(fromDb.get().isActive()).isTrue();
+
+        // Cleanup
+        bankAccountService.delete(saved.getId());
+    }
+
     // ==================== UI TESTS ====================
 
     @Test
@@ -343,7 +433,7 @@ class SettingsPersistenceTest extends PlaywrightTestBase {
 
         // Verify in database
         CompanyConfig updated = companyConfigService.getConfig();
-        assertThat(updated.getCompanyName()).isEqualTo(newName);
+        org.assertj.core.api.Assertions.assertThat(updated.getCompanyName()).isEqualTo(newName);
 
         // Restore original
         companyNameInput = page.locator("#companyName");

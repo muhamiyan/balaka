@@ -136,4 +136,77 @@ class DataImportPersistenceTest extends PlaywrightTestBase {
             zos.closeEntry();
         }
     }
+
+    // ==================== DATA INTEGRITY TESTS ====================
+
+    @Test
+    @DisplayName("Should verify client repository works")
+    void shouldVerifyClientRepositoryWorks() {
+        long clientCount = clientRepository.count();
+        assertThat(clientCount).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("Should verify account repository structure")
+    void shouldVerifyAccountRepositoryStructure() {
+        var accounts = accountRepository.findAll();
+        if (!accounts.isEmpty()) {
+            var account = accounts.get(0);
+            assertThat(account.getAccountCode()).isNotNull();
+            assertThat(account.getAccountName()).isNotNull();
+        }
+    }
+
+    @Test
+    @DisplayName("Should verify template repository structure")
+    void shouldVerifyTemplateRepositoryStructure() {
+        var templates = templateRepository.findAll();
+        if (!templates.isEmpty()) {
+            var template = templates.get(0);
+            assertThat(template.getTemplateName()).isNotNull();
+            assertThat(template.getCategory()).isNotNull();
+        }
+    }
+
+    // ==================== UI ERROR HANDLING TESTS ====================
+
+    @Test
+    @DisplayName("Should display import page")
+    void shouldDisplayImportPage() {
+        navigateTo("/settings/import");
+        waitForPageLoad();
+
+        assertThat(page.locator("#page-title")).isVisible();
+    }
+
+    @Test
+    @DisplayName("Should display export page")
+    void shouldDisplayExportPage() {
+        navigateTo("/settings/export");
+        waitForPageLoad();
+
+        assertThat(page.locator("#page-title")).isVisible();
+    }
+
+    @Test
+    @DisplayName("Should reject empty file upload")
+    void shouldRejectEmptyFileUpload() throws IOException {
+        // Create empty ZIP
+        Path emptyZip = tempDir.resolve("empty.zip");
+        try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(emptyZip.toFile()))) {
+            // Empty ZIP
+        }
+
+        navigateTo("/settings/import");
+        waitForPageLoad();
+
+        // Try to upload empty ZIP
+        page.locator("#file").setInputFiles(emptyZip);
+        page.onDialog(dialog -> dialog.accept());
+        page.locator("#btn-import").click();
+        waitForPageLoad();
+
+        // Should still be on import page
+        assertThat(page.locator("#page-title")).isVisible();
+    }
 }

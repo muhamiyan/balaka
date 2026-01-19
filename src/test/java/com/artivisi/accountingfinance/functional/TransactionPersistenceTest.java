@@ -20,6 +20,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +49,41 @@ class TransactionPersistenceTest extends PlaywrightTestBase {
     @BeforeEach
     void setupAndLogin() {
         loginAsAdmin();
+    }
+
+    private Transaction createDraftTransaction() {
+        var template = templateRepository.findAll().stream()
+            .filter(t -> Boolean.TRUE.equals(t.getIsCurrentVersion()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No current version template found"));
+
+        Transaction tx = new Transaction();
+        tx.setJournalTemplate(template);
+        tx.setTransactionDate(LocalDate.now());
+        tx.setAmount(new BigDecimal("1000000"));
+        tx.setDescription("Test Draft Transaction " + System.currentTimeMillis());
+        tx.setStatus(TransactionStatus.DRAFT);
+
+        return transactionRepository.saveAndFlush(tx);
+    }
+
+    private Transaction createPostedTransaction() {
+        var template = templateRepository.findAll().stream()
+            .filter(t -> Boolean.TRUE.equals(t.getIsCurrentVersion()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("No current version template found"));
+
+        Transaction tx = new Transaction();
+        tx.setJournalTemplate(template);
+        tx.setTransactionDate(LocalDate.now());
+        tx.setAmount(new BigDecimal("1000000"));
+        tx.setDescription("Test Posted Transaction " + System.currentTimeMillis());
+        tx.setTransactionNumber("TXN-TEST-" + System.currentTimeMillis());
+        tx.setStatus(TransactionStatus.POSTED);
+        tx.setPostedAt(LocalDateTime.now());
+        tx.setPostedBy("admin");
+
+        return transactionRepository.saveAndFlush(tx);
     }
 
     // ==================== SERVICE LAYER TESTS ====================
@@ -183,6 +219,44 @@ class TransactionPersistenceTest extends PlaywrightTestBase {
     }
 
     @Test
+    @DisplayName("Should display transaction detail page")
+    void shouldDisplayTransactionDetailPage() {
+        // Create a transaction for this test
+        var transaction = createDraftTransaction();
+
+        navigateTo("/transactions/" + transaction.getId());
+        waitForPageLoad();
+
+        assertThat(page.locator("#page-title")).isVisible();
+    }
+
+    @Test
+    @DisplayName("Should display transaction edit form for draft transaction")
+    void shouldDisplayTransactionEditFormForDraftTransaction() {
+        // Create a draft transaction for this test
+        var transaction = createDraftTransaction();
+
+        navigateTo("/transactions/" + transaction.getId() + "/edit");
+        waitForPageLoad();
+
+        // Page should show form elements
+        assertThat(page.locator("#page-title")).isVisible();
+    }
+
+    @Test
+    @DisplayName("Should display void transaction form for posted transaction")
+    void shouldDisplayVoidTransactionFormForPostedTransaction() {
+        // Create a posted transaction for this test
+        var postedTransaction = createPostedTransaction();
+
+        navigateTo("/transactions/" + postedTransaction.getId() + "/void");
+        waitForPageLoad();
+
+        // Page should show void form
+        assertThat(page.locator("#page-title")).isVisible();
+    }
+
+    @Test
     @DisplayName("Should display quick transaction templates")
     void shouldDisplayQuickTransactionTemplates() {
         // Request quick templates via HTMX
@@ -246,5 +320,71 @@ class TransactionPersistenceTest extends PlaywrightTestBase {
                 .setHeader("HX-Request", "true"));
 
         org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(200);
+    }
+
+    // ==================== API ENDPOINT TESTS ====================
+
+    @Test
+    @DisplayName("Should call transaction API list endpoint")
+    void shouldCallTransactionApiListEndpoint() {
+        // API is at /transactions/api, not /api/transactions
+        var response = page.request().get(baseUrl() + "/transactions/api",
+            com.microsoft.playwright.options.RequestOptions.create()
+                .setHeader("Accept", "application/json"));
+
+        org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Should call transaction API search endpoint")
+    void shouldCallTransactionApiSearchEndpoint() {
+        var response = page.request().get(baseUrl() + "/transactions/api/search?q=test",
+            com.microsoft.playwright.options.RequestOptions.create()
+                .setHeader("Accept", "application/json"));
+
+        org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Should call transaction API get endpoint")
+    void shouldCallTransactionApiGetEndpoint() {
+        // Create a transaction for this test
+        var transaction = createDraftTransaction();
+
+        var response = page.request().get(baseUrl() + "/transactions/api/" + transaction.getId(),
+            com.microsoft.playwright.options.RequestOptions.create()
+                .setHeader("Accept", "application/json"));
+
+        org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(200);
+    }
+
+    // ==================== HTMX POST/DELETE TESTS ====================
+
+    @Test
+    @DisplayName("Should call HTMX post endpoint with CSRF protection")
+    void shouldCallHtmxPostEndpointWithCsrfProtection() {
+        // Create a draft transaction for this test
+        var transaction = createDraftTransaction();
+
+        var response = page.request().post(baseUrl() + "/transactions/" + transaction.getId() + "/post",
+            com.microsoft.playwright.options.RequestOptions.create()
+                .setHeader("HX-Request", "true"));
+
+        // CSRF protected - should return 403 without valid token
+        org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(403);
+    }
+
+    @Test
+    @DisplayName("Should call HTMX delete endpoint with CSRF protection")
+    void shouldCallHtmxDeleteEndpointWithCsrfProtection() {
+        // Create a draft transaction for this test
+        var transaction = createDraftTransaction();
+
+        var response = page.request().post(baseUrl() + "/transactions/" + transaction.getId() + "/delete",
+            com.microsoft.playwright.options.RequestOptions.create()
+                .setHeader("HX-Request", "true"));
+
+        // CSRF protected - should return 403 without valid token
+        org.assertj.core.api.Assertions.assertThat(response.status()).isEqualTo(403);
     }
 }
