@@ -502,6 +502,8 @@ public class TransactionApiService {
             );
         }
 
+        UUID transactionId = draft.getTransaction() != null ? draft.getTransaction().getId() : null;
+
         return new DraftResponse(
                 draft.getId(),
                 draft.getStatus().name(),
@@ -511,7 +513,8 @@ public class TransactionApiService {
                 templateSuggestion,
                 draft.getOverallConfidence(),
                 needsClarification,
-                clarificationQuestion
+                clarificationQuestion,
+                transactionId
         );
     }
 

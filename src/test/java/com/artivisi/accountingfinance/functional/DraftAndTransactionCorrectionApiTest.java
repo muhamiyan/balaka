@@ -417,6 +417,39 @@ class DraftAndTransactionCorrectionApiTest extends PlaywrightTestBase {
     }
 
     @Nested
+    @DisplayName("POST /api/drafts/{id}/approve - transactionId")
+    class ApproveTransactionId {
+
+        @Test
+        @DisplayName("Should return transactionId after approval")
+        void shouldReturnTransactionIdAfterApproval() throws Exception {
+            String draftId = createPendingDraft("TransactionId Test Merchant", 60000);
+            String templateId = getFirstTemplateId();
+
+            Map<String, Object> request = Map.of(
+                    "templateId", templateId,
+                    "description", "Approve with transactionId test",
+                    "amount", 60000
+            );
+
+            APIResponse response = apiContext.post("/api/drafts/" + draftId + "/approve",
+                    RequestOptions.create()
+                            .setHeader("Content-Type", "application/json")
+                            .setHeader("Authorization", "Bearer " + accessToken)
+                            .setData(request));
+
+            assertThat(response.ok())
+                    .as("Approve failed: %d %s", response.status(), response.text())
+                    .isTrue();
+
+            JsonNode body = objectMapper.readTree(response.text());
+            assertThat(body.get("status").asText()).isEqualTo("APPROVED");
+            assertThat(body.has("transactionId")).isTrue();
+            assertThat(body.get("transactionId").isNull()).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/templates")
     class GetTemplates {
 

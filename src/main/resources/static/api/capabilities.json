@@ -105,7 +105,7 @@
             "amount": "number (optional, override)",
             "description": "string (optional, override)"
           },
-          "response": "DraftResponse: draftId, status=APPROVED, transactionId"
+          "response": "DraftResponse: draftId, status=APPROVED, merchant, amount, transactionDate, transactionId (UUID of created Transaction)"
         },
         {
           "method": "POST",

@@ -20,6 +20,7 @@ public record DraftResponse(
         TemplateSuggestion suggestedTemplate,
         BigDecimal confidence,
         boolean needsClarification,
-        String clarificationQuestion
+        String clarificationQuestion,
+        UUID transactionId
 ) {
 }
