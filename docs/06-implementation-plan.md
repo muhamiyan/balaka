@@ -1274,18 +1274,18 @@ Key difference: **BUMN is pemungut PPN** — they withhold PPN and remit it dire
 - [x] Document the DPP Nilai Lain formula in user manual (04-perpajakan.md, 12-lampiran-template.md)
 - [x] Production database updated via SQL script
 
-### 12.2 Tax Transaction Detail Entry (Web UI)
-- [ ] Tax detail form on transaction detail page (inline or modal)
-- [ ] Fields: fakturNumber, fakturDate, transactionCode (01/02/03/04/07/08), dpp, ppn, ppnbm
-- [ ] Fields: bupotNumber, taxObjectCode (dropdown from TaxObjectCode enum), grossAmount, taxRate, taxAmount
-- [ ] Fields: counterpartyNpwp, counterpartyNitku, counterpartyName, counterpartyAddress, counterpartyIdType
-- [ ] Auto-populate counterparty fields from Client/Vendor when linked
-- [ ] Auto-populate DPP/PPN from transaction amount using template formula
-- [ ] Validation: fakturNumber uniqueness, NPWP format, required fields per taxType
-- [ ] List view: show tax detail status (has detail / missing) on transaction list
-- [ ] Bulk entry support: batch-attach tax details to multiple transactions
-- [ ] Permission: TAX_EXPORT (reuse existing)
-- [ ] Functional tests
+### 12.2 Tax Transaction Detail Entry (Web UI) ✅
+- [x] Tax detail form on transaction detail page (HTMX fragment inline)
+- [x] Fields: fakturNumber, fakturDate, transactionCode (01/02/03/04/07/08), dpp, ppn, ppnbm
+- [x] Fields: bupotNumber, taxObjectCode, grossAmount, taxRate, taxAmount
+- [x] Fields: counterpartyNpwp, counterpartyNitku, counterpartyName, counterpartyAddress, counterpartyIdType
+- [x] Auto-populate counterparty fields from Client when linked via Project
+- [x] Auto-populate DPP/PPN from journal entries (tax account code detection)
+- [x] Validation: fakturNumber uniqueness, NPWP format, required fields per taxType
+- [x] List view: show tax indicator on transaction list
+- [x] Bulk entry page: batch-attach tax details to transactions missing them
+- [x] Permission: TAX_EXPORT (reused existing)
+- [x] 10 Playwright functional tests
 
 ### 12.3 Tax Transaction Detail API
 - [ ] `POST /api/transactions/{id}/tax-details` — attach tax detail to existing transaction
