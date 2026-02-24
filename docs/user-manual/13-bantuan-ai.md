@@ -554,6 +554,7 @@ Selain mencatat transaksi, AI assistant juga dapat **menganalisis data keuangan*
 | `GET /api/analysis/receivables` | Piutang usaha | `asOfDate` |
 | `GET /api/analysis/payables` | Hutang usaha | `asOfDate` |
 | `GET /api/analysis/accounts` | Daftar akun (COA) | — |
+| `GET /api/analysis/accounts/{id}/ledger` | Buku besar per akun (running balance) | `startDate`, `endDate` |
 | `GET /api/analysis/drafts` | Draft transaksi pending | — |
 
 Semua parameter **wajib** (tidak ada nilai default). Request tanpa parameter yang diperlukan akan mengembalikan HTTP 400.
@@ -1407,6 +1408,7 @@ Setiap user dapat melihat dan mencabut device token miliknya sendiri di halaman 
 | GET | `/api/analysis/receivables` | Piutang usaha |
 | GET | `/api/analysis/payables` | Hutang usaha |
 | GET | `/api/analysis/accounts` | Daftar akun (COA) |
+| GET | `/api/analysis/accounts/{id}/ledger` | Buku besar per akun (running balance) |
 | GET | `/api/analysis/drafts` | Draft transaksi pending |
 | GET | `/api/analysis/transactions` | List transaksi dengan filter (status, category, date range, search) |
 | GET | `/api/analysis/transactions/{id}` | Detail transaksi dengan jurnal entries |

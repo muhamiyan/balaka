@@ -16,12 +16,14 @@ import com.artivisi.accountingfinance.repository.CompanyConfigRepository;
 import com.artivisi.accountingfinance.repository.DraftTransactionRepository;
 import com.artivisi.accountingfinance.repository.TransactionRepository;
 import com.artivisi.accountingfinance.service.DashboardService;
+import com.artivisi.accountingfinance.service.JournalEntryService;
 import com.artivisi.accountingfinance.service.ReportService;
 import com.artivisi.accountingfinance.service.SecurityAuditService;
 import com.artivisi.accountingfinance.service.TaxReportService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -68,6 +70,7 @@ public class FinancialAnalysisApiController {
     private final ReportService reportService;
     private final DashboardService dashboardService;
     private final TaxReportService taxReportService;
+    private final JournalEntryService journalEntryService;
     private final ChartOfAccountRepository chartOfAccountRepository;
     private final DraftTransactionRepository draftTransactionRepository;
     private final TransactionRepository transactionRepository;
@@ -374,6 +377,55 @@ public class FinancialAnalysisApiController {
                 data,
                 Map.of(META_DESCRIPTION, "Chart of accounts (leaf/transactable accounts only). "
                         + "normalBalance indicates whether the account normally carries a DEBIT or CREDIT balance.")));
+    }
+
+    @GetMapping("/accounts/{id}/ledger")
+    @Transactional(readOnly = true)
+    public ResponseEntity<AnalysisResponse<AccountLedgerDto>> getAccountLedger(
+            @PathVariable UUID id,
+            @RequestParam String startDate,
+            @RequestParam String endDate) {
+
+        LocalDate start = LocalDate.parse(startDate);
+        LocalDate end = LocalDate.parse(endDate);
+
+        JournalEntryService.GeneralLedgerData ledger = journalEntryService.getGeneralLedger(id, start, end);
+        ChartOfAccount account = ledger.account();
+
+        List<LedgerEntryDto> entries = ledger.entries().stream()
+                .map(item -> new LedgerEntryDto(
+                        item.entry().getJournalDate(),
+                        item.entry().getTransaction().getId(),
+                        item.entry().getJournalNumber(),
+                        item.entry().getTransaction().getDescription(),
+                        item.entry().getDebitAmount(),
+                        item.entry().getCreditAmount(),
+                        item.runningBalance()))
+                .toList();
+
+        AccountLedgerDto data = new AccountLedgerDto(
+                account.getAccountCode(),
+                account.getAccountName(),
+                account.getAccountType().name(),
+                account.getNormalBalance().name(),
+                ledger.openingBalance(),
+                ledger.totalDebit(),
+                ledger.totalCredit(),
+                ledger.closingBalance(),
+                entries);
+
+        auditAccess("account-ledger", Map.of("accountId", id.toString(),
+                "startDate", startDate, "endDate", endDate));
+
+        return ResponseEntity.ok(new AnalysisResponse<>(
+                "account-ledger", LocalDateTime.now(),
+                Map.of("accountId", id.toString(), "startDate", startDate, "endDate", endDate),
+                data,
+                Map.of(META_CURRENCY, META_CURRENCY_IDR,
+                        META_DESCRIPTION, "Account ledger for " + account.getAccountCode()
+                                + " " + account.getAccountName()
+                                + " from " + startDate + " to " + endDate
+                                + ". Running balance reflects account's normal balance convention.")));
     }
 
     @GetMapping("/drafts")
@@ -841,5 +893,19 @@ public class FinancialAnalysisApiController {
             String accountName,
             BigDecimal debitAmount,
             BigDecimal creditAmount
+    ) {}
+
+    // --- Account Ledger DTOs ---
+
+    public record AccountLedgerDto(
+            String accountCode, String accountName, String accountType, String normalBalance,
+            BigDecimal openingBalance, BigDecimal totalDebit, BigDecimal totalCredit, BigDecimal closingBalance,
+            List<LedgerEntryDto> entries
+    ) {}
+
+    public record LedgerEntryDto(
+            LocalDate transactionDate, UUID transactionId, String journalNumber,
+            String description, BigDecimal debitAmount, BigDecimal creditAmount,
+            BigDecimal runningBalance
     ) {}
 }

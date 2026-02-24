@@ -375,6 +375,13 @@
         },
         {
           "method": "GET",
+          "path": "/api/analysis/accounts/{id}/ledger?startDate={}&endDate={}",
+          "scope": "analysis:read",
+          "description": "Account ledger with running balance for date range",
+          "response": "AccountLedgerDto: accountCode, accountName, accountType, normalBalance, openingBalance, totalDebit, totalCredit, closingBalance, entries[transactionDate, transactionId, journalNumber, description, debitAmount, creditAmount, runningBalance]"
+        },
+        {
+          "method": "GET",
           "path": "/api/analysis/drafts?page={}&size={}",
           "scope": "analysis:read",
           "description": "Pending draft transactions (paginated, default page=0, size=20)",

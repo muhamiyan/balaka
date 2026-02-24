@@ -34,7 +34,6 @@ public class DashboardService {
     // Account codes for specific KPIs
     private static final String PIUTANG_USAHA_CODE = "1.1.04";
     private static final String HUTANG_USAHA_CODE = "2.1.01";
-    private static final List<String> CASH_BANK_CODES = List.of("1.1.01", "1.1.02", "1.1.03");
 
     public DashboardKPI calculateKPIs(YearMonth month) {
         LocalDate startDate = month.atDay(1);
@@ -148,38 +147,38 @@ public class DashboardService {
 
     private BigDecimal calculateCashBalance(LocalDate asOfDate) {
         BigDecimal total = BigDecimal.ZERO;
-        for (String code : CASH_BANK_CODES) {
-            total = total.add(calculateAccountBalance(code, asOfDate));
+        for (ChartOfAccount account : chartOfAccountRepository.findCashBankAccounts()) {
+            total = total.add(calculateAccountBalanceByEntity(account, asOfDate));
         }
         return total;
     }
 
     private BigDecimal calculateAccountBalance(String accountCode, LocalDate asOfDate) {
         return chartOfAccountRepository.findByAccountCode(accountCode)
-                .map(account -> {
-                    BigDecimal debit = journalEntryRepository.sumDebitByAccountAndDateRange(
-                            account.getId(), LocalDate.of(1900, 1, 1), asOfDate);
-                    BigDecimal credit = journalEntryRepository.sumCreditByAccountAndDateRange(
-                            account.getId(), LocalDate.of(1900, 1, 1), asOfDate);
-
-                    if (account.getNormalBalance() == NormalBalance.DEBIT) {
-                        return debit.subtract(credit);
-                    } else {
-                        return credit.subtract(debit);
-                    }
-                })
+                .map(account -> calculateAccountBalanceByEntity(account, asOfDate))
                 .orElse(BigDecimal.ZERO);
+    }
+
+    private BigDecimal calculateAccountBalanceByEntity(ChartOfAccount account, LocalDate asOfDate) {
+        BigDecimal debit = journalEntryRepository.sumDebitByAccountAndDateRange(
+                account.getId(), LocalDate.of(1900, 1, 1), asOfDate);
+        BigDecimal credit = journalEntryRepository.sumCreditByAccountAndDateRange(
+                account.getId(), LocalDate.of(1900, 1, 1), asOfDate);
+
+        if (account.getNormalBalance() == NormalBalance.DEBIT) {
+            return debit.subtract(credit);
+        } else {
+            return credit.subtract(debit);
+        }
     }
 
     private List<CashBankItem> calculateCashBankBreakdown(LocalDate asOfDate) {
         List<CashBankItem> items = new ArrayList<>();
-        for (String code : CASH_BANK_CODES) {
-            chartOfAccountRepository.findByAccountCode(code).ifPresent(account -> {
-                BigDecimal balance = calculateAccountBalance(code, asOfDate);
-                if (balance.compareTo(BigDecimal.ZERO) != 0) {
-                    items.add(new CashBankItem(account.getAccountName(), balance));
-                }
-            });
+        for (ChartOfAccount account : chartOfAccountRepository.findCashBankAccounts()) {
+            BigDecimal balance = calculateAccountBalanceByEntity(account, asOfDate);
+            if (balance.compareTo(BigDecimal.ZERO) != 0) {
+                items.add(new CashBankItem(account.getAccountName(), balance));
+            }
         }
         return items;
     }

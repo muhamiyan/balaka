@@ -296,6 +296,57 @@ class FinancialAnalysisApiTest extends PlaywrightTestBase {
     }
 
     @Test
+    @DisplayName("GET /api/analysis/accounts/{id}/ledger - returns account ledger with running balance")
+    void testAccountLedger() throws Exception {
+        // First get an account ID from the accounts list
+        APIResponse accountsResponse = get("/api/analysis/accounts");
+        assertThat(accountsResponse.status()).isEqualTo(200);
+
+        JsonNode accountsBody = parse(accountsResponse);
+        JsonNode accounts = accountsBody.get("data").get("accounts");
+        assertThat(accounts.size()).isGreaterThan(0);
+
+        String accountId = accounts.get(0).get("id").asText();
+
+        // Now request the ledger for that account
+        APIResponse response = get("/api/analysis/accounts/" + accountId
+                + "/ledger?startDate=2026-01-01&endDate=2026-01-31");
+
+        assertThat(response.status()).isEqualTo(200);
+
+        JsonNode body = parse(response);
+        assertThat(body.get("reportType").asText()).isEqualTo("account-ledger");
+
+        JsonNode data = body.get("data");
+        assertThat(data.has("accountCode")).isTrue();
+        assertThat(data.has("accountName")).isTrue();
+        assertThat(data.has("accountType")).isTrue();
+        assertThat(data.has("normalBalance")).isTrue();
+        assertThat(data.has("openingBalance")).isTrue();
+        assertThat(data.has("totalDebit")).isTrue();
+        assertThat(data.has("totalCredit")).isTrue();
+        assertThat(data.has("closingBalance")).isTrue();
+        assertThat(data.has("entries")).isTrue();
+        assertThat(data.get("entries").isArray()).isTrue();
+
+        // If there are entries, verify structure
+        JsonNode entries = data.get("entries");
+        if (entries.size() > 0) {
+            JsonNode first = entries.get(0);
+            assertThat(first.has("transactionDate")).isTrue();
+            assertThat(first.has("transactionId")).isTrue();
+            assertThat(first.has("journalNumber")).isTrue();
+            assertThat(first.has("description")).isTrue();
+            assertThat(first.has("debitAmount")).isTrue();
+            assertThat(first.has("creditAmount")).isTrue();
+            assertThat(first.has("runningBalance")).isTrue();
+        }
+
+        log.info("Account ledger test passed - accountCode: {}, {} entries, closingBalance: {}",
+                data.get("accountCode"), entries.size(), data.get("closingBalance"));
+    }
+
+    @Test
     @DisplayName("GET /api/analysis/trial-balance without asOfDate returns 400")
     void testMissingRequiredParams() {
         APIResponse response = apiContext.get("/api/analysis/trial-balance",

@@ -31,9 +31,6 @@ public class ReportService {
     private final JournalEntryRepository journalEntryRepository;
     private final TransactionRepository transactionRepository;
 
-    // Cash/Bank account codes for cash flow calculation
-    private static final List<String> CASH_BANK_CODES = List.of("1.1.01", "1.1.02", "1.1.03");
-
     public TrialBalanceReport generateTrialBalance(LocalDate asOfDate) {
         List<ChartOfAccount> accounts = chartOfAccountRepository.findAllTransactableAccounts();
         List<TrialBalanceItem> items = new ArrayList<>();
@@ -265,8 +262,8 @@ public class ReportService {
     // ==================== CASH FLOW STATEMENT ====================
 
     public CashFlowReport generateCashFlowStatement(LocalDate startDate, LocalDate endDate) {
-        // Get cash/bank accounts
-        List<ChartOfAccount> cashAccounts = chartOfAccountRepository.findByAccountCodeIn(CASH_BANK_CODES);
+        // Get cash/bank accounts dynamically (all active leaf accounts matching 1.1.0x pattern)
+        List<ChartOfAccount> cashAccounts = chartOfAccountRepository.findCashBankAccounts();
 
         // Calculate beginning cash balance (before startDate)
         BigDecimal beginningCashBalance = calculateCashBalance(cashAccounts, LocalDate.of(1900, 1, 1), startDate.minusDays(1));
