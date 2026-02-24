@@ -67,8 +67,8 @@
                 </div>
                 <div class="flex items-center space-x-1">
                     <!-- Previous Button -->
-                    <a th:href="@{/transactions(page=${page.number - 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
-                       th:hx-get="@{/transactions(page=${page.number - 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
+                    <a th:href="@{/transactions(page=${page.number - 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
+                       th:hx-get="@{/transactions(page=${page.number - 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
                        hx-target="#transaction-table"
                        hx-swap="outerHTML"
                        hx-push-url="true"
@@ -77,26 +77,33 @@
                         &laquo;
                     </a>
 
-                    <!-- Page Numbers -->
-                    <th:block th:each="pageNum : ${#numbers.sequence(0, page.totalPages - 1)}">
+                    <!-- Page Numbers (truncated: first, ..., neighbors, ..., last) -->
+                    <th:block th:each="pageNum : ${#numbers.sequence(0, page.totalPages - 1)}"
+                              th:if="${pageNum == 0 or pageNum == page.totalPages - 1 or (pageNum >= page.number - 1 and pageNum <= page.number + 1)}">
+                        <!-- Ellipsis before current window -->
+                        <span th:if="${pageNum == page.number - 1 and pageNum > 1}"
+                              class="px-2 py-1.5 text-sm text-gray-400">...</span>
                         <!-- Current page (highlighted) -->
                         <span th:if="${pageNum == page.number}"
                               class="px-3 py-1.5 text-sm font-medium text-white bg-primary-600 border border-primary-600 rounded-lg"
                               th:text="${pageNum + 1}">1</span>
                         <!-- Other pages (clickable) -->
                         <a th:unless="${pageNum == page.number}"
-                           th:href="@{/transactions(page=${pageNum}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
-                           th:hx-get="@{/transactions(page=${pageNum}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
+                           th:href="@{/transactions(page=${pageNum}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
+                           th:hx-get="@{/transactions(page=${pageNum}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
                            hx-target="#transaction-table"
                            hx-swap="outerHTML"
                            hx-push-url="true"
                            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
                            th:text="${pageNum + 1}">2</a>
+                        <!-- Ellipsis after current window -->
+                        <span th:if="${pageNum == page.number + 1 and pageNum < page.totalPages - 2}"
+                              class="px-2 py-1.5 text-sm text-gray-400">...</span>
                     </th:block>
 
                     <!-- Next Button -->
-                    <a th:href="@{/transactions(page=${page.number + 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
-                       th:hx-get="@{/transactions(page=${page.number + 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode})}"
+                    <a th:href="@{/transactions(page=${page.number + 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
+                       th:hx-get="@{/transactions(page=${page.number + 1}, size=${page.size}, status=${selectedStatus}, category=${selectedCategory}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, projectCode=${selectedProjectCode}, tagId=${selectedTagId})}"
                        hx-target="#transaction-table"
                        hx-swap="outerHTML"
                        hx-push-url="true"
