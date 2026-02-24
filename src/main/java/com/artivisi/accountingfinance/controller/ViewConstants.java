@@ -83,6 +83,9 @@ public final class ViewConstants {
     // Current page values - Recurring Transactions
     public static final String PAGE_RECURRING = "recurring";
 
+    // Current page values - Tax Details
+    public static final String PAGE_TAX_DETAIL_BULK = "tax-detail-bulk";
+
     // Current page values - Bank Reconciliation
     public static final String PAGE_BANK_RECONCILIATION = "bank-reconciliation";
     public static final String PAGE_BANK_RECON_PARSER_CONFIGS = "bank-recon-parser-configs";

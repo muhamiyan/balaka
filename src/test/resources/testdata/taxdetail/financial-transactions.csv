@@ -1,0 +1,4 @@
+transaction_id,transaction_number,transaction_date,template_name,project_code,amount,description,reference_number,notes,status,void_reason,void_notes,voided_at,voided_by,posted_at,posted_by,created_at
+aaaaaaaa-aaaa-aaaa-aaaa-000000000001,TAX-TRX-001,2025-01-15,Pendapatan Jasa + PPN,PRJ-2024-001,10000000,Test PPN Keluaran - Pendapatan Jasa IT,INV-TAX-001,,POSTED,,,,,2025-01-15 10:00:00,admin,
+aaaaaaaa-aaaa-aaaa-aaaa-000000000002,TAX-TRX-002,2025-01-20,Pembayaran Jasa dengan PPh 23,PRJ-2024-003,5000000,Test PPh 23 - Pembayaran Jasa Konsultan,INV-TAX-002,,POSTED,,,,,2025-01-20 10:00:00,admin,
+aaaaaaaa-aaaa-aaaa-aaaa-000000000003,TAX-TRX-003,2025-01-25,Pendapatan Jasa Training,,15000000,Test Non-Tax - Pendapatan Training,INV-TAX-003,,POSTED,,,,,2025-01-25 10:00:00,admin,

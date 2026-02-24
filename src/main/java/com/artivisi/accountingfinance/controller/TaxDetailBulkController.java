@@ -1,0 +1,167 @@
+package com.artivisi.accountingfinance.controller;
+
+import com.artivisi.accountingfinance.entity.TaxTransactionDetail;
+import com.artivisi.accountingfinance.entity.Transaction;
+import com.artivisi.accountingfinance.enums.TaxType;
+import com.artivisi.accountingfinance.security.Permission;
+import com.artivisi.accountingfinance.service.TaxTransactionDetailService;
+import com.artivisi.accountingfinance.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import static com.artivisi.accountingfinance.controller.ViewConstants.ATTR_CURRENT_PAGE;
+
+@Controller
+@RequestMapping("/transactions/tax-details/bulk")
+@RequiredArgsConstructor
+@PreAuthorize("hasAuthority('" + Permission.TAX_EXPORT + "')")
+@Slf4j
+public class TaxDetailBulkController {
+
+    private static final String PAGE_TAX_DETAIL_BULK = "tax-detail-bulk";
+
+    private final TransactionService transactionService;
+    private final TaxTransactionDetailService taxDetailService;
+
+    @GetMapping
+    public String list(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            Model model) {
+
+        // Default to current month
+        if (startDate == null) {
+            startDate = LocalDate.now().withDayOfMonth(1);
+        }
+        if (endDate == null) {
+            endDate = startDate.plusMonths(1).minusDays(1);
+        }
+
+        model.addAttribute(ATTR_CURRENT_PAGE, PAGE_TAX_DETAIL_BULK);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        // Get POSTED transactions in date range
+        Page<Transaction> transactionPage = transactionService.findByFilters(
+                com.artivisi.accountingfinance.enums.TransactionStatus.POSTED,
+                null, null, null, startDate, endDate,
+                PageRequest.of(page, size));
+
+        List<Transaction> transactions = transactionPage.getContent();
+
+        // Find which ones already have tax details
+        List<UUID> ids = transactions.stream().map(Transaction::getId).toList();
+        Set<UUID> withDetails = taxDetailService.findTransactionIdsWithDetails(ids);
+
+        // Filter to only those missing tax details and having PPN/PPh templates
+        List<Transaction> missingDetails = transactions.stream()
+                .filter(t -> !withDetails.contains(t.getId()))
+                .filter(t -> {
+                    String templateName = t.getJournalTemplate() != null
+                            ? t.getJournalTemplate().getTemplateName().toUpperCase() : "";
+                    return templateName.contains("PPN") || templateName.contains("PPH");
+                })
+                .toList();
+
+        // Generate suggestions for each
+        Map<UUID, List<TaxTransactionDetailService.TaxDetailSuggestion>> suggestionsMap = missingDetails.stream()
+                .collect(Collectors.toMap(Transaction::getId,
+                        t -> taxDetailService.suggestFromTransaction(t)));
+
+        model.addAttribute("transactions", missingDetails);
+        model.addAttribute("suggestionsMap", suggestionsMap);
+        model.addAttribute("page", transactionPage);
+        model.addAttribute("taxTypes", TaxType.values());
+
+        return "transactions/tax-details-bulk";
+    }
+
+    @PostMapping
+    public String bulkSave(
+            @RequestParam Map<String, String> params,
+            RedirectAttributes redirectAttributes) {
+
+        int savedCount = 0;
+
+        // Extract transaction IDs from form params: taxType_<transactionId>, fakturNumber_<transactionId>, etc.
+        Set<String> transactionIds = params.keySet().stream()
+                .filter(k -> k.startsWith("taxType_"))
+                .map(k -> k.substring("taxType_".length()))
+                .collect(Collectors.toSet());
+
+        for (String txIdStr : transactionIds) {
+            String taxTypeStr = params.get("taxType_" + txIdStr);
+            if (taxTypeStr == null || taxTypeStr.isBlank()) {
+                continue;
+            }
+
+            try {
+                UUID txId = UUID.fromString(txIdStr);
+                TaxType taxType = TaxType.valueOf(taxTypeStr);
+
+                TaxTransactionDetail detail = new TaxTransactionDetail();
+                detail.setTaxType(taxType);
+                detail.setFakturNumber(params.getOrDefault("fakturNumber_" + txIdStr, null));
+                detail.setBupotNumber(params.getOrDefault("bupotNumber_" + txIdStr, null));
+                detail.setCounterpartyName(params.getOrDefault("counterpartyName_" + txIdStr, ""));
+
+                // Set amounts from suggestions (passed as hidden fields)
+                String dppStr = params.get("dpp_" + txIdStr);
+                if (dppStr != null && !dppStr.isBlank()) {
+                    detail.setDpp(new java.math.BigDecimal(dppStr));
+                }
+                String ppnStr = params.get("ppn_" + txIdStr);
+                if (ppnStr != null && !ppnStr.isBlank()) {
+                    detail.setPpn(new java.math.BigDecimal(ppnStr));
+                }
+                String grossStr = params.get("grossAmount_" + txIdStr);
+                if (grossStr != null && !grossStr.isBlank()) {
+                    detail.setGrossAmount(new java.math.BigDecimal(grossStr));
+                }
+                String rateStr = params.get("taxRate_" + txIdStr);
+                if (rateStr != null && !rateStr.isBlank()) {
+                    detail.setTaxRate(new java.math.BigDecimal(rateStr));
+                }
+                String amountStr = params.get("taxAmount_" + txIdStr);
+                if (amountStr != null && !amountStr.isBlank()) {
+                    detail.setTaxAmount(new java.math.BigDecimal(amountStr));
+                }
+
+                String npwp = params.get("counterpartyNpwp_" + txIdStr);
+                if (npwp != null && !npwp.isBlank()) {
+                    detail.setCounterpartyNpwp(npwp);
+                }
+                detail.setCounterpartyIdType("TIN");
+                detail.setPpnbm(java.math.BigDecimal.ZERO);
+
+                taxDetailService.save(txId, detail);
+                savedCount++;
+            } catch (Exception e) {
+                log.warn("Failed to save tax detail for transaction {}: {}", txIdStr, e.getMessage());
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage",
+                savedCount + " detail pajak berhasil disimpan");
+        return "redirect:/transactions/tax-details/bulk";
+    }
+}

@@ -339,6 +339,23 @@
                 </div>
             </div>
 
+            <!-- Tax Detail Section (POSTED transactions only, TAX_EXPORT permission) -->
+            <div th:if="${transaction.status.name() == 'POSTED'}" sec:authorize="hasAuthority('TAX_EXPORT')"
+                 class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6" data-testid="tax-detail-section-card">
+                <div class="p-6 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Detail Pajak</h2>
+                </div>
+                <div class="p-6">
+                    <div id="tax-detail-container"
+                         hx-get th:hx-get="@{/transactions/{id}/tax-details(id=${transaction.id})}"
+                         hx-trigger="load" hx-swap="outerHTML">
+                        <div class="text-center py-6 text-gray-500">
+                            <p class="text-sm">Memuat detail pajak...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Document Attachment Section -->
             <div id="document-section" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
                 <div class="p-6 border-b border-gray-200">

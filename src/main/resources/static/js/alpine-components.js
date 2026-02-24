@@ -397,6 +397,40 @@ function registerFormComponents() {
         }
     }))
 
+    // Tax detail form - conditional sections based on tax type
+    Alpine.data('taxDetailForm', () => ({
+        taxType: '',
+        idType: 'TIN',
+        init() {
+            this.taxType = this.$el.dataset.taxType || ''
+            this.idType = this.$el.dataset.idType || 'TIN'
+            // Sync the select elements with Alpine state
+            const taxTypeSelect = this.$el.querySelector('[data-testid="tax-type-select"]')
+            if (taxTypeSelect && this.taxType) {
+                taxTypeSelect.value = this.taxType
+            }
+            const idTypeSelect = this.$el.querySelector('[data-testid="counterparty-id-type"]')
+            if (idTypeSelect && this.idType) {
+                idTypeSelect.value = this.idType
+            }
+        },
+        get isPpn() {
+            return this.taxType === 'PPN_KELUARAN' || this.taxType === 'PPN_MASUKAN'
+        },
+        get isPph() {
+            return this.taxType === 'PPH_21' || this.taxType === 'PPH_23' || this.taxType === 'PPH_42'
+        },
+        get hasType() {
+            return this.taxType !== ''
+        },
+        get isTin() {
+            return this.idType === 'TIN'
+        },
+        get isNik() {
+            return this.idType === 'NIK'
+        }
+    }))
+
     // Account form - auto-suggest permanent based on account type
     Alpine.data('accountForm', () => ({
         isNewAccount: false,

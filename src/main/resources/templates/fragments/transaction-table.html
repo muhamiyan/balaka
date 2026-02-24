@@ -135,9 +135,17 @@
                     <p class="text-xs text-gray-500" th:text="${#temporals.format(trx.transactionDate, 'dd MMM yyyy')}">01 Jan 2025</p>
                 </div>
                 <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span th:classappend="${trx.status.name() == 'DRAFT'} ? 'bg-amber-100 text-amber-800' : (${trx.status.name() == 'POSTED'} ? 'bg-accent-100 text-accent-800' : 'bg-red-100 text-red-800')"
-                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                          th:text="${trx.status.name()}">Status</span>
+                    <div class="flex items-center gap-1">
+                        <span th:classappend="${trx.status.name() == 'DRAFT'} ? 'bg-amber-100 text-amber-800' : (${trx.status.name() == 'POSTED'} ? 'bg-accent-100 text-accent-800' : 'bg-red-100 text-red-800')"
+                              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                              th:text="${trx.status.name()}">Status</span>
+                        <span th:if="${taxDetailTransactionIds != null and taxDetailTransactionIds.contains(trx.id)}"
+                              title="Detail pajak tersedia">
+                            <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                        </span>
+                    </div>
                     <p th:classappend="${trx.status.name() == 'VOID'} ? 'text-gray-400 line-through' : (${trx.journalTemplate?.category?.name() == 'INCOME' or trx.journalTemplate?.category?.name() == 'RECEIPT'} ? 'text-green-600' : (${trx.journalTemplate?.category?.name() == 'EXPENSE' or trx.journalTemplate?.category?.name() == 'PAYMENT'} ? 'text-red-600' : 'text-gray-600'))"
                        class="text-sm font-medium">
                         <span th:if="${trx.journalTemplate?.category?.name() == 'INCOME' or trx.journalTemplate?.category?.name() == 'RECEIPT'}">+ </span>
@@ -250,6 +258,14 @@
                 <span th:classappend="${trx.status.name() == 'DRAFT'} ? 'bg-amber-100 text-amber-800' : (${trx.status.name() == 'POSTED'} ? 'bg-accent-100 text-accent-800' : 'bg-red-100 text-red-800')"
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                       th:text="${trx.status.name()}">Status</span>
+                <!-- Tax detail indicator -->
+                <span th:if="${taxDetailTransactionIds != null and taxDetailTransactionIds.contains(trx.id)}"
+                      class="inline-flex items-center ml-1" title="Detail pajak tersedia"
+                      data-testid="tax-indicator">
+                    <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                </span>
             </div>
             <div class="col-span-2 flex justify-center space-x-1 trx-actions">
                 <a th:href="@{/transactions/{id}(id=${trx.id})}"

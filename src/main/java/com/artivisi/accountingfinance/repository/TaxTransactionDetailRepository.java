@@ -7,13 +7,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface TaxTransactionDetailRepository extends JpaRepository<TaxTransactionDetail, UUID> {
 
     Optional<TaxTransactionDetail> findByTransactionId(UUID transactionId);
+
+    List<TaxTransactionDetail> findAllByTransactionIdOrderByTaxTypeAsc(UUID transactionId);
+
+    @Query("SELECT DISTINCT t.transaction.id FROM TaxTransactionDetail t WHERE t.transaction.id IN :ids")
+    Set<UUID> findTransactionIdsWithDetails(@Param("ids") Collection<UUID> ids);
 
     List<TaxTransactionDetail> findByTaxType(TaxType taxType);
 
@@ -74,5 +81,9 @@ public interface TaxTransactionDetailRepository extends JpaRepository<TaxTransac
 
     boolean existsByFakturNumber(String fakturNumber);
 
+    boolean existsByFakturNumberAndIdNot(String fakturNumber, UUID id);
+
     boolean existsByBupotNumber(String bupotNumber);
+
+    boolean existsByBupotNumberAndIdNot(String bupotNumber, UUID id);
 }

@@ -1,0 +1,198 @@
+package com.artivisi.accountingfinance.controller;
+
+import com.artivisi.accountingfinance.entity.TaxTransactionDetail;
+import com.artivisi.accountingfinance.entity.Transaction;
+import com.artivisi.accountingfinance.enums.TaxType;
+import com.artivisi.accountingfinance.security.Permission;
+import com.artivisi.accountingfinance.service.TaxTransactionDetailService;
+import com.artivisi.accountingfinance.service.TransactionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+@Controller
+@RequestMapping("/transactions/{transactionId}/tax-details")
+@RequiredArgsConstructor
+@PreAuthorize("hasAuthority('" + Permission.TAX_EXPORT + "')")
+public class TaxDetailController {
+
+    private static final String FRAGMENT_PREFIX = "fragments/tax-detail-section :: ";
+
+    private final TaxTransactionDetailService taxDetailService;
+    private final TransactionService transactionService;
+
+    @GetMapping
+    public String list(@PathVariable UUID transactionId, Model model) {
+        List<TaxTransactionDetail> details = taxDetailService.findByTransactionId(transactionId);
+        model.addAttribute("taxDetails", details);
+        model.addAttribute("transactionId", transactionId);
+        return FRAGMENT_PREFIX + "taxDetailSection";
+    }
+
+    @GetMapping("/form")
+    public String showForm(@PathVariable UUID transactionId, Model model) {
+        Transaction transaction = transactionService.findByIdWithJournalEntries(transactionId);
+        List<TaxTransactionDetailService.TaxDetailSuggestion> suggestions =
+                taxDetailService.suggestFromTransaction(transaction);
+
+        model.addAttribute("transactionId", transactionId);
+        model.addAttribute("suggestions", suggestions);
+        model.addAttribute("taxTypes", TaxType.values());
+        model.addAttribute("detail", new TaxTransactionDetail());
+        return FRAGMENT_PREFIX + "taxDetailForm";
+    }
+
+    @GetMapping("/{detailId}/edit")
+    public String showEditForm(@PathVariable UUID transactionId,
+                               @PathVariable UUID detailId,
+                               Model model) {
+        TaxTransactionDetail detail = taxDetailService.findById(detailId);
+        model.addAttribute("transactionId", transactionId);
+        model.addAttribute("detail", detail);
+        model.addAttribute("taxTypes", TaxType.values());
+        model.addAttribute("isEdit", true);
+        return FRAGMENT_PREFIX + "taxDetailForm";
+    }
+
+    @PostMapping
+    public String create(@PathVariable UUID transactionId,
+                         @RequestParam TaxType taxType,
+                         @RequestParam(required = false) String fakturNumber,
+                         @RequestParam(required = false) LocalDate fakturDate,
+                         @RequestParam(required = false) String transactionCode,
+                         @RequestParam(required = false) BigDecimal dpp,
+                         @RequestParam(required = false) BigDecimal ppn,
+                         @RequestParam(required = false) BigDecimal ppnbm,
+                         @RequestParam(required = false) String bupotNumber,
+                         @RequestParam(required = false) String taxObjectCode,
+                         @RequestParam(required = false) BigDecimal grossAmount,
+                         @RequestParam(required = false) BigDecimal taxRate,
+                         @RequestParam(required = false) BigDecimal taxAmount,
+                         @RequestParam(required = false) String counterpartyIdType,
+                         @RequestParam(required = false) String counterpartyNpwp,
+                         @RequestParam(required = false) String counterpartyNik,
+                         @RequestParam(required = false) String counterpartyNitku,
+                         @RequestParam String counterpartyName,
+                         @RequestParam(required = false) String counterpartyAddress,
+                         Model model) {
+        TaxTransactionDetail detail = buildDetail(taxType, fakturNumber, fakturDate, transactionCode,
+                dpp, ppn, ppnbm, bupotNumber, taxObjectCode, grossAmount, taxRate, taxAmount,
+                counterpartyIdType, counterpartyNpwp, counterpartyNik, counterpartyNitku,
+                counterpartyName, counterpartyAddress);
+
+        try {
+            taxDetailService.save(transactionId, detail);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("transactionId", transactionId);
+            model.addAttribute("taxTypes", TaxType.values());
+            model.addAttribute("detail", detail);
+            return FRAGMENT_PREFIX + "taxDetailForm";
+        }
+
+        List<TaxTransactionDetail> details = taxDetailService.findByTransactionId(transactionId);
+        model.addAttribute("taxDetails", details);
+        model.addAttribute("transactionId", transactionId);
+        model.addAttribute("successMessage", "Detail pajak berhasil disimpan");
+        return FRAGMENT_PREFIX + "taxDetailSection";
+    }
+
+    @PostMapping("/{detailId}")
+    public String update(@PathVariable UUID transactionId,
+                         @PathVariable UUID detailId,
+                         @RequestParam TaxType taxType,
+                         @RequestParam(required = false) String fakturNumber,
+                         @RequestParam(required = false) LocalDate fakturDate,
+                         @RequestParam(required = false) String transactionCode,
+                         @RequestParam(required = false) BigDecimal dpp,
+                         @RequestParam(required = false) BigDecimal ppn,
+                         @RequestParam(required = false) BigDecimal ppnbm,
+                         @RequestParam(required = false) String bupotNumber,
+                         @RequestParam(required = false) String taxObjectCode,
+                         @RequestParam(required = false) BigDecimal grossAmount,
+                         @RequestParam(required = false) BigDecimal taxRate,
+                         @RequestParam(required = false) BigDecimal taxAmount,
+                         @RequestParam(required = false) String counterpartyIdType,
+                         @RequestParam(required = false) String counterpartyNpwp,
+                         @RequestParam(required = false) String counterpartyNik,
+                         @RequestParam(required = false) String counterpartyNitku,
+                         @RequestParam String counterpartyName,
+                         @RequestParam(required = false) String counterpartyAddress,
+                         Model model) {
+        TaxTransactionDetail detail = buildDetail(taxType, fakturNumber, fakturDate, transactionCode,
+                dpp, ppn, ppnbm, bupotNumber, taxObjectCode, grossAmount, taxRate, taxAmount,
+                counterpartyIdType, counterpartyNpwp, counterpartyNik, counterpartyNitku,
+                counterpartyName, counterpartyAddress);
+
+        try {
+            taxDetailService.update(detailId, detail);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("transactionId", transactionId);
+            model.addAttribute("taxTypes", TaxType.values());
+            model.addAttribute("detail", detail);
+            model.addAttribute("isEdit", true);
+            return FRAGMENT_PREFIX + "taxDetailForm";
+        }
+
+        List<TaxTransactionDetail> details = taxDetailService.findByTransactionId(transactionId);
+        model.addAttribute("taxDetails", details);
+        model.addAttribute("transactionId", transactionId);
+        model.addAttribute("successMessage", "Detail pajak berhasil diperbarui");
+        return FRAGMENT_PREFIX + "taxDetailSection";
+    }
+
+    @DeleteMapping("/{detailId}")
+    public String delete(@PathVariable UUID transactionId,
+                         @PathVariable UUID detailId,
+                         Model model) {
+        taxDetailService.delete(detailId);
+
+        List<TaxTransactionDetail> details = taxDetailService.findByTransactionId(transactionId);
+        model.addAttribute("taxDetails", details);
+        model.addAttribute("transactionId", transactionId);
+        model.addAttribute("successMessage", "Detail pajak berhasil dihapus");
+        return FRAGMENT_PREFIX + "taxDetailSection";
+    }
+
+    private TaxTransactionDetail buildDetail(TaxType taxType, String fakturNumber, LocalDate fakturDate,
+                                              String transactionCode, BigDecimal dpp, BigDecimal ppn,
+                                              BigDecimal ppnbm, String bupotNumber, String taxObjectCode,
+                                              BigDecimal grossAmount, BigDecimal taxRate, BigDecimal taxAmount,
+                                              String counterpartyIdType, String counterpartyNpwp,
+                                              String counterpartyNik, String counterpartyNitku,
+                                              String counterpartyName, String counterpartyAddress) {
+        TaxTransactionDetail detail = new TaxTransactionDetail();
+        detail.setTaxType(taxType);
+        detail.setFakturNumber(fakturNumber);
+        detail.setFakturDate(fakturDate);
+        detail.setTransactionCode(transactionCode);
+        detail.setDpp(dpp);
+        detail.setPpn(ppn);
+        detail.setPpnbm(ppnbm != null ? ppnbm : BigDecimal.ZERO);
+        detail.setBupotNumber(bupotNumber);
+        detail.setTaxObjectCode(taxObjectCode);
+        detail.setGrossAmount(grossAmount);
+        detail.setTaxRate(taxRate);
+        detail.setTaxAmount(taxAmount);
+        detail.setCounterpartyIdType(counterpartyIdType != null ? counterpartyIdType : "TIN");
+        detail.setCounterpartyNpwp(counterpartyNpwp);
+        detail.setCounterpartyNik(counterpartyNik);
+        detail.setCounterpartyNitku(counterpartyNitku);
+        detail.setCounterpartyName(counterpartyName);
+        detail.setCounterpartyAddress(counterpartyAddress);
+        return detail;
+    }
+}

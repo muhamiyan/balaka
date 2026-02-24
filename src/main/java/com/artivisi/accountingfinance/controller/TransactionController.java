@@ -19,6 +19,7 @@ import com.artivisi.accountingfinance.service.JournalTemplateService;
 import com.artivisi.accountingfinance.service.ProjectService;
 import com.artivisi.accountingfinance.service.TemplateExecutionEngine;
 import com.artivisi.accountingfinance.service.TagService;
+import com.artivisi.accountingfinance.service.TaxTransactionDetailService;
 import com.artivisi.accountingfinance.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -71,6 +73,7 @@ public class TransactionController {
     private final ProjectService projectService;
     private final InvoiceService invoiceService;
     private final TagService tagService;
+    private final TaxTransactionDetailService taxTransactionDetailService;
     private final TemplateExecutionEngine templateExecutionEngine;
     private final com.artivisi.accountingfinance.service.DashboardService dashboardService;
 
@@ -136,6 +139,12 @@ public class TransactionController {
         model.addAttribute("transactions", transactionPage.getContent());
         model.addAttribute("page", transactionPage);
         model.addAttribute("draftCount", transactionService.countByStatus(TransactionStatus.DRAFT));
+
+        // Tax detail indicator: which transactions have tax details
+        List<UUID> transactionIds = transactionPage.getContent().stream()
+                .map(Transaction::getId).toList();
+        Set<UUID> taxDetailTransactionIds = taxTransactionDetailService.findTransactionIdsWithDetails(transactionIds);
+        model.addAttribute("taxDetailTransactionIds", taxDetailTransactionIds);
 
         // Return fragment for HTMX requests, full page otherwise
         if ("true".equals(hxRequest)) {
