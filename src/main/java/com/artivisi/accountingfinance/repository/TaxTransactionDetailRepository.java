@@ -86,4 +86,11 @@ public interface TaxTransactionDetailRepository extends JpaRepository<TaxTransac
     boolean existsByBupotNumber(String bupotNumber);
 
     boolean existsByBupotNumberAndIdNot(String bupotNumber, UUID id);
+
+    @Query("SELECT t FROM TaxTransactionDetail t " +
+            "JOIN t.transaction trx " +
+            "WHERE t.counterpartyNpwp = :npwp " +
+            "AND trx.status = 'POSTED' " +
+            "ORDER BY trx.transactionDate DESC")
+    List<TaxTransactionDetail> findByCounterpartyNpwp(@Param("npwp") String npwp);
 }

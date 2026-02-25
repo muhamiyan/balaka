@@ -1,6 +1,10 @@
 package com.artivisi.accountingfinance.controller;
 
 import com.artivisi.accountingfinance.entity.Client;
+import com.artivisi.accountingfinance.entity.Invoice;
+import com.artivisi.accountingfinance.entity.TaxTransactionDetail;
+import com.artivisi.accountingfinance.repository.InvoiceRepository;
+import com.artivisi.accountingfinance.repository.TaxTransactionDetailRepository;
 import com.artivisi.accountingfinance.service.ClientService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 import static com.artivisi.accountingfinance.controller.ViewConstants.*;
 
 @Controller
@@ -33,6 +40,8 @@ public class ClientController {
     private static final String VIEW_FORM = "clients/form";
 
     private final ClientService clientService;
+    private final InvoiceRepository invoiceRepository;
+    private final TaxTransactionDetailRepository taxTransactionDetailRepository;
 
     @GetMapping
     public String list(
@@ -91,6 +100,34 @@ public class ClientController {
         Client client = clientService.findByCode(code);
         model.addAttribute(ATTR_CLIENT, client);
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_CLIENTS);
+
+        // Fetch invoices separately (avoids MultipleBagFetchException with projects)
+        List<Invoice> invoices = invoiceRepository.findByClientId(client.getId());
+        model.addAttribute("invoices", invoices);
+
+        if (client.getNpwp() != null && !client.getNpwp().isBlank()) {
+            List<TaxTransactionDetail> taxDetails = taxTransactionDetailRepository
+                    .findByCounterpartyNpwp(client.getNpwp());
+            long efakturCount = taxDetails.stream().filter(TaxTransactionDetail::isEFaktur).count();
+            long ebupotCount = taxDetails.stream().filter(TaxTransactionDetail::isEBupot).count();
+            BigDecimal totalDpp = taxDetails.stream()
+                    .map(t -> t.getDpp() != null ? t.getDpp() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalPpn = taxDetails.stream()
+                    .map(t -> t.getPpn() != null ? t.getPpn() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalPph = taxDetails.stream()
+                    .map(t -> t.getTaxAmount() != null ? t.getTaxAmount() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            model.addAttribute("taxDetails", taxDetails);
+            model.addAttribute("efakturCount", efakturCount);
+            model.addAttribute("ebupotCount", ebupotCount);
+            model.addAttribute("totalDpp", totalDpp);
+            model.addAttribute("totalPpn", totalPpn);
+            model.addAttribute("totalPph", totalPph);
+        }
+
         return "clients/detail";
     }
 

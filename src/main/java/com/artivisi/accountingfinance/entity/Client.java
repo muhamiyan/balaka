@@ -12,6 +12,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -64,6 +65,8 @@ public class Client {
     private String notes;
 
     // Tax identification fields (for Coretax integration)
+    @Pattern(regexp = "^$|^\\d{2}\\.\\d{3}\\.\\d{3}\\.\\d-\\d{3}\\.\\d{3}$",
+            message = "Format NPWP tidak valid (XX.XXX.XXX.X-XXX.XXX)")
     @Size(max = 20, message = "NPWP maksimal 20 karakter")
     @Column(name = "npwp", length = 20)
     private String npwp;

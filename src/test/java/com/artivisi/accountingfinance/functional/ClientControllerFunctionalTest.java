@@ -1,13 +1,20 @@
 package com.artivisi.accountingfinance.functional;
 
+import com.artivisi.accountingfinance.entity.Client;
+import com.artivisi.accountingfinance.entity.Invoice;
+import com.artivisi.accountingfinance.enums.InvoiceStatus;
 import com.artivisi.accountingfinance.functional.service.ServiceTestDataInitializer;
 import com.artivisi.accountingfinance.repository.ClientRepository;
+import com.artivisi.accountingfinance.repository.InvoiceRepository;
 import com.artivisi.accountingfinance.ui.PlaywrightTestBase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
@@ -21,6 +28,9 @@ class ClientControllerFunctionalTest extends PlaywrightTestBase {
 
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
 
     @BeforeEach
     void setupAndLogin() {
@@ -282,5 +292,64 @@ class ClientControllerFunctionalTest extends PlaywrightTestBase {
 
         // Should stay on form with error
         assertThat(page.locator("input[name='code']")).isVisible();
+    }
+
+    @Test
+    @DisplayName("Should display invoices section on client detail page")
+    void shouldDisplayInvoicesSectionOnClientDetail() {
+        Client client = clientRepository.findAll().stream().findFirst()
+                .orElseThrow(() -> new AssertionError("No client found in test data"));
+
+        // Create a test invoice for this client
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceNumber("INV-TEST-" + System.currentTimeMillis());
+        invoice.setClient(client);
+        invoice.setInvoiceDate(LocalDate.now());
+        invoice.setDueDate(LocalDate.now().plusDays(30));
+        invoice.setAmount(new BigDecimal("10000000"));
+        invoice.setTaxAmount(new BigDecimal("1100000"));
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        invoiceRepository.save(invoice);
+
+        navigateTo("/clients/" + client.getCode());
+        waitForPageLoad();
+
+        // Invoices section should be visible with invoice data
+        assertThat(page.locator("[data-testid='invoices-section']")).isVisible();
+        assertThat(page.locator("[data-testid='invoices-section']")).containsText(invoice.getInvoiceNumber());
+    }
+
+    @Test
+    @DisplayName("Should display tax summary for client with NPWP")
+    void shouldDisplayTaxSummaryForClientWithNpwp() {
+        // MANDIRI client has NPWP 01.310.523.4-091.000
+        Client client = clientRepository.findByCode("MANDIRI")
+                .orElseThrow(() -> new AssertionError("MANDIRI client not found in test data"));
+
+        navigateTo("/clients/" + client.getCode());
+        waitForPageLoad();
+
+        // Tax info card should be visible (client has NPWP)
+        assertThat(page.locator("body")).containsText("Informasi Pajak");
+        assertThat(page.locator("body")).containsText(client.getNpwp());
+    }
+
+    @Test
+    @DisplayName("Should reject invalid NPWP format")
+    void shouldRejectInvalidNpwpFormat() {
+        navigateTo("/clients/new");
+        waitForPageLoad();
+
+        String uniqueCode = "NPWP-TEST-" + System.currentTimeMillis();
+        page.fill("input[name='code']", uniqueCode);
+        page.fill("input[name='name']", "Test NPWP Validation");
+        page.fill("input[name='npwp']", "12345-invalid");
+
+        page.click("#btn-simpan");
+        waitForPageLoad();
+
+        // Should stay on form with validation error
+        assertThat(page.locator("input[name='npwp']")).isVisible();
+        assertThat(page.locator("body")).containsText("Format NPWP tidak valid");
     }
 }

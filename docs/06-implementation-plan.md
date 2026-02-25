@@ -1314,14 +1314,14 @@ Key difference: **BUMN is pemungut PPN** — they withhold PPN and remit it dire
 - [x] Functional tests (5 tests: PPN auto-populate, PPh 23 auto-populate, non-tax skip, counterparty from client, no duplicates)
 
 ### 12.5 Client Management UI
-- [ ] Client list page with search and filters (active/inactive)
-- [ ] Client form: code, name, npwp, nitku, nik, idType, contactPerson, email, phone, address
-- [ ] Client detail page with linked projects, invoices, and tax transaction summary
-- [ ] NPWP format validation (16 digits)
-- [ ] Import clients from CSV
-- [ ] Permission: PROJECT_VIEW / PROJECT_EDIT (reuse existing, clients are in same domain)
-- [ ] Sidebar link in Master Data group
-- [ ] Functional tests
+- [x] Client list page with search and filters (active/inactive)
+- [x] Client form: code, name, npwp, nitku, nik, idType, contactPerson, email, phone, address
+- [x] Client detail page with linked projects, invoices, and tax transaction summary
+- [x] NPWP format validation (XX.XXX.XXX.X-XXX.XXX)
+- [x] Import clients from CSV
+- [x] Permission: CLIENT_VIEW / CLIENT_CREATE / CLIENT_EDIT / CLIENT_DELETE
+- [x] Sidebar link in Proyek group
+- [x] Functional tests (18 tests)
 - [ ] User manual update
 
 ### 12.6 Fiscal Period Management UI

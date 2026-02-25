@@ -43,4 +43,7 @@ public interface ClientRepository extends JpaRepository<Client, UUID> {
 
     @Query("SELECT c FROM Client c LEFT JOIN FETCH c.projects WHERE c.id = :id")
     Optional<Client> findByIdWithProjects(@Param("id") UUID id);
+
+    @Query("SELECT c FROM Client c LEFT JOIN FETCH c.projects WHERE c.code = :code")
+    Optional<Client> findByCodeWithProjects(@Param("code") String code);
 }

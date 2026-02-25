@@ -25,7 +25,7 @@ public class ClientService {
     }
 
     public Client findByCode(String code) {
-        return clientRepository.findByCode(code)
+        return clientRepository.findByCodeWithProjects(code)
                 .orElseThrow(() -> new EntityNotFoundException("Client not found with code: " + code));
     }
 
@@ -70,6 +70,10 @@ public class ClientService {
         existing.setPhone(updatedClient.getPhone());
         existing.setAddress(updatedClient.getAddress());
         existing.setNotes(updatedClient.getNotes());
+        existing.setNpwp(updatedClient.getNpwp());
+        existing.setNitku(updatedClient.getNitku());
+        existing.setNik(updatedClient.getNik());
+        existing.setIdType(updatedClient.getIdType());
 
         return clientRepository.save(existing);
     }
