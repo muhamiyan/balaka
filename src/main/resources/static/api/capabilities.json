@@ -716,6 +716,115 @@
           "response": "List<ReconciliationItem>"
         }
       ]
+    },
+    {
+      "name": "Tax Details",
+      "description": "CRUD and bulk operations for tax transaction details (e-Faktur, e-Bupot)",
+      "endpoints": [
+        {
+          "method": "GET",
+          "path": "/api/transactions/{id}/tax-details",
+          "scope": "transactions:post",
+          "description": "List all tax details for a transaction",
+          "response": "List<TaxDetailResponse>: id, transactionId, taxType, counterpartyName, fakturNumber, dpp, ppn, bupotNumber, grossAmount, taxRate, taxAmount, counterparty fields, timestamps"
+        },
+        {
+          "method": "GET",
+          "path": "/api/transactions/{id}/tax-details/{detailId}",
+          "scope": "transactions:post",
+          "description": "Get a single tax detail by ID",
+          "response": "TaxDetailResponse"
+        },
+        {
+          "method": "POST",
+          "path": "/api/transactions/{id}/tax-details",
+          "scope": "transactions:post",
+          "description": "Create a tax detail for a transaction",
+          "requestBody": {
+            "taxType": "TaxType enum (required): PPN_KELUARAN, PPN_MASUKAN, PPH_21, PPH_23, PPH_42, PPH_25, PPH_29",
+            "counterpartyName": "string (required)",
+            "fakturNumber": "string (optional, for PPN)",
+            "fakturDate": "yyyy-MM-dd (optional)",
+            "transactionCode": "string (optional, e.g. 01, 03)",
+            "dpp": "number (required for PPN)",
+            "ppn": "number (required for PPN)",
+            "ppnbm": "number (optional)",
+            "bupotNumber": "string (optional, for PPh)",
+            "taxObjectCode": "string (optional, e.g. 24-104-01)",
+            "grossAmount": "number (required for PPh)",
+            "taxRate": "number (required for PPh)",
+            "taxAmount": "number (required for PPh)",
+            "counterpartyNpwp": "string (optional)",
+            "counterpartyNitku": "string (optional)",
+            "counterpartyNik": "string (optional)",
+            "counterpartyIdType": "string (optional, TIN or NIK)",
+            "counterpartyAddress": "string (optional)"
+          },
+          "response": "201 TaxDetailResponse"
+        },
+        {
+          "method": "PUT",
+          "path": "/api/transactions/{id}/tax-details/{detailId}",
+          "scope": "transactions:post",
+          "description": "Update a tax detail",
+          "requestBody": "Same as POST",
+          "response": "TaxDetailResponse"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/transactions/{id}/tax-details/{detailId}",
+          "scope": "transactions:post",
+          "description": "Delete a tax detail",
+          "response": "204 No Content"
+        },
+        {
+          "method": "POST",
+          "path": "/api/tax-details/bulk",
+          "scope": "transactions:post",
+          "description": "Bulk create tax details for multiple transactions",
+          "requestBody": {
+            "items": "List<BulkTaxDetailItem> (required). Each: {transactionId: UUID (required), detail: TaxDetailRequest (required)}"
+          },
+          "response": "BulkTaxDetailResponse: results[transactionId, detailId, success, errorMessage], successCount, failureCount"
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "description": "Document attachment management for transactions",
+      "endpoints": [
+        {
+          "method": "POST",
+          "path": "/api/transactions/{id}/documents",
+          "scope": "transactions:post",
+          "description": "Upload a document for a transaction (multipart/form-data, param: file)",
+          "requestBody": {
+            "file": "File (required, multipart/form-data)"
+          },
+          "response": "201 DocumentResponse: id, originalFilename, contentType, fileSize, fileSizeFormatted, checksumSha256, uploadedAt, uploadedBy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/transactions/{id}/documents",
+          "scope": "transactions:post",
+          "description": "List all documents for a transaction",
+          "response": "List<DocumentResponse>"
+        },
+        {
+          "method": "GET",
+          "path": "/api/documents/{docId}",
+          "scope": "transactions:post",
+          "description": "Download a document file",
+          "response": "Binary file with Content-Disposition: attachment"
+        },
+        {
+          "method": "DELETE",
+          "path": "/api/documents/{docId}",
+          "scope": "transactions:post",
+          "description": "Delete a document (soft delete)",
+          "response": "204 No Content"
+        }
+      ]
     }
   ],
   "workflows": [

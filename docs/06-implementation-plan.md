@@ -1287,18 +1287,22 @@ Key difference: **BUMN is pemungut PPN** — they withhold PPN and remit it dire
 - [x] Permission: TAX_EXPORT (reused existing)
 - [x] 10 Playwright functional tests
 
-### 12.3 Tax Transaction Detail API
-- [ ] `POST /api/transactions/{id}/tax-details` — attach tax detail to existing transaction
-- [ ] `PUT /api/transactions/{id}/tax-details` — update tax detail
-- [ ] `GET /api/transactions/{id}/tax-details` — get tax detail for transaction
-- [ ] `DELETE /api/transactions/{id}/tax-details` — remove tax detail
-- [ ] Bulk endpoint: `POST /api/tax-details/bulk` — attach details to multiple transactions
-- [ ] `POST /api/transactions/{id}/documents` — upload document attachment (multipart file upload)
-- [ ] `GET /api/transactions/{id}/documents` — list attached documents
-- [ ] `GET /api/transactions/{id}/documents/{docId}` — download document
-- [ ] OAuth scope: `transactions:post` (reuse existing)
-- [ ] Functional tests
-- [ ] Update capabilities.json
+### 12.3 Tax Transaction Detail API ✅
+- [x] `POST /api/transactions/{id}/tax-details` — attach tax detail to existing transaction
+- [x] `PUT /api/transactions/{id}/tax-details/{detailId}` — update tax detail
+- [x] `GET /api/transactions/{id}/tax-details` — list tax details for transaction
+- [x] `GET /api/transactions/{id}/tax-details/{detailId}` — get single tax detail
+- [x] `DELETE /api/transactions/{id}/tax-details/{detailId}` — remove tax detail
+- [x] Bulk endpoint: `POST /api/tax-details/bulk` — attach details to multiple transactions
+- [x] `POST /api/transactions/{id}/documents` — upload document attachment (multipart file upload)
+- [x] `GET /api/transactions/{id}/documents` — list attached documents
+- [x] `GET /api/documents/{docId}` — download document
+- [x] `DELETE /api/documents/{docId}` — delete document
+- [x] OAuth scope: `transactions:post` (reuse existing)
+- [x] 10 Playwright functional tests
+- [x] Update capabilities.json
+- [x] DTOs: TaxDetailRequest, TaxDetailResponse, DocumentResponse
+- [x] EntityNotFoundException handler in ApiExceptionHandler (returns 404 instead of 500)
 
 ### 12.4 Auto-populate Tax Details from Templates
 - [ ] When posting a transaction via PPN template → auto-create TaxTransactionDetail with taxType=PPN_KELUARAN or PPN_MASUKAN
