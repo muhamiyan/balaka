@@ -16,6 +16,7 @@ import com.artivisi.accountingfinance.entity.JournalEntry;
 import com.artivisi.accountingfinance.entity.JournalTemplate;
 import com.artivisi.accountingfinance.entity.JournalTemplateLine;
 import com.artivisi.accountingfinance.entity.MerchantMapping;
+import com.artivisi.accountingfinance.entity.Project;
 import com.artivisi.accountingfinance.entity.Transaction;
 import com.artivisi.accountingfinance.entity.TransactionAccountMapping;
 import com.artivisi.accountingfinance.repository.DocumentRepository;
@@ -575,6 +576,12 @@ public class TransactionApiService {
         transaction.setAmount(request.amount());
         transaction.setDescription(request.description());
         transaction.setCreatedBy(username);
+
+        if (request.projectId() != null) {
+            Project project = new Project();
+            project.setId(request.projectId());
+            transaction.setProject(project);
+        }
 
         Map<UUID, UUID> accountMappings = resolveAccountSlots(template, request.accountSlots());
 

@@ -33,6 +33,8 @@ public record CreateDraftRequest(
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate transactionDate,
 
+        UUID projectId,
+
         /**
          * Map of accountHint to accountId.
          * Used to specify accounts for template lines that have accountHint instead of a fixed account.

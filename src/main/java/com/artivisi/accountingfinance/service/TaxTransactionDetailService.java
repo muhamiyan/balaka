@@ -10,6 +10,7 @@ import com.artivisi.accountingfinance.repository.TaxTransactionDetailRepository;
 import com.artivisi.accountingfinance.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -94,6 +96,51 @@ public class TaxTransactionDetailService {
         TaxTransactionDetail detail = taxDetailRepository.findById(detailId)
                 .orElseThrow(() -> new EntityNotFoundException(DETAIL_NOT_FOUND + detailId));
         taxDetailRepository.delete(detail);
+    }
+
+    @Transactional
+    public int autoPopulateFromTransaction(Transaction transaction) {
+        List<TaxTransactionDetail> existing = findByTransactionId(transaction.getId());
+        if (!existing.isEmpty()) {
+            log.debug("Transaction {} already has {} tax details, skipping auto-populate",
+                    transaction.getId(), existing.size());
+            return 0;
+        }
+
+        List<TaxDetailSuggestion> suggestions = suggestFromTransaction(transaction);
+        if (suggestions.isEmpty()) {
+            return 0;
+        }
+
+        int count = 0;
+        for (TaxDetailSuggestion suggestion : suggestions) {
+            if (suggestion.name() == null || suggestion.name().isBlank()) {
+                log.debug("Skipping auto-populate for {} — no counterparty name available",
+                        suggestion.taxType());
+                continue;
+            }
+
+            TaxTransactionDetail detail = new TaxTransactionDetail();
+            detail.setTaxType(suggestion.taxType());
+            detail.setTransactionCode(suggestion.transactionCode());
+            detail.setDpp(suggestion.dpp());
+            detail.setPpn(suggestion.ppn());
+            detail.setGrossAmount(suggestion.grossAmount());
+            detail.setTaxRate(suggestion.taxRate());
+            detail.setTaxAmount(suggestion.taxAmount());
+            detail.setCounterpartyNpwp(suggestion.npwp());
+            detail.setCounterpartyNitku(suggestion.nitku());
+            detail.setCounterpartyNik(suggestion.nik());
+            detail.setCounterpartyIdType(suggestion.idType());
+            detail.setCounterpartyName(suggestion.name());
+            detail.setCounterpartyAddress(suggestion.address());
+
+            save(transaction.getId(), detail);
+            count++;
+        }
+
+        log.info("Auto-populated {} tax details for transaction {}", count, transaction.getId());
+        return count;
     }
 
     public Set<UUID> findTransactionIdsWithDetails(Collection<UUID> ids) {

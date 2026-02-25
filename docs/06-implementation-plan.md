@@ -1304,14 +1304,14 @@ Key difference: **BUMN is pemungut PPN** — they withhold PPN and remit it dire
 - [x] DTOs: TaxDetailRequest, TaxDetailResponse, DocumentResponse
 - [x] EntityNotFoundException handler in ApiExceptionHandler (returns 404 instead of 500)
 
-### 12.4 Auto-populate Tax Details from Templates
-- [ ] When posting a transaction via PPN template → auto-create TaxTransactionDetail with taxType=PPN_KELUARAN or PPN_MASUKAN
-- [ ] When posting via PPh 23 template → auto-create TaxTransactionDetail with taxType=PPH_23
-- [ ] When posting via PPh 4(2) template → auto-create TaxTransactionDetail with taxType=PPH_42
-- [ ] Auto-fill DPP, PPN/taxAmount from computed journal amounts
-- [ ] Auto-fill counterparty from linked Client/Vendor (if transaction has project/invoice reference)
-- [ ] Leave fakturNumber/bupotNumber blank (user fills in after receiving from Coretax)
-- [ ] Functional tests
+### 12.4 Auto-populate Tax Details from Templates ✅
+- [x] When posting a transaction via PPN template → auto-create TaxTransactionDetail with taxType=PPN_KELUARAN or PPN_MASUKAN
+- [x] When posting via PPh 23 template → auto-create TaxTransactionDetail with taxType=PPH_23
+- [x] When posting via PPh 4(2) template → auto-create TaxTransactionDetail with taxType=PPH_42
+- [x] Auto-fill DPP, PPN/taxAmount from computed journal amounts
+- [x] Auto-fill counterparty from linked Client/Vendor (if transaction has project/invoice reference)
+- [x] Leave fakturNumber/bupotNumber blank (user fills in after receiving from Coretax)
+- [x] Functional tests (5 tests: PPN auto-populate, PPh 23 auto-populate, non-tax skip, counterparty from client, no duplicates)
 
 ### 12.5 Client Management UI
 - [ ] Client list page with search and filters (active/inactive)

@@ -59,6 +59,7 @@ public class TransactionService {
     private final TagRepository tagRepository;
     private final JournalTemplateService journalTemplateService;
     private final FormulaEvaluator formulaEvaluator;
+    private final TaxTransactionDetailService taxTransactionDetailService;
 
     public List<Transaction> findAll() {
         return transactionRepository.findAll();
@@ -276,7 +277,9 @@ public class TransactionService {
             transaction.setPostedAt(LocalDateTime.now());
             transaction.setPostedBy(postedBy);
 
-            return transactionRepository.save(transaction);
+            Transaction saved = transactionRepository.save(transaction);
+            taxTransactionDetailService.autoPopulateFromTransaction(saved);
+            return saved;
         }
 
         // No existing journal entries - create them from template (traditional flow)
@@ -323,7 +326,9 @@ public class TransactionService {
         transaction.setPostedAt(LocalDateTime.now());
         transaction.setPostedBy(postedBy);
 
-        return transactionRepository.save(transaction);
+        Transaction saved = transactionRepository.save(transaction);
+        taxTransactionDetailService.autoPopulateFromTransaction(saved);
+        return saved;
     }
 
     @Transactional
