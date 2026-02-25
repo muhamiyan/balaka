@@ -105,4 +105,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             @Param("endDate") LocalDate endDate);
 
     boolean existsByJournalTemplateId(UUID templateId);
+
+    long countByStatusAndTransactionDateBetween(TransactionStatus status, LocalDate startDate, LocalDate endDate);
 }

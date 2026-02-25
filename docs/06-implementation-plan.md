@@ -1325,14 +1325,14 @@ Key difference: **BUMN is pemungut PPN** — they withhold PPN and remit it dire
 - [ ] User manual update
 
 ### 12.6 Fiscal Period Management UI
-- [ ] Fiscal period list page (12 months per year, with status badges)
-- [ ] Open/close period workflow (OPEN → MONTH_CLOSED → TAX_FILED)
-- [ ] FiscalPeriodService: create periods for a year, update status, enforce locking
-- [ ] Block transaction posting in closed periods
-- [ ] Block period close if unposted drafts exist
-- [ ] Year selector
-- [ ] Permission: SETTINGS_VIEW / SETTINGS_EDIT
-- [ ] Functional tests
+- [x] Fiscal period list page (12 months per year, with status badges)
+- [x] Open/close period workflow (OPEN → MONTH_CLOSED → TAX_FILED)
+- [x] FiscalPeriodService: create periods for a year, update status, enforce locking
+- [x] Block transaction posting in closed periods
+- [x] Block period close if unposted drafts exist
+- [x] Year selector
+- [x] Permission: SETTINGS_VIEW / SETTINGS_EDIT
+- [x] Functional tests
 - [ ] User manual update
 
 ### 12.7 Tax Report Enhancements

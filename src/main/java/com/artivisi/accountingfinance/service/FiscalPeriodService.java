@@ -2,7 +2,9 @@ package com.artivisi.accountingfinance.service;
 
 import com.artivisi.accountingfinance.entity.FiscalPeriod;
 import com.artivisi.accountingfinance.enums.FiscalPeriodStatus;
+import com.artivisi.accountingfinance.enums.TransactionStatus;
 import com.artivisi.accountingfinance.repository.FiscalPeriodRepository;
+import com.artivisi.accountingfinance.repository.TransactionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class FiscalPeriodService {
 
     private final FiscalPeriodRepository fiscalPeriodRepository;
+    private final TransactionRepository transactionRepository;
 
     public FiscalPeriod findById(UUID id) {
         return fiscalPeriodRepository.findById(id)
@@ -89,6 +92,13 @@ public class FiscalPeriodService {
 
         if (!period.canCloseMonth()) {
             throw new IllegalStateException("Cannot close month for period with status: " + period.getStatus());
+        }
+
+        long draftCount = transactionRepository.countByStatusAndTransactionDateBetween(
+                TransactionStatus.DRAFT, period.getStartDate(), period.getEndDate());
+        if (draftCount > 0) {
+            throw new IllegalStateException("Tidak dapat menutup periode " + period.getPeriodDisplayName() +
+                    ". Masih ada " + draftCount + " transaksi draft yang belum diposting.");
         }
 
         period.setStatus(FiscalPeriodStatus.MONTH_CLOSED);

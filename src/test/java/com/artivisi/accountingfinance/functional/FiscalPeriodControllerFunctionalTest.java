@@ -130,6 +130,48 @@ class FiscalPeriodControllerFunctionalTest extends PlaywrightTestBase {
     }
 
     @Test
+    @DisplayName("Should show sidebar link for admin")
+    void shouldShowSidebarLinkForAdmin() {
+        navigateTo("/fiscal-periods");
+        waitForPageLoad();
+
+        // Open the Master Data sidebar group
+        page.locator("#nav-group-master").click();
+
+        var sidebarLink = page.locator("#nav-fiscal-periods");
+        assertThat(sidebarLink).isVisible();
+        assertThat(sidebarLink).hasText("Periode Fiskal");
+    }
+
+    @Test
+    @DisplayName("Should generate year periods and show success message")
+    void shouldGenerateYearPeriodsAndShowSuccessMessage() {
+        int testYear = 2099;
+
+        // Clean up any existing periods for this year
+        fiscalPeriodRepository.findByYear(testYear)
+                .forEach(fiscalPeriodRepository::delete);
+
+        navigateTo("/fiscal-periods");
+        waitForPageLoad();
+
+        // Fill in the year input in the generate year form
+        var yearInput = page.locator("form[action*='generate-year'] input[name='year']");
+        yearInput.fill(String.valueOf(testYear));
+
+        // Click generate button
+        page.locator("#btn-generate-year").click();
+        waitForPageLoad();
+
+        // Verify success message
+        assertThat(page.locator("body")).containsText("12 periode fiskal berhasil ditambahkan untuk tahun " + testYear);
+
+        // Clean up
+        fiscalPeriodRepository.findByYear(testYear)
+                .forEach(fiscalPeriodRepository::delete);
+    }
+
+    @Test
     @DisplayName("Should have close month button for open periods")
     void shouldHaveCloseMonthButtonForOpenPeriods() {
         var period = fiscalPeriodRepository.findAll().stream()

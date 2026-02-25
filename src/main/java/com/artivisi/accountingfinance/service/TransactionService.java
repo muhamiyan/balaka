@@ -60,6 +60,7 @@ public class TransactionService {
     private final JournalTemplateService journalTemplateService;
     private final FormulaEvaluator formulaEvaluator;
     private final TaxTransactionDetailService taxTransactionDetailService;
+    private final FiscalPeriodService fiscalPeriodService;
 
     public List<Transaction> findAll() {
         return transactionRepository.findAll();
@@ -249,6 +250,8 @@ public class TransactionService {
         if (!transaction.isDraft()) {
             throw new IllegalStateException("Only draft transactions can be posted");
         }
+
+        fiscalPeriodService.validatePeriodOpenForPosting(transaction.getTransactionDate());
 
         // Generate transaction number at posting time (not at draft creation)
         // This avoids gaps in numbering when drafts are deleted
