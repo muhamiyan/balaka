@@ -555,6 +555,69 @@ Dr. Hutang PPh 21                   750.000
 
 ---
 
+## Penggajian via API
+
+REST API tersedia untuk integrasi penggajian dengan sistem eksternal.
+
+### Komponen Gaji
+
+```
+GET    /api/salary-components           — daftar komponen aktif
+POST   /api/salary-components           — buat komponen baru
+PUT    /api/salary-components/{id}       — update komponen
+DELETE /api/salary-components/{id}       — nonaktifkan komponen
+```
+
+### Karyawan
+
+```
+GET    /api/employees                    — daftar karyawan (filter: active, status)
+POST   /api/employees                    — buat karyawan
+GET    /api/employees/{id}               — detail dengan komponen gaji
+PUT    /api/employees/{id}               — update data karyawan
+POST   /api/employees/{id}/salary-components    — assign komponen gaji
+PUT    /api/employees/{id}/salary-components/{componentId}  — update assignment
+```
+
+### Payroll Run
+
+```
+GET    /api/payroll                      — daftar payroll (filter: year, status)
+POST   /api/payroll                      — buat payroll baru (DRAFT)
+GET    /api/payroll/{id}                 — detail dengan semua detail karyawan
+POST   /api/payroll/{id}/calculate       — hitung PPh 21, set CALCULATED
+POST   /api/payroll/{id}/approve         — set APPROVED
+POST   /api/payroll/{id}/post            — posting ke jurnal
+DELETE /api/payroll/{id}                 — hapus (hanya DRAFT)
+```
+
+### 1721-A1 dan Ringkasan PPh 21
+
+```
+GET /api/payroll/employees/{id}/1721-a1?year=2025  — data 1721-A1 per karyawan
+GET /api/payroll/pph21/summary?year=2025           — ringkasan PPh 21 seluruh karyawan
+```
+
+Response 1721-A1 berisi:
+- Data karyawan (NPWP, NIK, PTKP, masa kerja)
+- Perhitungan (penghasilan bruto, biaya jabatan, neto, PTKP, PKP, PPh 21 terutang)
+- Breakdown bulanan (gross salary dan PPh 21 per bulan)
+
+### Skenario: Retrofit Data Payroll 2025
+
+1. Buat komponen gaji: `POST /api/salary-components` (GAJI_POKOK, EARNING, isTaxable=true)
+2. Buat karyawan: `POST /api/employees` (nama, NPWP, NIK, PTKP, hireDate)
+3. Assign komponen dengan dua periode:
+   - `POST /api/employees/{id}/salary-components` (amount=11253000, effectiveDate=2025-01-01, endDate=2025-04-30)
+   - `POST /api/employees/{id}/salary-components` (amount=5000000, effectiveDate=2025-05-01)
+4. Buat 12 payroll run: `POST /api/payroll` (periode 2025-01 s/d 2025-12)
+5. Hitung masing-masing: `POST /api/payroll/{id}/calculate`
+6. Generate 1721-A1: `GET /api/payroll/employees/{id}/1721-a1?year=2025`
+
+Autentikasi: Bearer token dengan scope `tax-export:read`.
+
+---
+
 ## Tips Penggajian
 
 1. **Setup komponen dulu** - Sebelum input karyawan

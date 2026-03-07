@@ -1432,6 +1432,40 @@ Setiap user dapat melihat dan mencabut device token miliknya sendiri di halaman 
 |--------|----------|-----------|
 | POST | `/api/analysis/reports` | Publikasi laporan analisis terstruktur |
 
+**Komponen Gaji (scope: `tax-export:read`):**
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/api/salary-components` | Daftar komponen gaji aktif |
+| POST | `/api/salary-components` | Buat komponen gaji |
+| PUT | `/api/salary-components/{id}` | Update komponen gaji |
+| DELETE | `/api/salary-components/{id}` | Nonaktifkan komponen gaji |
+
+**Karyawan (scope: `tax-export:read`):**
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/api/employees` | Daftar karyawan (filter: active, status) |
+| POST | `/api/employees` | Buat karyawan |
+| GET | `/api/employees/{id}` | Detail karyawan + komponen gaji |
+| PUT | `/api/employees/{id}` | Update data karyawan |
+| POST | `/api/employees/{id}/salary-components` | Assign komponen gaji |
+| PUT | `/api/employees/{id}/salary-components/{componentId}` | Update assignment |
+
+**Payroll (scope: `tax-export:read`):**
+
+| Method | Endpoint | Deskripsi |
+|--------|----------|-----------|
+| GET | `/api/payroll` | Daftar payroll run (filter: year, status) |
+| POST | `/api/payroll` | Buat payroll run (DRAFT) |
+| GET | `/api/payroll/{id}` | Detail payroll + semua detail karyawan |
+| POST | `/api/payroll/{id}/calculate` | Hitung PPh 21, set CALCULATED |
+| POST | `/api/payroll/{id}/approve` | Set APPROVED |
+| POST | `/api/payroll/{id}/post` | Posting ke jurnal |
+| DELETE | `/api/payroll/{id}` | Hapus payroll DRAFT |
+| GET | `/api/payroll/employees/{id}/1721-a1?year=YYYY` | Data 1721-A1 per karyawan |
+| GET | `/api/payroll/pph21/summary?year=YYYY` | Ringkasan PPh 21 seluruh karyawan |
+
 **Koreksi Fiskal (scope: `tax-export:read`):**
 
 | Method | Endpoint | Deskripsi |
