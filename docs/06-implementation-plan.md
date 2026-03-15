@@ -176,7 +176,7 @@
 - [x] Pending amortization entries count widget (dashboard widget with total/overdue/due this month)
 
 ### 1.11 Comprehensive User Manual ✅
-- [x] 15 files in docs/user-manual/*.md (12 sections + 4 appendices)
+- [x] 20 files in docs/user-manual/*.md (17 sections + 4 appendices)
 - [x] Industry-specific guides: Service, Trading, Manufacturing, Education
 - [x] Playwright functional tests generate screenshots automatically
 - [x] Screenshots stored in target/user-manual/screenshots/

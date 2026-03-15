@@ -32,26 +32,19 @@ Memory budget allocation for minimum 2GB VPS:
 
 | Component | Allocation | Notes |
 |-----------|------------|-------|
-| JVM Heap | 768 MB | Fixed min=max to avoid resize |
+| JVM Heap | 512-1024 MB | Dynamic sizing |
 | JVM Metaspace | 128-192 MB | Class metadata |
 | PostgreSQL | ~256 MB | shared_buffers + connections |
 | OS/Buffers | ~512 MB | Page cache, kernel |
 
 #### JVM Configuration
 
-Ansible configures the JVM with G1GC (optimal for heaps <4GB):
+JVM uses G1GC (Java 25 default, optimal for heaps <4GB):
 
 ```bash
--XX:+UseG1GC
--XX:G1HeapRegionSize=4m
--XX:G1ReservePercent=15
--XX:MaxGCPauseMillis=200
--XX:+UseStringDeduplication
--Xms768m -Xmx768m              # Fixed heap
+-Xms512m -Xmx1024m             # Dynamic heap sizing
 -XX:MetaspaceSize=128m
 -XX:MaxMetaspaceSize=192m
--XX:MaxDirectMemorySize=128m
--Xss512k                        # Thread stack
 ```
 
 GC logging is enabled at `/var/log/aplikasi-akunting/gc.log` for diagnostics.

@@ -131,7 +131,7 @@ Key Services:
 
 **Location:** `src/main/java/.../entity/`
 
-- 40+ JPA entities
+- 85 JPA entities
 - UUID primary keys
 - Audit fields (createdAt, updatedAt)
 
@@ -371,7 +371,7 @@ PostgreSQL tuning for 2GB VPS:
 ### Application Performance
 
 - Virtual threads (Java 25)
-- ZGC garbage collector (<10ms pause times)
+- G1GC garbage collector (Java 25 default)
 - Dynamic heap sizing (512m-1024m)
 - Async processing for heavy reports
 - Spring Cache for frequent data
@@ -382,7 +382,7 @@ JVM settings:
 | Setting | Value | Notes |
 |---------|-------|-------|
 | Heap | 512-1024 MB | Dynamic sizing |
-| GC | ZGC | Sub-10ms pauses |
+| GC | G1GC | Java 25 default, optimal for heaps <4GB |
 
 Startup time: ~50-55 seconds on 1 vCPU
 

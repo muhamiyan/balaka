@@ -202,26 +202,25 @@ Indonesian accounting application for small businesses. Spring Boot 4.0 + Thymel
 - Manufacturing (Kedai Kopi Nusantara) - 90 COA, 33 templates, BOM products
 - Education (STMIK Tazkia) - 87 COA, 31 templates, student billing
 
-**User Manual (15 files, 12-section structure)**
+**User Manual (20 files, 17 sections + appendices)**
 - Setup & Administration
-- Basic Accounting Tutorial (crown jewel)
+- Basic Accounting Tutorial
 - Fixed Assets & Depreciation
 - Tax Compliance
 - Payroll & BPJS
-- Industry Overview
-- Service Industry Guide
-- Trading Industry Guide
-- Manufacturing Industry Guide
-- Education Industry Guide
+- Industry Overview + 4 Industry Guides (Service, Trading, Manufacturing, Education)
 - Security & Compliance
+- AI-Assisted Transactions
+- Bank Reconciliation
+- Smart Alerts
+- Invoices & Bills
+- Recurring Transactions
 - 4 Appendices (Glossary, Templates, Amortization, Accounts)
 
-**Functional Tests**
-- Service: 24 tests (billing, payments, reports)
-- Seller: 28 tests (inventory, sales, COGS)
-- Manufacturing: 44 tests (BOM, production, costing)
-- Campus: 19 tests (billing, scholarships, receivables)
-- Total: 115 industry-specific functional tests
+**Test Suite**
+- 3,600+ tests (unit, integration, functional, DAST)
+- 80%+ line coverage
+- 4 industry-specific functional test suites (Service, Seller, Manufacturing, Campus)
 
 ### Phase 6: Security Hardening (Complete)
 

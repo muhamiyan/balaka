@@ -6,7 +6,7 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=artivisi_aplikasi-akunting&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=artivisi_aplikasi-akunting)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=artivisi_aplikasi-akunting&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=artivisi_aplikasi-akunting)
 
-Accounting application for Indonesian small businesses. Spring Boot 4.0 + Thymeleaf + PostgreSQL.
+Accounting application for Indonesian small businesses. Spring Boot 4.0.3 + Thymeleaf + PostgreSQL.
 
 **Production-ready features:**
 - ✅ Core accounting (Chart of Accounts, journal entries, financial reports)
@@ -60,17 +60,15 @@ Accounting application for Indonesian small businesses. Spring Boot 4.0 + Thymel
 
 ## Project Status
 
-**Current Phase:** Phase 6 (Security Hardening) - 8 of 10 subsections complete
+**All 16 phases complete.** Core accounting, tax compliance, payroll, fixed assets, inventory & production, security hardening, API foundation, bank reconciliation, analytics, invoicing, recurring transactions, tax data management, OpenAPI, fiscal adjustments, payroll API, user manual.
 
-**Security highlights:**
-- SpotBugs/FindSecBugs: ✅ 0 issues (33 vulnerabilities fixed)
-- OWASP ZAP DAST: ✅ 0 HIGH, 0 MEDIUM (111 endpoints scanned)
-- CSP headers: nonce-based with full dispatcher coverage
-
-**Completed:** Core accounting MVP, tax compliance, payroll, fixed assets, inventory & production, 4 industry seed packs, comprehensive user manual (15 files), 115+ functional tests
+- 3,600+ tests, 80%+ line coverage
+- 4 industry seed packs, 20-file user manual
+- SpotBugs/FindSecBugs: 0 issues
+- OWASP ZAP DAST: 0 HIGH, 0 MEDIUM
 
 See [Features & Roadmap](docs/01-features-and-roadmap.md) for complete feature list and [Implementation Plan](docs/06-implementation-plan.md) for detailed status.
 
 ## License
 
-[AGPL-3.0](LICENSE)
+[Apache License 2.0](LICENSE)
