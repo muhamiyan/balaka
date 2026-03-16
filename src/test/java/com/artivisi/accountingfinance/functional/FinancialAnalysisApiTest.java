@@ -81,6 +81,25 @@ class FinancialAnalysisApiTest extends PlaywrightTestBase {
     }
 
     @Test
+    @DisplayName("GET /api/analysis/snapshot with separate month and year params")
+    void testSnapshotWithSeparateMonthYear() throws Exception {
+        APIResponse response = get("/api/analysis/snapshot?month=1&year=2026");
+
+        assertThat(response.status()).isEqualTo(200);
+
+        JsonNode body = parse(response);
+        assertThat(body.get("reportType").asText()).isEqualTo("snapshot");
+        assertThat(body.get("parameters").get("month").asText()).isEqualTo("1");
+
+        JsonNode data = body.get("data");
+        assertThat(data.has("revenue")).isTrue();
+        assertThat(data.has("netProfit")).isTrue();
+        assertThat(data.has("cashBalance")).isTrue();
+
+        log.info("Snapshot (month+year) test passed - month={}", data.get("month"));
+    }
+
+    @Test
     @DisplayName("GET /api/analysis/trial-balance - returns trial balance")
     void testTrialBalance() throws Exception {
         APIResponse response = get("/api/analysis/trial-balance?asOfDate=2026-01-31");
