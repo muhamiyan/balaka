@@ -27,6 +27,18 @@ public interface EmployeeSalaryComponentRepository extends JpaRepository<Employe
 
     boolean existsByEmployeeAndSalaryComponent(Employee employee, SalaryComponent salaryComponent);
 
+    @Query("SELECT CASE WHEN COUNT(esc) > 0 THEN true ELSE false END " +
+           "FROM EmployeeSalaryComponent esc " +
+           "WHERE esc.employee = :employee " +
+           "AND esc.salaryComponent = :component " +
+           "AND esc.effectiveDate <= :endDate " +
+           "AND (esc.endDate IS NULL OR esc.endDate >= :startDate)")
+    boolean existsOverlappingAssignment(
+            @Param("employee") Employee employee,
+            @Param("component") SalaryComponent component,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
     @Query("SELECT esc FROM EmployeeSalaryComponent esc " +
            "JOIN FETCH esc.salaryComponent sc " +
            "WHERE esc.employee.id = :employeeId " +

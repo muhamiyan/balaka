@@ -839,9 +839,9 @@ CREATE TABLE employees (
     -- Link to user account for self-service access
     id_user UUID REFERENCES users(id),
 
-    -- Tax identification
-    npwp VARCHAR(20),                        -- 15-16 digits formatted: XX.XXX.XXX.X-XXX.XXX
-    nik_ktp VARCHAR(16),                     -- 16 digit NIK KTP
+    -- Tax identification (VARCHAR(255) for encrypted-at-rest PII storage)
+    npwp VARCHAR(255),
+    nik_ktp VARCHAR(255),
 
     -- PTKP status for PPh 21 calculation
     ptkp_status VARCHAR(10) NOT NULL DEFAULT 'TK_0',
@@ -856,12 +856,12 @@ CREATE TABLE employees (
 
     -- Bank account for salary payment
     bank_name VARCHAR(100),
-    bank_account_number VARCHAR(50),
+    bank_account_number VARCHAR(255),       -- encrypted at rest
     bank_account_name VARCHAR(255),
 
-    -- BPJS registration
-    bpjs_kesehatan_number VARCHAR(20),
-    bpjs_ketenagakerjaan_number VARCHAR(20),
+    -- BPJS registration (VARCHAR(255) for encrypted-at-rest PII storage)
+    bpjs_kesehatan_number VARCHAR(255),
+    bpjs_ketenagakerjaan_number VARCHAR(255),
 
     notes TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -920,9 +920,10 @@ CREATE TABLE employee_salary_components (
     end_date DATE,
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
-
-    CONSTRAINT uk_employee_component UNIQUE (employee_id, salary_component_id)
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    -- No unique constraint on (employee_id, salary_component_id):
+    -- same component can be assigned multiple times with non-overlapping date ranges
+    -- to model salary changes over time. Overlap validation is at application level.
 );
 
 CREATE INDEX idx_esc_employee ON employee_salary_components(employee_id);

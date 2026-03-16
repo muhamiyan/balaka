@@ -123,11 +123,7 @@ public class EmployeeApiController {
         SalaryComponent component = salaryComponentService.findById(request.salaryComponentId());
 
         EmployeeSalaryComponent assignment = salaryComponentService.assignComponentToEmployee(
-                employee, component, request.effectiveDate(), null, request.amount(), null);
-        if (request.endDate() != null) {
-            assignment.setEndDate(request.endDate());
-            assignment = employeeSalaryComponentRepository.save(assignment);
-        }
+                employee, component, request.effectiveDate(), request.endDate(), null, request.amount(), null);
 
         log.info("API: Salary component assigned - id={}", assignment.getId());
         return ResponseEntity.status(HttpStatus.CREATED)

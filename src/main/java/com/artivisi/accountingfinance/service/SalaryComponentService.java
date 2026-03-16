@@ -161,15 +161,26 @@ public class SalaryComponentService {
     public EmployeeSalaryComponent assignComponentToEmployee(Employee employee, SalaryComponent component,
                                                               LocalDate effectiveDate, java.math.BigDecimal rate,
                                                               java.math.BigDecimal amount, String notes) {
-        // Check if already assigned
-        if (employeeSalaryComponentRepository.existsByEmployeeAndSalaryComponent(employee, component)) {
-            throw new IllegalArgumentException("Komponen " + component.getName() + " sudah ditugaskan ke karyawan ini");
+        return assignComponentToEmployee(employee, component, effectiveDate, null, rate, amount, notes);
+    }
+
+    @Transactional
+    public EmployeeSalaryComponent assignComponentToEmployee(Employee employee, SalaryComponent component,
+                                                              LocalDate effectiveDate, LocalDate endDate,
+                                                              java.math.BigDecimal rate,
+                                                              java.math.BigDecimal amount, String notes) {
+        // Check for overlapping date range with existing assignments of the same component
+        LocalDate overlapEnd = (endDate != null) ? endDate : LocalDate.of(9999, 12, 31);
+        if (employeeSalaryComponentRepository.existsOverlappingAssignment(employee, component, effectiveDate, overlapEnd)) {
+            throw new IllegalArgumentException("Komponen " + component.getName()
+                    + " sudah ditugaskan ke karyawan ini pada periode yang tumpang tindih");
         }
 
         EmployeeSalaryComponent esc = new EmployeeSalaryComponent();
         esc.setEmployee(employee);
         esc.setSalaryComponent(component);
         esc.setEffectiveDate(effectiveDate);
+        esc.setEndDate(endDate);
         esc.setRate(rate);
         esc.setAmount(amount);
         esc.setNotes(notes);

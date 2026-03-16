@@ -184,6 +184,73 @@ class PayrollApiTest extends PlaywrightTestBase {
                 .isTrue();
     }
 
+    @Test
+    @DisplayName("Salary component assignment with non-overlapping date ranges")
+    void salaryComponentNonOverlappingDateRanges() throws Exception {
+        // Create salary component
+        Map<String, Object> compRequest = new HashMap<>();
+        compRequest.put("code", "GAPOK_RANGE_TEST");
+        compRequest.put("name", "Gaji Pokok Range Test");
+        compRequest.put("componentType", "EARNING");
+        compRequest.put("defaultAmount", 5000000);
+        compRequest.put("isTaxable", true);
+
+        APIResponse compResponse = post("/api/salary-components", compRequest);
+        assertThat(compResponse.status()).isEqualTo(201);
+        String salaryComponentId = parse(compResponse).get("id").asText();
+
+        // Create employee
+        Map<String, Object> empRequest = new HashMap<>();
+        empRequest.put("employeeId", "EMP-RANGE-TEST");
+        empRequest.put("name", "Range Test Employee");
+        empRequest.put("ptkpStatus", "TK_0");
+        empRequest.put("hireDate", "2025-01-01");
+
+        APIResponse empResponse = post("/api/employees", empRequest);
+        assertThat(empResponse.status()).isEqualTo(201);
+        String employeeId = parse(empResponse).get("id").asText();
+
+        // First assignment: Jan-Apr 2025
+        Map<String, Object> assign1 = new HashMap<>();
+        assign1.put("salaryComponentId", salaryComponentId);
+        assign1.put("amount", 11253000);
+        assign1.put("effectiveDate", "2025-01-01");
+        assign1.put("endDate", "2025-04-30");
+
+        APIResponse assign1Response = post("/api/employees/" + employeeId + "/salary-components", assign1);
+        assertThat(assign1Response.status())
+                .as("First assignment should succeed: " + assign1Response.text())
+                .isEqualTo(201);
+
+        // Second assignment: May onwards (non-overlapping)
+        Map<String, Object> assign2 = new HashMap<>();
+        assign2.put("salaryComponentId", salaryComponentId);
+        assign2.put("amount", 5000000);
+        assign2.put("effectiveDate", "2025-05-01");
+
+        APIResponse assign2Response = post("/api/employees/" + employeeId + "/salary-components", assign2);
+        assertThat(assign2Response.status())
+                .as("Non-overlapping second assignment should succeed: " + assign2Response.text())
+                .isEqualTo(201);
+
+        // Overlapping assignment should fail
+        Map<String, Object> assign3 = new HashMap<>();
+        assign3.put("salaryComponentId", salaryComponentId);
+        assign3.put("amount", 8000000);
+        assign3.put("effectiveDate", "2025-03-01");
+        assign3.put("endDate", "2025-06-30");
+
+        APIResponse assign3Response = post("/api/employees/" + employeeId + "/salary-components", assign3);
+        assertThat(assign3Response.status())
+                .as("Overlapping assignment should be rejected")
+                .isEqualTo(400);
+
+        // Verify employee has 2 salary components
+        APIResponse empDetail = get("/api/employees/" + employeeId);
+        JsonNode empWithSalary = parse(empDetail);
+        assertThat(empWithSalary.get("salaryComponents").size()).isEqualTo(2);
+    }
+
     // ==================== PAYROLL RUN TESTS ====================
 
     @Test
