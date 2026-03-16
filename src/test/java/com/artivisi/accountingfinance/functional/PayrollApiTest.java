@@ -160,6 +160,30 @@ class PayrollApiTest extends PlaywrightTestBase {
         assertThat(empWithSalary.get("salaryComponents").size()).isEqualTo(1);
     }
 
+    @Test
+    @DisplayName("Employee creation without employeeId returns 400")
+    void employeeCreationWithoutEmployeeIdReturns400() throws Exception {
+        Map<String, Object> empRequest = new HashMap<>();
+        empRequest.put("name", "Test No EmployeeId");
+        empRequest.put("nikKtp", "9999888877776666");
+        empRequest.put("ptkpStatus", "TK_0");
+        empRequest.put("hireDate", "2025-01-01");
+        empRequest.put("employmentType", "PERMANENT");
+        empRequest.put("employmentStatus", "ACTIVE");
+
+        APIResponse response = post("/api/employees", empRequest);
+        assertThat(response.status())
+                .as("Missing employeeId should return 400, not 500")
+                .isEqualTo(400);
+
+        JsonNode error = parse(response);
+        log.info("Validation error response: {}", error);
+        // Check that response contains validation error info
+        assertThat(error.has("error") || error.has("fieldErrors") || error.has("detail"))
+                .as("Response should contain error details")
+                .isTrue();
+    }
+
     // ==================== PAYROLL RUN TESTS ====================
 
     @Test

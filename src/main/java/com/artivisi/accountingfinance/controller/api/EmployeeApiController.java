@@ -205,6 +205,7 @@ public class EmployeeApiController {
     }
 
     public record EmployeeRequest(
+            @NotBlank(message = "NIK karyawan wajib diisi")
             String employeeId,
 
             @NotBlank(message = "Nama wajib diisi")

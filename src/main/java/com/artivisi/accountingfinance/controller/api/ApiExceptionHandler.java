@@ -1,6 +1,8 @@
 package com.artivisi.accountingfinance.controller.api;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,6 +77,31 @@ public class ApiExceptionHandler {
         );
 
         log.warn("API malformed request body: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handle JPA/Bean Validation constraint violations (entity-level @NotBlank, @Size, etc.).
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+
+        for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
+            fieldErrors.put(violation.getPropertyPath().toString(), violation.getMessage());
+        }
+
+        String message = fieldErrors.isEmpty()
+                ? "Validation failed"
+                : fieldErrors.values().iterator().next();
+
+        ErrorResponse error = new ErrorResponse(
+                "VALIDATION_ERROR",
+                message,
+                fieldErrors
+        );
+
+        log.warn("API constraint violation: {}", fieldErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
