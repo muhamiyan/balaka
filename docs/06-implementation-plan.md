@@ -1628,6 +1628,32 @@ Update PPN rate description in app and docs to reflect 2025 DPP Nilai Lain regim
 
 ---
 
+## Phase 19: Scheduled Payroll ✅
+
+**Goal:** Automate monthly payroll run creation so users don't need to manually call create/calculate/approve every month.
+
+**Feature request ref:** `finance/feature-request-scheduled-payroll.md`
+
+### 19.1 Schedule Configuration ✅
+- [x] `payroll_schedule` table (single-row config: dayOfMonth, baseSalary, jkkRiskClass, autoCalculate, autoApprove, active)
+- [x] `PayrollSchedule` entity extending `TimestampedEntity`
+- [x] `PayrollScheduleRepository` with findActive/findCurrent helpers
+
+### 19.2 Schedule CRUD API ✅
+- [x] `GET /api/payroll/schedule` — get current config (404 if not set)
+- [x] `POST /api/payroll/schedule` — create/update (replaces existing)
+- [x] `DELETE /api/payroll/schedule` — remove schedule
+- [x] OpenAPI annotations on all endpoints
+
+### 19.3 Scheduler ✅
+- [x] `PayrollScheduler` — daily cron check (default 6:30 AM)
+- [x] On configured dayOfMonth: create DRAFT, optionally calculate, optionally approve
+- [x] Startup catch-up via `@EventListener(ApplicationReadyEvent.class)` — checks previous and current month
+- [x] Skip if payroll run already exists for the period
+- [x] Never auto-post (posting = payment happened, always manual)
+
+---
+
 ## Future Enhancements (As Needed)
 
 Items below are not planned phases. They are implemented only when a concrete client need arises.

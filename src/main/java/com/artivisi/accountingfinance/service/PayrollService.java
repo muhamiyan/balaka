@@ -6,12 +6,14 @@ import com.artivisi.accountingfinance.entity.EmploymentStatus;
 import com.artivisi.accountingfinance.entity.JournalTemplate;
 import com.artivisi.accountingfinance.entity.PayrollDetail;
 import com.artivisi.accountingfinance.entity.PayrollRun;
+import com.artivisi.accountingfinance.entity.PayrollSchedule;
 import com.artivisi.accountingfinance.entity.PayrollStatus;
 import com.artivisi.accountingfinance.entity.Transaction;
 import com.artivisi.accountingfinance.repository.EmployeeRepository;
 import com.artivisi.accountingfinance.repository.JournalTemplateRepository;
 import com.artivisi.accountingfinance.repository.PayrollDetailRepository;
 import com.artivisi.accountingfinance.repository.PayrollRunRepository;
+import com.artivisi.accountingfinance.repository.PayrollScheduleRepository;
 import com.artivisi.accountingfinance.security.LogSanitizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +55,7 @@ public class PayrollService {
 
     private final PayrollRunRepository payrollRunRepository;
     private final PayrollDetailRepository payrollDetailRepository;
+    private final PayrollScheduleRepository payrollScheduleRepository;
     private final EmployeeRepository employeeRepository;
     private final JournalTemplateRepository journalTemplateRepository;
     private final BpjsCalculationService bpjsCalculationService;
@@ -62,6 +65,7 @@ public class PayrollService {
     public PayrollService(
             PayrollRunRepository payrollRunRepository,
             PayrollDetailRepository payrollDetailRepository,
+            PayrollScheduleRepository payrollScheduleRepository,
             EmployeeRepository employeeRepository,
             JournalTemplateRepository journalTemplateRepository,
             BpjsCalculationService bpjsCalculationService,
@@ -69,6 +73,7 @@ public class PayrollService {
             TransactionService transactionService) {
         this.payrollRunRepository = payrollRunRepository;
         this.payrollDetailRepository = payrollDetailRepository;
+        this.payrollScheduleRepository = payrollScheduleRepository;
         this.employeeRepository = employeeRepository;
         this.journalTemplateRepository = journalTemplateRepository;
         this.bpjsCalculationService = bpjsCalculationService;
@@ -409,6 +414,52 @@ public class PayrollService {
             totalBpjsEmployee,
             totalPph21
         );
+    }
+
+    // ==================== Schedule CRUD ====================
+
+    public Optional<PayrollSchedule> getSchedule() {
+        return payrollScheduleRepository.findCurrent();
+    }
+
+    public PayrollSchedule saveSchedule(PayrollSchedule schedule) {
+        // Single-row: delete existing before saving
+        payrollScheduleRepository.deleteAll();
+        return payrollScheduleRepository.save(schedule);
+    }
+
+    public void deleteSchedule() {
+        payrollScheduleRepository.deleteAll();
+    }
+
+    /**
+     * Execute scheduled payroll for the given period.
+     * Creates DRAFT, optionally calculates and approves.
+     * Never auto-posts (posting = payment happened).
+     *
+     * @return the created PayrollRun, or empty if already exists
+     */
+    public Optional<PayrollRun> executeScheduledPayroll(YearMonth period, PayrollSchedule schedule) {
+        String periodStr = period.toString();
+        if (payrollRunRepository.existsByPayrollPeriod(periodStr)) {
+            log.info("Scheduled payroll: period {} already exists, skipping", periodStr);
+            return Optional.empty();
+        }
+
+        PayrollRun run = createPayrollRun(period);
+        log.info("Scheduled payroll: created DRAFT for period {}", periodStr);
+
+        if (Boolean.TRUE.equals(schedule.getAutoCalculate())) {
+            run = calculatePayroll(run.getId(), schedule.getBaseSalary(), schedule.getJkkRiskClass());
+            log.info("Scheduled payroll: calculated for period {}", periodStr);
+        }
+
+        if (Boolean.TRUE.equals(schedule.getAutoApprove())) {
+            run = approvePayroll(run.getId());
+            log.info("Scheduled payroll: approved for period {}", periodStr);
+        }
+
+        return Optional.of(run);
     }
 
     /**

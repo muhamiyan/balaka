@@ -642,6 +642,35 @@ Response 1721-A1 berisi:
 - Perhitungan (penghasilan bruto, biaya jabatan, neto, PTKP, PKP, PPh 21 terutang)
 - Breakdown bulanan (gross salary dan PPh 21 per bulan)
 
+### Jadwal Payroll Otomatis
+
+```
+GET    /api/payroll/schedule             — lihat konfigurasi jadwal
+POST   /api/payroll/schedule             — buat/update jadwal
+DELETE /api/payroll/schedule             — hapus jadwal
+```
+
+Request body:
+```json
+{
+  "dayOfMonth": 28,
+  "baseSalary": 5000000,
+  "jkkRiskClass": 1,
+  "autoCalculate": true,
+  "autoApprove": false,
+  "active": true
+}
+```
+
+- `dayOfMonth`: Tanggal setiap bulan untuk auto-create payroll (1–28)
+- `baseSalary`: Gaji pokok yang digunakan untuk kalkulasi
+- `jkkRiskClass`: Kelas risiko JKK (1–5)
+- `autoCalculate`: Otomatis hitung BPJS + PPh 21 setelah create
+- `autoApprove`: Otomatis approve setelah kalkulasi
+- Posting selalu manual — posting berarti pembayaran sudah dilakukan
+
+Scheduler berjalan harian pukul 06:30. Saat startup, sistem juga memeriksa bulan sebelumnya dan bulan berjalan untuk mengejar ketinggalan jika server sempat mati.
+
 ### Skenario: Retrofit Data Payroll 2025
 
 1. Buat komponen gaji: `POST /api/salary-components` (GAJI_POKOK, EARNING, isTaxable=true)

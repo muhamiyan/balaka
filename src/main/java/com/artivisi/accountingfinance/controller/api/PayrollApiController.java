@@ -3,6 +3,7 @@ package com.artivisi.accountingfinance.controller.api;
 import com.artivisi.accountingfinance.entity.Employee;
 import com.artivisi.accountingfinance.entity.PayrollDetail;
 import com.artivisi.accountingfinance.entity.PayrollRun;
+import com.artivisi.accountingfinance.entity.PayrollSchedule;
 import com.artivisi.accountingfinance.entity.PayrollStatus;
 import com.artivisi.accountingfinance.entity.PtkpStatus;
 import com.artivisi.accountingfinance.service.EmployeeService;
@@ -461,4 +462,83 @@ public class PayrollApiController {
             BigDecimal totalGross,
             BigDecimal totalPph21
     ) {}
+
+    // ==================== SCHEDULE ====================
+
+    @GetMapping("/schedule")
+    @Operation(summary = "Get payroll schedule configuration",
+            description = "Returns the current payroll schedule configuration, or 404 if not configured.")
+    @ApiResponse(responseCode = "200", description = "Schedule configuration")
+    @ApiResponse(responseCode = "404", description = "No schedule configured")
+    public ResponseEntity<ScheduleResponse> getSchedule() {
+        return payrollService.getSchedule()
+                .map(s -> ResponseEntity.ok(ScheduleResponse.from(s)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/schedule")
+    @Operation(summary = "Create or update payroll schedule",
+            description = "Configures automated monthly payroll run creation. "
+                    + "On the configured dayOfMonth, the scheduler creates a DRAFT payroll run, "
+                    + "optionally calculates (BPJS + PPh 21 TER) and approves it. "
+                    + "Posting is always manual — posting means payment has been made. "
+                    + "Only one schedule exists; calling POST replaces the existing one.")
+    @ApiResponse(responseCode = "200", description = "Schedule saved")
+    public ResponseEntity<ScheduleResponse> saveSchedule(@Valid @RequestBody ScheduleRequest request) {
+        log.info("API: Save payroll schedule - dayOfMonth={}, autoCalculate={}, autoApprove={}",
+                request.dayOfMonth(), request.autoCalculate(), request.autoApprove());
+
+        PayrollSchedule schedule = new PayrollSchedule();
+        schedule.setDayOfMonth(request.dayOfMonth());
+        schedule.setBaseSalary(request.baseSalary());
+        schedule.setJkkRiskClass(request.jkkRiskClass());
+        schedule.setAutoCalculate(request.autoCalculate());
+        schedule.setAutoApprove(request.autoApprove());
+        schedule.setActive(request.active() != null ? request.active() : true);
+
+        PayrollSchedule saved = payrollService.saveSchedule(schedule);
+        return ResponseEntity.ok(ScheduleResponse.from(saved));
+    }
+
+    @DeleteMapping("/schedule")
+    @Operation(summary = "Delete payroll schedule",
+            description = "Disables automated payroll run creation by removing the schedule configuration.")
+    @ApiResponse(responseCode = "204", description = "Schedule deleted")
+    public ResponseEntity<Void> deleteSchedule() {
+        log.info("API: Delete payroll schedule");
+        payrollService.deleteSchedule();
+        return ResponseEntity.noContent().build();
+    }
+
+    // Schedule DTOs
+    public record ScheduleRequest(
+            @NotNull Integer dayOfMonth,
+            @NotNull BigDecimal baseSalary,
+            @NotNull Integer jkkRiskClass,
+            @NotNull Boolean autoCalculate,
+            Boolean autoApprove,
+            Boolean active
+    ) {}
+
+    public record ScheduleResponse(
+            UUID id,
+            int dayOfMonth,
+            BigDecimal baseSalary,
+            int jkkRiskClass,
+            boolean autoCalculate,
+            boolean autoApprove,
+            boolean active
+    ) {
+        public static ScheduleResponse from(PayrollSchedule s) {
+            return new ScheduleResponse(
+                    s.getId(),
+                    s.getDayOfMonth(),
+                    s.getBaseSalary(),
+                    s.getJkkRiskClass(),
+                    s.getAutoCalculate(),
+                    s.getAutoApprove(),
+                    s.getActive()
+            );
+        }
+    }
 }

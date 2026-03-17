@@ -470,3 +470,21 @@ CREATE TABLE fiscal_loss_carryforwards (
 );
 
 CREATE INDEX idx_flc_expiry_year ON fiscal_loss_carryforwards(expiry_year);
+
+-- =============================================
+-- Payroll Schedule (single-row config)
+-- =============================================
+CREATE TABLE payroll_schedule (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    day_of_month INTEGER NOT NULL,
+    base_salary DECIMAL(19, 2) NOT NULL,
+    jkk_risk_class INTEGER NOT NULL DEFAULT 1,
+    auto_calculate BOOLEAN NOT NULL DEFAULT TRUE,
+    auto_approve BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_ps_day_of_month CHECK (day_of_month BETWEEN 1 AND 28),
+    CONSTRAINT chk_ps_jkk_risk_class CHECK (jkk_risk_class BETWEEN 1 AND 5),
+    CONSTRAINT chk_ps_base_salary_positive CHECK (base_salary > 0)
+);
