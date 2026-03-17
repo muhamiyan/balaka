@@ -15,7 +15,7 @@ EnvironmentFile=/opt/{{ app_name }}/env.conf
 ExecStart=/usr/bin/java \
     -Xms{{ java_heap_min }} \
     -Xmx{{ java_heap_max }} \
-    -XX:+UseZGC \
+    -XX:+UseSerialGC \
     -XX:+DisableAttachMechanism \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/var/log/{{ app_name }}/heapdump.hprof \
