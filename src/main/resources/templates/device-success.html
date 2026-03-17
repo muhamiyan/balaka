@@ -29,15 +29,18 @@
     </p>
 
     <div class="space-y-3">
-        <a href="/dashboard"
-           class="block w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700">
+        <a th:href="@{/dashboard}"
+           class="block w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 text-center">
             Kembali ke Dashboard
         </a>
 
-        <button onclick="window.close()"
+        <button onclick="window.close(); document.getElementById('close-note').classList.remove('hidden');"
                 class="block w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300">
             Tutup Tab Ini
         </button>
+        <p id="close-note" class="hidden text-sm text-gray-500">
+            Browser tidak mengizinkan menutup tab ini secara otomatis. Silakan tutup tab secara manual.
+        </p>
     </div>
 
     <div class="mt-8 pt-6 border-t border-gray-200">
