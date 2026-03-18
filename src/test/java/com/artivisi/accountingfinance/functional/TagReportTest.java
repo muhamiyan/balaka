@@ -56,7 +56,7 @@ class TagReportTest extends PlaywrightTestBase {
         assertThat(page.locator("#page-title")).hasText("Ringkasan per Label");
         assertThat(page.locator("#startDate")).isVisible();
         assertThat(page.locator("#endDate")).isVisible();
-        assertThat(page.locator("#btn-filter")).isVisible();
+        assertThat(page.locator("#btn-generate")).isVisible();
     }
 
     @Test

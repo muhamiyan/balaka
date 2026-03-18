@@ -19,29 +19,29 @@ class PeriodReportTest extends PlaywrightTestBase {
     }
 
     @Test
-    @DisplayName("Should display period report page with period selector and options")
+    @DisplayName("Should display period report page with quick presets")
     void shouldDisplayPeriodReportPage() {
         navigateTo("/reports/period");
         waitForPageLoad();
 
         assertThat(page.locator("#page-title")).hasText("Laporan Periode");
-        assertThat(page.locator("#period")).isVisible();
+        assertThat(page.locator("#startDate")).isVisible();
+        assertThat(page.locator("#endDate")).isVisible();
         assertThat(page.locator("#btn-generate")).isVisible();
 
-        // Verify period options include yearly and monthly entries
-        assertThat(page.locator("#period option[value='2025']")).hasText("Tahun 2025");
-        assertThat(page.locator("#period option[value='2025-01']")).hasText("  Januari 2025");
-        assertThat(page.locator("#period option[value='2025-12']")).hasText("  Desember 2025");
+        // Verify quick preset buttons exist for fiscal years
+        assertThat(page.locator("button.period-preset:has-text('Tahun')").first()).isVisible();
     }
 
     @Test
     @DisplayName("Should generate yearly report with income statement and balance sheet")
     void shouldGenerateYearlyReport() {
-        navigateTo("/reports/period?period=2025");
+        navigateTo("/reports/period?startDate=2025-01-01&endDate=2025-12-31");
         waitForPageLoad();
 
         assertThat(page.locator("#page-title")).hasText("Laporan Periode");
-        assertThat(page.locator("#period")).hasValue("2025");
+        assertThat(page.locator("#startDate")).hasValue("2025-01-01");
+        assertThat(page.locator("#endDate")).hasValue("2025-12-31");
         assertThat(page.locator("text=LAPORAN LABA RUGI")).isVisible();
         assertThat(page.locator("text=LAPORAN POSISI KEUANGAN")).isVisible();
     }
@@ -49,11 +49,12 @@ class PeriodReportTest extends PlaywrightTestBase {
     @Test
     @DisplayName("Should generate monthly report with income statement and balance sheet")
     void shouldGenerateMonthlyReport() {
-        navigateTo("/reports/period?period=2025-01");
+        navigateTo("/reports/period?startDate=2025-01-01&endDate=2025-01-31");
         waitForPageLoad();
 
         assertThat(page.locator("#page-title")).hasText("Laporan Periode");
-        assertThat(page.locator("#period")).hasValue("2025-01");
+        assertThat(page.locator("#startDate")).hasValue("2025-01-01");
+        assertThat(page.locator("#endDate")).hasValue("2025-01-31");
         assertThat(page.locator("text=LAPORAN LABA RUGI")).isVisible();
         assertThat(page.locator("text=LAPORAN POSISI KEUANGAN")).isVisible();
     }

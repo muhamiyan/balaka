@@ -32,9 +32,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -72,6 +72,33 @@ public class ReportController {
     private final FiscalPeriodService fiscalPeriodService;
 
     private static final DateTimeFormatter FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    public record PeriodPreset(String label, String startDate, String endDate) {}
+    public record YearPresets(int year, List<PeriodPreset> months) {}
+
+    @org.springframework.web.bind.annotation.ModelAttribute("periodYears")
+    public List<Integer> periodYears() {
+        return fiscalPeriodService.findDistinctYears();
+    }
+
+    @org.springframework.web.bind.annotation.ModelAttribute("yearPresets")
+    public List<YearPresets> yearPresets() {
+        Locale id = Locale.of("id", "ID");
+        return fiscalPeriodService.findDistinctYears().stream()
+                .map(year -> {
+                    List<PeriodPreset> months = java.util.stream.IntStream.rangeClosed(1, 12)
+                            .mapToObj(m -> {
+                                YearMonth ym = YearMonth.of(year, m);
+                                return new PeriodPreset(
+                                        Month.of(m).getDisplayName(TextStyle.SHORT, id),
+                                        ym.atDay(1).toString(),
+                                        ym.atEndOfMonth().toString());
+                            })
+                            .toList();
+                    return new YearPresets(year, months);
+                })
+                .toList();
+    }
 
     @GetMapping
     public String index(Model model) {
@@ -153,66 +180,22 @@ public class ReportController {
 
     @GetMapping("/period")
     public String periodReport(
-            @RequestParam(required = false) String period,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
             Model model) {
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_REPORTS);
         model.addAttribute(ATTR_REPORT_TYPE, "period");
 
-        // Build period options: yearly + monthly from fiscal periods
-        List<Integer> years = fiscalPeriodService.findDistinctYears();
-        model.addAttribute("periodOptions", buildPeriodOptions(years));
-
-        if (period != null && !period.isBlank()) {
-            model.addAttribute("selectedPeriod", period);
-            LocalDate start;
-            LocalDate end;
-
-            if (period.length() == 4) {
-                // Yearly: "2025" — full fiscal year
-                int year = Integer.parseInt(period);
-                start = LocalDate.of(year, 1, 1);
-                LocalDate yearEnd = LocalDate.of(year, 12, 31);
-                LocalDate today = LocalDate.now();
-                // Open/current year: cap at today; closed/past year: Dec 31
-                end = today.isBefore(yearEnd) && today.getYear() == year ? today : yearEnd;
-            } else {
-                // Monthly: "2025-01"
-                String[] parts = period.split("-");
-                int year = Integer.parseInt(parts[0]);
-                int month = Integer.parseInt(parts[1]);
-                start = LocalDate.of(year, month, 1);
-                LocalDate monthEnd = start.withDayOfMonth(start.lengthOfMonth());
-                LocalDate today = LocalDate.now();
-                // Open/current month: cap at today
-                end = today.isBefore(monthEnd) && today.getYear() == year
-                        && today.getMonthValue() == month ? today : monthEnd;
-            }
-
-            model.addAttribute(ATTR_START_DATE, start);
-            model.addAttribute(ATTR_END_DATE, end);
+        if (startDate != null && endDate != null) {
+            model.addAttribute(ATTR_START_DATE, startDate);
+            model.addAttribute(ATTR_END_DATE, endDate);
             model.addAttribute("incomeStatement",
-                    reportService.generateIncomeStatementExcludingClosing(start, end));
+                    reportService.generateIncomeStatementExcludingClosing(startDate, endDate));
             model.addAttribute("balanceSheet",
-                    reportService.generateBalanceSheet(end));
+                    reportService.generateBalanceSheet(endDate));
         }
 
         return "reports/period";
-    }
-
-    public record PeriodOption(String value, String label) {}
-
-    private List<PeriodOption> buildPeriodOptions(List<Integer> years) {
-        Locale id = Locale.of("id", "ID");
-        List<PeriodOption> options = new ArrayList<>();
-        for (int year : years) {
-            options.add(new PeriodOption(String.valueOf(year), "Tahun " + year));
-            for (Month m : Month.values()) {
-                String value = String.format("%d-%02d", year, m.getValue());
-                String label = "  " + m.getDisplayName(TextStyle.FULL, id) + " " + year;
-                options.add(new PeriodOption(value, label));
-            }
-        }
-        return options;
     }
 
     // REST API Endpoints
