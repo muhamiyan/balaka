@@ -90,6 +90,7 @@ public class FiscalAdjustmentApiController {
         existing.setAdjustmentDirection(request.adjustmentDirection());
         existing.setAmount(request.amount());
         existing.setAccountCode(request.accountCode());
+        existing.setPasal(request.pasal());
         existing.setNotes(request.notes());
 
         FiscalAdjustment saved = taxReportDetailService.saveAdjustment(existing);
@@ -157,6 +158,7 @@ public class FiscalAdjustmentApiController {
         entity.setAdjustmentDirection(request.adjustmentDirection());
         entity.setAmount(request.amount());
         entity.setAccountCode(request.accountCode());
+        entity.setPasal(request.pasal());
         entity.setNotes(request.notes());
         return entity;
     }
@@ -179,6 +181,7 @@ public class FiscalAdjustmentApiController {
             BigDecimal amount,
 
             String accountCode,
+            String pasal,
             String notes
     ) {}
 
@@ -223,6 +226,7 @@ public class FiscalAdjustmentApiController {
             FiscalAdjustmentDirection adjustmentDirection,
             BigDecimal amount,
             String accountCode,
+            String pasal,
             String notes
     ) {
         public static FiscalAdjustmentResponse from(FiscalAdjustment entity) {
@@ -234,6 +238,7 @@ public class FiscalAdjustmentApiController {
                     entity.getAdjustmentDirection(),
                     entity.getAmount(),
                     entity.getAccountCode(),
+                    entity.getPasal(),
                     entity.getNotes()
             );
         }

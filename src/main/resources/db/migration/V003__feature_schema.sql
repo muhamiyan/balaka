@@ -437,6 +437,7 @@ CREATE TABLE fiscal_adjustments (
     adjustment_direction VARCHAR(20) NOT NULL,
     amount DECIMAL(15, 2) NOT NULL,
     account_code VARCHAR(20),
+    pasal VARCHAR(50),
     notes TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),

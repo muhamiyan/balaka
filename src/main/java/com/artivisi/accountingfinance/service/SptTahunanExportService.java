@@ -508,12 +508,12 @@ public class SptTahunanExportService {
         // Prepaid expenses: 1.1.15-1.1.19
         if (code.equals("1.1.15") || code.startsWith("1.1.16") || code.startsWith("1.1.17")
                 || code.startsWith("1.1.18") || code.startsWith("1.1.19")) return "8A.I.5";
-        // Tax assets: 1.1.2x (PPN Masukan, Kredit Pajak PPh 23, etc.)
+        // Short-term investments: 1.1.21 (Logam Mulia), 1.1.4x
+        if (code.equals("1.1.21") || code.startsWith("1.1.4")) return "8A.I.6";
+        // Tax assets: 1.1.25+ (PPN Masukan, Kredit Pajak PPh 23, PPN Dipungut Pemungut, etc.)
         if (code.startsWith("1.1.2")) return "8A.I.7";
         // Inventory: 1.1.3x
         if (code.startsWith("1.1.3")) return "8A.I.4";
-        // Short-term investments: 1.1.4x
-        if (code.startsWith("1.1.4")) return "8A.I.6";
         // Fixed assets (contra-assets with CREDIT normal balance = accumulated depreciation)
         if ((code.startsWith("1.2") || code.startsWith("1.3")) && normalBalance == NormalBalance.CREDIT) return "8A.I.9";
         if (code.startsWith("1.2") || code.startsWith("1.3")) return "8A.I.8";
@@ -567,10 +567,10 @@ public class SptTahunanExportService {
 
     private SptLampiranI buildLampiranI(L1Report l1) {
         List<SptAdjustmentItem> koreksiPositif = l1.positiveAdjustments().stream()
-                .map(a -> new SptAdjustmentItem(a.description(), a.accountCode(), a.amount()))
+                .map(a -> new SptAdjustmentItem(a.description(), a.pasal(), a.amount()))
                 .toList();
         List<SptAdjustmentItem> koreksiNegatif = l1.negativeAdjustments().stream()
-                .map(a -> new SptAdjustmentItem(a.description(), a.accountCode(), a.amount()))
+                .map(a -> new SptAdjustmentItem(a.description(), a.pasal(), a.amount()))
                 .toList();
         List<SptLossItem> kompensasi = l1.lossCarryforwards().stream()
                 .map(loss -> new SptLossItem(loss.originYear(), loss.remainingAmount(), loss.expiryYear()))
@@ -661,7 +661,8 @@ public class SptTahunanExportService {
                 adj.getAdjustmentCategory().name(),
                 adj.getAdjustmentDirection().name(),
                 adj.getAmount(),
-                adj.getAccountCode());
+                adj.getAccountCode(),
+                adj.getPasal());
     }
 
     private String describeObjectCode(String code) {
@@ -752,7 +753,8 @@ public class SptTahunanExportService {
             String category,
             String direction,
             BigDecimal amount,
-            String accountCode
+            String accountCode,
+            String pasal
     ) {}
 
     public record L4Report(

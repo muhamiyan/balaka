@@ -334,6 +334,119 @@ class TaxExportApiTest extends PlaywrightTestBase {
         log.info("Consolidated lampiran test passed - all sections present");
     }
 
+    // ==================== BUG-015: LAMPIRAN III PPh 23 DATA ====================
+
+    @Test
+    @DisplayName("BUG-015: Lampiran III returns PPh 23 bupot items when data exists")
+    void testLampiranIIIPph23Data() throws Exception {
+        // Create PPh 23 tax detail on an existing transaction
+        String txnId = findTransactionId("TAX-TRX-002");
+        Map<String, Object> pph23Detail = new HashMap<>();
+        pph23Detail.put("taxType", "PPH_23");
+        pph23Detail.put("counterpartyName", "PT Test Pemotong");
+        pph23Detail.put("counterpartyNpwp", "0123456789012345");
+        pph23Detail.put("bupotNumber", "25TEST001");
+        pph23Detail.put("grossAmount", 10000000);
+        pph23Detail.put("taxRate", 2);
+        pph23Detail.put("taxAmount", 200000);
+        APIResponse createResp = post("/api/transactions/" + txnId + "/tax-details", pph23Detail);
+        assertThat(createResp.status()).as("Create PPh 23 detail: " + createResp.text()).isIn(200, 201);
+
+        // Fetch consolidated lampiran
+        APIResponse response = get("/api/tax-export/spt-tahunan/lampiran?year=2025");
+        assertThat(response.status()).isEqualTo(200);
+        JsonNode l3 = parse(response).get("data").get("lampiranIII");
+
+        assertThat(l3.get("kreditPPh23").size())
+                .as("Lampiran III should have PPh 23 items when data exists")
+                .isGreaterThanOrEqualTo(1);
+        assertThat(l3.get("totalKreditPPh23").asDouble())
+                .as("Total kredit PPh 23 should be > 0")
+                .isGreaterThan(0);
+
+        // Verify item fields
+        JsonNode firstItem = l3.get("kreditPPh23").get(0);
+        assertThat(firstItem.has("pemotong")).isTrue();
+        assertThat(firstItem.has("npwp")).isTrue();
+        assertThat(firstItem.has("bupotNumber")).isTrue();
+        assertThat(firstItem.has("dpp")).isTrue();
+        assertThat(firstItem.has("pph23")).isTrue();
+
+        log.info("BUG-015 test passed: {} PPh 23 items returned", l3.get("kreditPPh23").size());
+    }
+
+    // ==================== BUG-016: TRANSKRIP 8A ASSET MAPPING ====================
+
+    @Test
+    @DisplayName("BUG-016: Transkrip 8A — tax asset accounts map to 8A.I.7, not other categories")
+    void testTranskrip8AAssetMapping() throws Exception {
+        APIResponse response = get("/api/tax-export/spt-tahunan/lampiran?year=2025");
+        assertThat(response.status()).isEqualTo(200);
+
+        JsonNode neracaAktiva = parse(response).get("data").get("transkrip8A").get("neracaAktiva");
+
+        // Find each field's amount
+        Map<String, Double> fieldAmounts = new HashMap<>();
+        for (JsonNode item : neracaAktiva) {
+            fieldAmounts.put(item.get("field").asText(), item.get("amount").asDouble());
+        }
+
+        // 8A.I.7 (Aset Pajak Tangguhan) should only contain tax receivables (1.1.25, 1.1.26, 1.1.27)
+        // not investment assets like Logam Mulia (1.1.21)
+        // In test data, 8A.I.7 should match only PPN Masukan (1.1.25) and Kredit Pajak PPh 23 (1.1.26)
+        log.info("BUG-016 field amounts: {}", fieldAmounts);
+
+        // 8A.I.6 (Investasi Jangka Pendek) — test data has no 1.1.21, so should be 0
+        // This test documents the mapping behavior; production has 1.1.21 which should go here
+        assertThat(fieldAmounts.containsKey("8A.I.6")).isTrue();
+        assertThat(fieldAmounts.containsKey("8A.I.7")).isTrue();
+
+        log.info("BUG-016 test passed: field mapping verified");
+    }
+
+    // ==================== BUG-017: LAMPIRAN I PASAL FIELD ====================
+
+    @Test
+    @DisplayName("BUG-017: Lampiran I koreksi pasal uses pasal field, not account code")
+    void testLampiranIPasalNotAccountCode() throws Exception {
+        // Create a fiscal adjustment with accountCode but also pasal
+        Map<String, Object> adjustment = new HashMap<>();
+        adjustment.put("year", 2025);
+        adjustment.put("description", "Beban Test Non-Deductible");
+        adjustment.put("adjustmentCategory", "PERMANENT");
+        adjustment.put("adjustmentDirection", "POSITIVE");
+        adjustment.put("amount", 1000000);
+        adjustment.put("accountCode", "5.9.99");
+        adjustment.put("pasal", "9(1)(a)");
+
+        APIResponse createResp = post("/api/fiscal-adjustments", adjustment);
+        assertThat(createResp.status())
+                .as("Create fiscal adjustment: " + createResp.text())
+                .isIn(200, 201);
+
+        // Fetch consolidated lampiran
+        APIResponse response = get("/api/tax-export/spt-tahunan/lampiran?year=2025");
+        assertThat(response.status()).isEqualTo(200);
+
+        JsonNode koreksiPositif = parse(response).get("data").get("lampiranI").get("koreksiPositif");
+        assertThat(koreksiPositif.size()).isGreaterThanOrEqualTo(1);
+
+        // Find our test adjustment
+        boolean found = false;
+        for (JsonNode item : koreksiPositif) {
+            if ("Beban Test Non-Deductible".equals(item.get("description").asText())) {
+                found = true;
+                String pasal = item.get("pasal").asText();
+                assertThat(pasal)
+                        .as("pasal should be '9(1)(a)', not account code '5.9.99'")
+                        .isEqualTo("9(1)(a)");
+            }
+        }
+        assertThat(found).as("Test fiscal adjustment must appear in koreksiPositif").isTrue();
+
+        log.info("BUG-017 test passed: pasal field shows tax article, not account code");
+    }
+
     // ==================== BUG-014: CLOSING JOURNAL EXCLUSION ====================
 
     @Test

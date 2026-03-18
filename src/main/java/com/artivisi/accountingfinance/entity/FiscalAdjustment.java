@@ -61,6 +61,9 @@ public class FiscalAdjustment {
     @Column(name = "account_code", length = 20)
     private String accountCode;
 
+    @Column(name = "pasal", length = 50)
+    private String pasal;
+
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
