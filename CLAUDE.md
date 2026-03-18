@@ -39,6 +39,7 @@ Indonesian accounting application for small businesses. Spring Boot 4.0 + Thymel
 - **BUG-016/017/018:** ✅ Complete (Transkrip 8A asset mapping, Lampiran I pasal field, accountSlots lineOrder fallback)
 - **Period Report:** ✅ Complete (`/reports/period` — fiscal period dropdown, closing-entry-excluded P&L)
 - **Sidebar Reorg:** ✅ Complete (Master Data separated from Pengaturan)
+- **Tax Filing (FR-001–006):** ✅ Complete (L1 non-operating expenses fix, L9 depreciation fallback, PKP rounding, excludeClosing API param, financial statements PDF, Coretax SPT export)
 - See `docs/06-implementation-plan.md` for full plan
 
 ## Key Files
@@ -126,7 +127,7 @@ User → Controller (MVC) → Service → Repository → PostgreSQL
 
 ## Current Release
 
-**2026.03.2-RELEASE** deployed to production (akunting.artivisi.id, akunting.stmik.tazkia.ac.id). See `docs/releases/2026.03.2-RELEASE.md` for release notes.
+**2026.03.3-RELEASE** deployed to production (balaka.artivisi.id, akunting.stmik.tazkia.ac.id). See `docs/releases/2026.03.3-RELEASE.md` for release notes.
 
 ## Current Focus
 

@@ -59,8 +59,8 @@ public class SptTahunanExportService {
     private static final String OPERATING_REVENUE_PREFIX = "4.1";
     private static final String OTHER_INCOME_PREFIX = "4.2";
     private static final String OPERATING_EXPENSE_PREFIX = "5.1";
-    private static final String OTHER_EXPENSE_PREFIX = "5.2";
-    private static final String TAX_EXPENSE_PREFIX = "5.9";
+    // OTHER_EXPENSE_PREFIX and TAX_EXPENSE_PREFIX removed — otherExpenses now captures
+    // all non-operating expenses (5.2, 5.3, 5.9, etc.) via exclusion filter
 
     // ==================== L1: REKONSILIASI FISKAL ====================
 
@@ -80,9 +80,9 @@ public class SptTahunanExportService {
         BigDecimal totalOperatingRevenue = sumLineItems(operatingRevenue);
         BigDecimal totalOtherIncome = sumLineItems(otherIncome);
 
-        // Categorize expense items (exclude tax expenses from L1)
+        // Categorize expense items: operating (5.1) vs everything else (5.2, 5.3, 5.9, etc.)
         List<L1LineItem> operatingExpenses = categorizeItems(incomeStatement.expenseItems(), OPERATING_EXPENSE_PREFIX);
-        List<L1LineItem> otherExpenses = categorizeItems(incomeStatement.expenseItems(), OTHER_EXPENSE_PREFIX);
+        List<L1LineItem> otherExpenses = categorizeItemsExcludingPrefix(incomeStatement.expenseItems(), OPERATING_EXPENSE_PREFIX);
 
         BigDecimal totalOperatingExpenses = sumLineItems(operatingExpenses);
         BigDecimal totalOtherExpenses = sumLineItems(otherExpenses);
@@ -445,6 +445,134 @@ public class SptTahunanExportService {
         return new SptLampiranReport(year, taxpayer, transkrip8A, lampiranI, lampiranII, lampiranIII, lampiranV, pphBadan);
     }
 
+    // ==================== CORETAX-COMPATIBLE SPT EXPORT ====================
+
+    /**
+     * Generate Coretax-compatible SPT Badan export.
+     * Aggregates all existing export data into a flat structure matching Coretax form fields.
+     * Values are plain numbers (no formatting) for direct entry into Coretax.
+     */
+    public CoretaxSptBadanExport generateCoretaxExport(int year) {
+        LocalDate startDate = LocalDate.of(year, 1, 1);
+        LocalDate endDate = LocalDate.of(year, 12, 31);
+
+        // Company info
+        CompanyConfig config = companyConfigRepository.findFirst()
+                .orElseThrow(() -> new IllegalStateException("Company config not found"));
+
+        // L1 data (includes PPh Badan calculation)
+        L1Report l1 = generateL1(year);
+        PPhBadanCalculation pph = l1.pphBadan();
+
+        // Build Induk section (SPT main form fields)
+        CoretaxInduk induk = new CoretaxInduk(
+                config.getNpwp(),
+                config.getNitku(),
+                config.getCompanyName(),
+                year,
+                l1.totalOperatingRevenue(),
+                l1.grossProfit(),
+                l1.totalOperatingExpenses(),
+                l1.netOperatingIncome(),
+                l1.totalOtherIncome(),
+                l1.totalOtherExpenses(),
+                l1.netOtherIncome(),
+                l1.commercialNetIncome(),
+                l1.totalPositiveAdjustment(),
+                l1.totalNegativeAdjustment(),
+                l1.pkpBeforeLoss(),
+                l1.totalLossCompensation(),
+                l1.pkp(),
+                pph.pkpRounded(),
+                pph.pphTerutang(),
+                pph.calculationMethod(),
+                pph.kreditPajakPPh23(),
+                pph.kreditPajakPPh25(),
+                pph.totalKreditPajak(),
+                pph.pph29()
+        );
+
+        // L1-D Laba Rugi items (revenue + expense lines with account codes)
+        IncomeStatementReport incomeStatement = reportService.generateIncomeStatementExcludingClosing(startDate, endDate);
+        List<CoretaxL1DItem> l1dLabaRugi = new ArrayList<>();
+        for (IncomeStatementItem item : incomeStatement.revenueItems()) {
+            l1dLabaRugi.add(new CoretaxL1DItem(
+                    item.account().getAccountCode(),
+                    item.account().getAccountName(),
+                    "PENDAPATAN",
+                    item.balance()));
+        }
+        for (IncomeStatementItem item : incomeStatement.expenseItems()) {
+            l1dLabaRugi.add(new CoretaxL1DItem(
+                    item.account().getAccountCode(),
+                    item.account().getAccountName(),
+                    "BEBAN",
+                    item.balance()));
+        }
+
+        // L1-D Neraca items
+        BalanceSheetReport balanceSheet = reportService.generateBalanceSheet(endDate);
+        CoretaxL1DNeraca l1dNeraca = buildCoretaxNeraca(balanceSheet);
+
+        // L3 Kredit Pajak (individual bupot entries)
+        PPh23DetailReport pph23 = taxReportDetailService.generatePPh23DetailReport(startDate, endDate);
+        List<CoretaxL3Item> l3KreditPajak = pph23.items().stream()
+                .map(d -> new CoretaxL3Item(
+                        d.getCounterpartyName(),
+                        d.getCounterpartyNpwp(),
+                        d.getBupotNumber(),
+                        d.getTransaction().getTransactionDate(),
+                        d.getGrossAmount(),
+                        d.getTaxRate(),
+                        d.getTaxAmount()))
+                .toList();
+
+        // Penyusutan items
+        L9Report l9 = generateL9(year);
+        List<CoretaxPenyusutanItem> penyusutan = l9.items().stream()
+                .map(item -> new CoretaxPenyusutanItem(
+                        item.assetName(),
+                        item.fiscalGroup(),
+                        item.acquisitionDate(),
+                        item.acquisitionCost(),
+                        item.depreciationMethod(),
+                        item.usefulLifeYears(),
+                        item.depreciationThisYear(),
+                        item.accumulatedDepreciation(),
+                        item.bookValue()))
+                .toList();
+
+        return new CoretaxSptBadanExport(year, induk, l1dLabaRugi, l1dNeraca, l3KreditPajak, penyusutan);
+    }
+
+    private CoretaxL1DNeraca buildCoretaxNeraca(BalanceSheetReport bs) {
+        List<CoretaxNeracaItem> aktiva = bs.assetItems().stream()
+                .map(item -> new CoretaxNeracaItem(
+                        item.account().getAccountCode(),
+                        item.account().getAccountName(),
+                        item.balance()))
+                .toList();
+
+        List<CoretaxNeracaItem> pasiva = new ArrayList<>();
+        for (BalanceSheetItem item : bs.liabilityItems()) {
+            pasiva.add(new CoretaxNeracaItem(
+                    item.account().getAccountCode(),
+                    item.account().getAccountName(),
+                    item.balance()));
+        }
+        for (BalanceSheetItem item : bs.equityItems()) {
+            pasiva.add(new CoretaxNeracaItem(
+                    item.account().getAccountCode(),
+                    item.account().getAccountName(),
+                    item.balance()));
+        }
+
+        return new CoretaxL1DNeraca(
+                aktiva, bs.totalAssets(),
+                pasiva, bs.totalLiabilities().add(bs.totalEquity()),
+                bs.currentYearEarnings());
+    }
+
     private SptTranskrip8A buildTranskrip8A(int year, LocalDate startDate, LocalDate endDate) {
         BalanceSheetReport bs = reportService.generateBalanceSheet(LocalDate.of(year, 12, 31));
         IncomeStatementReport is = reportService.generateIncomeStatementExcludingClosing(startDate, endDate);
@@ -641,6 +769,17 @@ public class SptTahunanExportService {
     private List<L1LineItem> categorizeItems(List<IncomeStatementItem> items, String prefix) {
         return items.stream()
                 .filter(item -> item.account().getAccountCode().startsWith(prefix))
+                .filter(item -> item.balance().compareTo(BigDecimal.ZERO) != 0)
+                .map(item -> new L1LineItem(
+                        item.account().getAccountCode(),
+                        item.account().getAccountName(),
+                        item.balance()))
+                .toList();
+    }
+
+    private List<L1LineItem> categorizeItemsExcludingPrefix(List<IncomeStatementItem> items, String excludePrefix) {
+        return items.stream()
+                .filter(item -> !item.account().getAccountCode().startsWith(excludePrefix))
                 .filter(item -> item.balance().compareTo(BigDecimal.ZERO) != 0)
                 .map(item -> new L1LineItem(
                         item.account().getAccountCode(),
@@ -938,5 +1077,86 @@ public class SptTahunanExportService {
             BigDecimal pphTerutang,
             BigDecimal kreditPajak,
             BigDecimal pph29KurangBayar
+    ) {}
+
+    // ==================== CORETAX SPT EXPORT DTOs ====================
+
+    public record CoretaxSptBadanExport(
+            int year,
+            CoretaxInduk induk,
+            List<CoretaxL1DItem> l1dLabaRugi,
+            CoretaxL1DNeraca l1dNeraca,
+            List<CoretaxL3Item> l3KreditPajak,
+            List<CoretaxPenyusutanItem> penyusutan
+    ) {}
+
+    public record CoretaxInduk(
+            String npwp,
+            String nitku,
+            String companyName,
+            int tahunPajak,
+            BigDecimal peredaranUsaha,
+            BigDecimal labaKotorUsaha,
+            BigDecimal biayaUsaha,
+            BigDecimal penghasilanNetoUsaha,
+            BigDecimal penghasilanLuarUsaha,
+            BigDecimal biayaLuarUsaha,
+            BigDecimal penghasilanNetoLuarUsaha,
+            BigDecimal penghasilanNetoKomersial,
+            BigDecimal koreksiFiskalPositif,
+            BigDecimal koreksiFiskalNegatif,
+            BigDecimal penghasilanNetoFiskal,
+            BigDecimal kompensasiKerugian,
+            BigDecimal penghasilanKenaPajak,
+            BigDecimal penghasilanKenaPajakPembulatan,
+            BigDecimal pphTerutang,
+            String metodePerhitungan,
+            BigDecimal kreditPajakPPh23,
+            BigDecimal kreditPajakPPh25,
+            BigDecimal totalKreditPajak,
+            BigDecimal pph29KurangBayar
+    ) {}
+
+    public record CoretaxL1DItem(
+            String kodeAkun,
+            String namaAkun,
+            String kategori,
+            BigDecimal jumlah
+    ) {}
+
+    public record CoretaxL1DNeraca(
+            List<CoretaxNeracaItem> aktiva,
+            BigDecimal totalAktiva,
+            List<CoretaxNeracaItem> pasiva,
+            BigDecimal totalPasiva,
+            BigDecimal labaTahunBerjalan
+    ) {}
+
+    public record CoretaxNeracaItem(
+            String kodeAkun,
+            String namaAkun,
+            BigDecimal jumlah
+    ) {}
+
+    public record CoretaxL3Item(
+            String namaPemotong,
+            String npwpPemotong,
+            String nomorBuktiPotong,
+            LocalDate tanggal,
+            BigDecimal jumlahBruto,
+            BigDecimal tarif,
+            BigDecimal pphDipotong
+    ) {}
+
+    public record CoretaxPenyusutanItem(
+            String namaHarta,
+            String kelompok,
+            LocalDate tanggalPerolehan,
+            BigDecimal hargaPerolehan,
+            String metodePenyusutan,
+            int masaManfaatTahun,
+            BigDecimal penyusutanTahunIni,
+            BigDecimal akumulasiPenyusutan,
+            BigDecimal nilaiSisaBuku
     ) {}
 }

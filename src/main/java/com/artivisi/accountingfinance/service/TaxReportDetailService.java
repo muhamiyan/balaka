@@ -186,20 +186,24 @@ public class TaxReportDetailService {
         LocalDate startDate = LocalDate.of(year, 1, 1);
         LocalDate endDate = LocalDate.of(year, 12, 31);
 
-        // Calculate PPh Badan with Pasal 31E logic
+        // Round PKP down to nearest 1,000 per UU PPh pasal 6 ayat 3
+        BigDecimal pkpRounded = pkp.divide(BigDecimal.valueOf(1000), 0, RoundingMode.DOWN)
+                .multiply(BigDecimal.valueOf(1000));
+
+        // Calculate PPh Badan with Pasal 31E logic (using rounded PKP)
         BigDecimal pphTerutang;
         String calculationMethod;
 
         if (totalRevenue.compareTo(REVENUE_THRESHOLD_FULL) < 0) {
             // Revenue < 4.8B: full 50% discount
-            pphTerutang = pkp.multiply(PPH_BADAN_RATE).multiply(PASAL_31E_DISCOUNT_RATE)
+            pphTerutang = pkpRounded.multiply(PPH_BADAN_RATE).multiply(PASAL_31E_DISCOUNT_RATE)
                     .setScale(0, RoundingMode.DOWN);
             calculationMethod = "Fasilitas Pasal 31E penuh (omset < 4,8M)";
         } else if (totalRevenue.compareTo(REVENUE_THRESHOLD_MAX) < 0) {
             // 4.8B <= Revenue < 50B: proportional
             BigDecimal facilitatedPortion = REVENUE_THRESHOLD_FULL.divide(totalRevenue, 10, RoundingMode.HALF_UP)
-                    .multiply(pkp).setScale(0, RoundingMode.DOWN);
-            BigDecimal nonFacilitatedPortion = pkp.subtract(facilitatedPortion);
+                    .multiply(pkpRounded).setScale(0, RoundingMode.DOWN);
+            BigDecimal nonFacilitatedPortion = pkpRounded.subtract(facilitatedPortion);
 
             BigDecimal pphFacilitated = facilitatedPortion.multiply(PPH_BADAN_RATE)
                     .multiply(PASAL_31E_DISCOUNT_RATE).setScale(0, RoundingMode.DOWN);
@@ -210,7 +214,7 @@ public class TaxReportDetailService {
             calculationMethod = "Fasilitas Pasal 31E proporsional (4,8M ≤ omset < 50M)";
         } else {
             // Revenue >= 50B: no discount
-            pphTerutang = pkp.multiply(PPH_BADAN_RATE).setScale(0, RoundingMode.DOWN);
+            pphTerutang = pkpRounded.multiply(PPH_BADAN_RATE).setScale(0, RoundingMode.DOWN);
             calculationMethod = "Tarif normal 22% (omset ≥ 50M)";
         }
 
@@ -241,7 +245,7 @@ public class TaxReportDetailService {
         // PPh 29 = PPh Terutang - Kredit Pajak
         BigDecimal pph29 = pphTerutang.subtract(totalKreditPajak);
 
-        return new PPhBadanCalculation(pkp, totalRevenue, pphTerutang, calculationMethod,
+        return new PPhBadanCalculation(pkp, pkpRounded, totalRevenue, pphTerutang, calculationMethod,
                 kreditPajakPPh23, kreditPajakPPh25, totalKreditPajak, pph29);
     }
 
@@ -311,6 +315,7 @@ public class TaxReportDetailService {
 
     public record PPhBadanCalculation(
             BigDecimal pkp,
+            BigDecimal pkpRounded,
             BigDecimal totalRevenue,
             BigDecimal pphTerutang,
             String calculationMethod,

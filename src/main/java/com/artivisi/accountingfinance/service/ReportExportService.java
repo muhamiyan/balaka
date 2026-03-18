@@ -412,6 +412,139 @@ public class ReportExportService {
         }
     }
 
+    // ==================== COMBINED FINANCIAL STATEMENTS (for Coretax upload) ====================
+
+    /**
+     * Generate a combined financial statements PDF (Neraca + Laba Rugi) for Coretax SPT upload.
+     * @param companyName company name for header
+     * @param npwp company NPWP for header
+     * @param balanceSheet balance sheet as of year-end
+     * @param incomeStatement income statement (excluding closing entries) for the year
+     * @param year fiscal year
+     */
+    public byte[] exportFinancialStatementsPdf(
+            String companyName, String npwp,
+            ReportService.BalanceSheetReport balanceSheet,
+            ReportService.IncomeStatementReport incomeStatement,
+            int year) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4);
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            // Company header
+            Paragraph companyPara = new Paragraph(companyName, getTitleFont());
+            companyPara.setAlignment(Element.ALIGN_CENTER);
+            document.add(companyPara);
+
+            Paragraph npwpPara = new Paragraph("NPWP: " + npwp, getSubtitleFont());
+            npwpPara.setAlignment(Element.ALIGN_CENTER);
+            document.add(npwpPara);
+
+            Paragraph yearPara = new Paragraph("Laporan Keuangan Tahun " + year, getSubtitleFont());
+            yearPara.setAlignment(Element.ALIGN_CENTER);
+            yearPara.setSpacingAfter(15);
+            document.add(yearPara);
+
+            // ---- NERACA (Balance Sheet) ----
+            Paragraph neracaTitle = new Paragraph("LAPORAN POSISI KEUANGAN (NERACA)", getBoldFont());
+            neracaTitle.setAlignment(Element.ALIGN_CENTER);
+            document.add(neracaTitle);
+
+            Paragraph neracaPeriod = new Paragraph(
+                    LABEL_PER_TANGGAL + "31 Desember " + year, getSubtitleFont());
+            neracaPeriod.setAlignment(Element.ALIGN_CENTER);
+            neracaPeriod.setSpacingAfter(10);
+            document.add(neracaPeriod);
+
+            PdfPTable bsTable = new PdfPTable(2);
+            bsTable.setWidthPercentage(100);
+            bsTable.setWidths(new float[]{70, 30});
+
+            addSectionHeader(bsTable, "ASET");
+            for (ReportService.BalanceSheetItem item : balanceSheet.assetItems()) {
+                addTableCell(bsTable, "  " + item.account().getAccountName(), Element.ALIGN_LEFT);
+                addTableCell(bsTable, formatNumber(item.balance()), Element.ALIGN_RIGHT);
+            }
+            addSubtotalRow(bsTable, "Total Aset", formatNumber(balanceSheet.totalAssets()));
+
+            addSectionHeader(bsTable, "LIABILITAS");
+            for (ReportService.BalanceSheetItem item : balanceSheet.liabilityItems()) {
+                addTableCell(bsTable, "  " + item.account().getAccountName(), Element.ALIGN_LEFT);
+                addTableCell(bsTable, formatNumber(item.balance()), Element.ALIGN_RIGHT);
+            }
+            addSubtotalRow(bsTable, "Total Liabilitas", formatNumber(balanceSheet.totalLiabilities()));
+
+            addSectionHeader(bsTable, "EKUITAS");
+            for (ReportService.BalanceSheetItem item : balanceSheet.equityItems()) {
+                addTableCell(bsTable, "  " + item.account().getAccountName(), Element.ALIGN_LEFT);
+                addTableCell(bsTable, formatNumber(item.balance()), Element.ALIGN_RIGHT);
+            }
+            addTableCell(bsTable, "  Laba Tahun Berjalan", Element.ALIGN_LEFT);
+            addTableCell(bsTable, formatNumber(balanceSheet.currentYearEarnings()), Element.ALIGN_RIGHT);
+            addSubtotalRow(bsTable, "Total Ekuitas", formatNumber(balanceSheet.totalEquity()));
+
+            BigDecimal totalLiabilitiesAndEquity = balanceSheet.totalLiabilities().add(balanceSheet.totalEquity());
+            addTotalRow(bsTable, TOTAL_LIABILITIES_EQUITY, formatNumber(totalLiabilitiesAndEquity), null);
+
+            document.add(bsTable);
+
+            // ---- Page break before Laba Rugi ----
+            document.newPage();
+
+            // Company header (repeated on new page)
+            Paragraph companyPara2 = new Paragraph(companyName, getTitleFont());
+            companyPara2.setAlignment(Element.ALIGN_CENTER);
+            document.add(companyPara2);
+
+            Paragraph npwpPara2 = new Paragraph("NPWP: " + npwp, getSubtitleFont());
+            npwpPara2.setAlignment(Element.ALIGN_CENTER);
+            npwpPara2.setSpacingAfter(10);
+            document.add(npwpPara2);
+
+            // ---- LABA RUGI (Income Statement) ----
+            Paragraph plTitle = new Paragraph("LAPORAN LABA RUGI", getBoldFont());
+            plTitle.setAlignment(Element.ALIGN_CENTER);
+            document.add(plTitle);
+
+            Paragraph plPeriod = new Paragraph(
+                    LABEL_PERIODE + "1 Januari - 31 Desember " + year, getSubtitleFont());
+            plPeriod.setAlignment(Element.ALIGN_CENTER);
+            plPeriod.setSpacingAfter(10);
+            document.add(plPeriod);
+
+            PdfPTable plTable = new PdfPTable(2);
+            plTable.setWidthPercentage(100);
+            plTable.setWidths(new float[]{70, 30});
+
+            addSectionHeader(plTable, "PENDAPATAN");
+            for (ReportService.IncomeStatementItem item : incomeStatement.revenueItems()) {
+                addTableCell(plTable, "  " + item.account().getAccountName(), Element.ALIGN_LEFT);
+                addTableCell(plTable, formatNumber(item.balance()), Element.ALIGN_RIGHT);
+            }
+            addSubtotalRow(plTable, "Total Pendapatan", formatNumber(incomeStatement.totalRevenue()));
+
+            addSectionHeader(plTable, "BEBAN");
+            for (ReportService.IncomeStatementItem item : incomeStatement.expenseItems()) {
+                addTableCell(plTable, "  " + item.account().getAccountName(), Element.ALIGN_LEFT);
+                addTableCell(plTable, "(" + formatNumber(item.balance()) + ")", Element.ALIGN_RIGHT);
+            }
+            addSubtotalRow(plTable, "Total Beban", "(" + formatNumber(incomeStatement.totalExpense()) + ")");
+
+            String netIncomeLabel = incomeStatement.netIncome().compareTo(BigDecimal.ZERO) >= 0
+                    ? "LABA BERSIH" : "RUGI BERSIH";
+            addTotalRow(plTable, netIncomeLabel, formatNumber(incomeStatement.netIncome()), null);
+
+            document.add(plTable);
+            document.close();
+
+            return baos.toByteArray();
+        } catch (DocumentException | IOException e) {
+            log.error("Error generating Financial Statements PDF", e);
+            throw new ReportGenerationException(PDF_GENERATION_ERROR + e.getMessage(), e);
+        }
+    }
+
     // ==================== CASH FLOW STATEMENT ====================
 
     public byte[] exportCashFlowToPdf(ReportService.CashFlowReport report) {

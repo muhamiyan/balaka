@@ -136,11 +136,14 @@ public class FinancialAnalysisApiController {
     @GetMapping("/income-statement")
     public ResponseEntity<AnalysisResponse<IncomeStatementDto>> getIncomeStatement(
             @RequestParam String startDate,
-            @RequestParam String endDate) {
+            @RequestParam String endDate,
+            @RequestParam(defaultValue = "false") boolean excludeClosing) {
 
         LocalDate start = LocalDate.parse(startDate);
         LocalDate end = LocalDate.parse(endDate);
-        ReportService.IncomeStatementReport report = reportService.generateIncomeStatement(start, end);
+        ReportService.IncomeStatementReport report = excludeClosing
+                ? reportService.generateIncomeStatementExcludingClosing(start, end)
+                : reportService.generateIncomeStatement(start, end);
 
         List<LineItemDto> revenueItems = report.revenueItems().stream()
                 .map(this::toLineItemDto)

@@ -32,6 +32,7 @@
 | **—** | SPT Lampiran Export | ✅ Complete |
 | **—** | Bug Fixes (BUG-016–018) | ✅ Complete |
 | **—** | Period Report + Sidebar Reorg | ✅ Complete |
+| **—** | Tax Filing Improvements (FR-001–006) | ✅ Complete |
 | **17** | SPT Tahunan Badan Data Export | ✅ Complete |
 | **18** | PPh 21 TER Method (PMK 168/2023) | ✅ Complete |
 | **—** | Future Enhancements | As needed |
@@ -1784,6 +1785,41 @@ Update PPN rate description in app and docs to reflect 2025 DPP Nilai Lain regim
 - [x] **Master Data** group: Bagan Akun, Template Jurnal, Label Transaksi, Periode Fiskal
 - [x] **Pengaturan** group (new): Perusahaan, Profil Pajak, Pengguna, Peran, Keamanan, Perangkat API, Import Data, Log Audit
 - [x] Both desktop and mobile sidebar updated
+
+---
+
+## Tax Filing Improvements (FR-001–006) ✅
+
+Gaps found during actual SPT Tahunan Badan 2025 filing via Coretax (2026-03-18).
+
+### FR-001: L1 missing non-operating expenses ✅
+- [x] `otherExpenses` now captures ALL non-5.1 expenses (5.2, 5.3, 5.9, etc.) via exclusion filter
+- [x] New `categorizeItemsExcludingPrefix()` helper in `SptTahunanExportService`
+
+### FR-002: L9 depreciationThisYear = 0 for pool assets ✅
+- [x] Fallback calculation when depreciation entries sum to 0
+- [x] `countDepreciationMonthsInYear()` helper considers start date, useful life end, disposal
+- [x] In `DepreciationReportService.calculateYearlyDepreciation()`
+
+### FR-003: PKP rounding to nearest thousand ✅
+- [x] PKP rounded down to nearest 1,000 before PPh calculation (UU PPh pasal 6 ayat 3)
+- [x] `PPhBadanCalculation` record extended with `pkpRounded` field
+- [x] All consumers updated: `TaxExportApiController`, `ReportExportServiceTest`
+
+### FR-004: Income statement API excludeClosing parameter ✅
+- [x] `GET /api/analysis/income-statement?excludeClosing=true` routes to `generateIncomeStatementExcludingClosing()`
+- [x] Default `false` preserves backward compatibility
+
+### FR-005: Financial statement PDF generation ✅
+- [x] `GET /api/tax-export/financial-statements/pdf?year=` returns combined Neraca + Laba Rugi PDF
+- [x] `ReportExportService.exportFinancialStatementsPdf()` — 2-page PDF with company name/NPWP header
+- [x] Uses existing OpenPDF infrastructure (fonts, table styles, formatting)
+
+### FR-006: Coretax-compatible SPT export ✅
+- [x] `GET /api/tax-export/coretax/spt-badan?year=` returns structured JSON matching Coretax form fields
+- [x] `SptTahunanExportService.generateCoretaxExport()` aggregates L1, L9, PPh, balance sheet, income statement
+- [x] 8 Coretax DTO records: `CoretaxSptBadanExport`, `CoretaxInduk`, `CoretaxL1DItem`, `CoretaxL1DNeraca`, `CoretaxNeracaItem`, `CoretaxL3Item`, `CoretaxPenyusutanItem`
+- [x] Values are plain numbers (no formatting) for direct entry into Coretax
 
 ---
 

@@ -188,8 +188,8 @@ class TaxProfileTest extends PlaywrightTestBase {
         navigateTo("/dashboard");
         waitForPageLoad();
 
-        // Open Master Data menu (use sidebar-nav to avoid matching mobile menu)
-        page.locator("#sidebar-nav details:has-text('Master Data')").click();
+        // Open Pengaturan menu (use sidebar-nav to avoid matching mobile menu)
+        page.locator("#sidebar-nav details:has-text('Pengaturan')").click();
         page.waitForTimeout(300);
 
         // Check that Tax Profile link exists

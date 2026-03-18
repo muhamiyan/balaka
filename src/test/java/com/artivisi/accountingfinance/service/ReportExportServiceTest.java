@@ -1142,7 +1142,8 @@ class ReportExportServiceTest {
             negativeAdj.setAmount(new BigDecimal("2000000"));
 
             var pphBadan = new TaxReportDetailService.PPhBadanCalculation(
-                    new BigDecimal("43000000"), new BigDecimal("100000000"),
+                    new BigDecimal("43000000"), new BigDecimal("43000000"),
+                    new BigDecimal("100000000"),
                     new BigDecimal("9460000"), "Tarif Normal 22%",
                     new BigDecimal("400000"), new BigDecimal("3000000"),
                     new BigDecimal("3400000"), new BigDecimal("6060000"));
@@ -1188,7 +1189,8 @@ class ReportExportServiceTest {
             negativeAdj.setAmount(new BigDecimal("2000000"));
 
             var pphBadan = new TaxReportDetailService.PPhBadanCalculation(
-                    new BigDecimal("43000000"), new BigDecimal("100000000"),
+                    new BigDecimal("43000000"), new BigDecimal("43000000"),
+                    new BigDecimal("100000000"),
                     new BigDecimal("9460000"), "Tarif Normal 22%",
                     new BigDecimal("400000"), new BigDecimal("3000000"),
                     new BigDecimal("3400000"), new BigDecimal("6060000"));

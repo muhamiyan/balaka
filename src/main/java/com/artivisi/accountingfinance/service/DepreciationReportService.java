@@ -93,13 +93,71 @@ public class DepreciationReportService {
 
     /**
      * Calculate depreciation amount for a specific year.
+     * Falls back to monthly depreciation formula if no entries exist (pool assets).
      */
     private BigDecimal calculateYearlyDepreciation(FixedAsset asset, int year) {
-        // Count depreciation entries for this year
-        return asset.getDepreciationEntries().stream()
+        BigDecimal fromEntries = asset.getDepreciationEntries().stream()
                 .filter(entry -> entry.getPeriodEnd().getYear() == year)
                 .map(entry -> entry.getDepreciationAmount())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (fromEntries.compareTo(BigDecimal.ZERO) > 0) {
+            return fromEntries;
+        }
+
+        // Fallback: calculate from asset's monthly depreciation * months active in year
+        if (asset.getStatus() == AssetStatus.DISPOSED
+                || asset.getDepreciationStartDate() == null
+                || asset.isFullyDepreciated()) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal monthlyDepreciation = asset.calculateMonthlyDepreciation();
+        int monthsInYear = countDepreciationMonthsInYear(asset, year);
+        return monthlyDepreciation.multiply(BigDecimal.valueOf(monthsInYear));
+    }
+
+    /**
+     * Count months the asset was depreciating in the given year,
+     * considering start date, useful life end, and disposal.
+     */
+    private int countDepreciationMonthsInYear(FixedAsset asset, int year) {
+        LocalDate yearStart = LocalDate.of(year, 1, 1);
+        LocalDate yearEnd = LocalDate.of(year, 12, 31);
+
+        // Asset depreciation start
+        LocalDate depStart = asset.getDepreciationStartDate();
+        if (depStart.isAfter(yearEnd)) {
+            return 0;
+        }
+
+        // Useful life end date
+        LocalDate usefulLifeEnd = depStart.plusMonths(asset.getUsefulLifeMonths());
+        if (usefulLifeEnd.isBefore(yearStart)) {
+            return 0;
+        }
+
+        // Effective range within this year
+        LocalDate effectiveStart = depStart.isAfter(yearStart) ? depStart : yearStart;
+        LocalDate effectiveEnd = usefulLifeEnd.isBefore(yearEnd) ? usefulLifeEnd : yearEnd;
+
+        // Consider disposal
+        if (asset.getDisposalDate() != null && asset.getDisposalDate().isBefore(effectiveEnd)) {
+            effectiveEnd = asset.getDisposalDate();
+        }
+
+        if (effectiveStart.isAfter(effectiveEnd)) {
+            return 0;
+        }
+
+        // Count months (partial months count as full)
+        int months = 0;
+        LocalDate cursor = effectiveStart.withDayOfMonth(1);
+        while (!cursor.isAfter(effectiveEnd)) {
+            months++;
+            cursor = cursor.plusMonths(1);
+        }
+        return months;
     }
 
     // Record classes for report data

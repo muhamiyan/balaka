@@ -6,6 +6,7 @@ import com.artivisi.accountingfinance.entity.TaxTransactionDetail;
 import com.artivisi.accountingfinance.enums.AuditEventType;
 import com.artivisi.accountingfinance.service.CoretaxExportService;
 import com.artivisi.accountingfinance.service.ReportExportService;
+import com.artivisi.accountingfinance.service.ReportService;
 import com.artivisi.accountingfinance.service.SecurityAuditService;
 import com.artivisi.accountingfinance.service.SptTahunanExportService;
 import com.artivisi.accountingfinance.service.SptTahunanExportService.Bpa1Report;
@@ -70,6 +71,8 @@ public class TaxExportApiController {
     private final ReportExportService reportExportService;
     private final SecurityAuditService securityAuditService;
     private final SptTahunanExportService sptTahunanExportService;
+    private final ReportService reportService;
+    private final com.artivisi.accountingfinance.repository.CompanyConfigRepository companyConfigRepository;
 
     // ==================== EXCEL EXPORT ENDPOINTS ====================
 
@@ -256,7 +259,7 @@ public class TaxExportApiController {
         auditAccess("pph-badan", Map.of("year", String.valueOf(year)));
 
         PPhBadanData data = new PPhBadanData(
-                calc.pkp(), calc.totalRevenue(), calc.pphTerutang(),
+                calc.pkp(), calc.pkpRounded(), calc.totalRevenue(), calc.pphTerutang(),
                 calc.calculationMethod(),
                 calc.kreditPajakPPh23(), calc.kreditPajakPPh25(),
                 calc.totalKreditPajak(), calc.pph29());
@@ -416,6 +419,36 @@ public class TaxExportApiController {
                         META_CURRENCY, "IDR")));
     }
 
+    // ==================== FINANCIAL STATEMENTS PDF ====================
+
+    @GetMapping("/financial-statements/pdf")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Combined financial statements PDF (Neraca + Laba Rugi)",
+            description = "Generates a PDF with Balance Sheet and Income Statement for Coretax SPT upload.")
+    public ResponseEntity<byte[]> getFinancialStatementsPdf(@RequestParam int year) {
+        com.artivisi.accountingfinance.entity.CompanyConfig config = companyConfigRepository.findFirst()
+                .orElseThrow(() -> new IllegalStateException("Company config not found"));
+
+        LocalDate startDate = LocalDate.of(year, 1, 1);
+        LocalDate endDate = LocalDate.of(year, 12, 31);
+
+        ReportService.BalanceSheetReport balanceSheet = reportService.generateBalanceSheet(endDate);
+        ReportService.IncomeStatementReport incomeStatement =
+                reportService.generateIncomeStatementExcludingClosing(startDate, endDate);
+
+        byte[] pdf = reportExportService.exportFinancialStatementsPdf(
+                config.getCompanyName(), config.getNpwp(),
+                balanceSheet, incomeStatement, year);
+
+        auditAccess("financial-statements-pdf", Map.of("year", String.valueOf(year)));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=laporan-keuangan-" + year + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
     // ==================== CONSOLIDATED LAMPIRAN ====================
 
     @GetMapping("/spt-tahunan/lampiran")
@@ -433,6 +466,26 @@ public class TaxExportApiController {
                 Map.of("year", String.valueOf(year)),
                 report,
                 Map.of(META_DESCRIPTION, "Consolidated SPT Tahunan Badan lampiran (Coretax-ready)",
+                        META_CURRENCY, "IDR")));
+    }
+
+    // ==================== CORETAX SPT EXPORT ====================
+
+    @GetMapping("/coretax/spt-badan")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Coretax-compatible SPT Badan export",
+            description = "Structured JSON matching Coretax form fields. Values are plain numbers for direct entry.")
+    public ResponseEntity<AnalysisResponse<SptTahunanExportService.CoretaxSptBadanExport>> getCoretaxSptBadan(
+            @RequestParam int year) {
+
+        SptTahunanExportService.CoretaxSptBadanExport export = sptTahunanExportService.generateCoretaxExport(year);
+        auditAccess("coretax-spt-badan", Map.of("year", String.valueOf(year)));
+
+        return ResponseEntity.ok(new AnalysisResponse<>(
+                "coretax-spt-badan", LocalDateTime.now(),
+                Map.of("year", String.valueOf(year)),
+                export,
+                Map.of(META_DESCRIPTION, "Coretax-compatible SPT Badan export — all values plain numbers for direct entry",
                         META_CURRENCY, "IDR")));
     }
 
@@ -496,7 +549,7 @@ public class TaxExportApiController {
 
         PPhBadanCalculation calc = report.pphBadan();
         PPhBadanData pphBadan = new PPhBadanData(
-                calc.pkp(), calc.totalRevenue(), calc.pphTerutang(),
+                calc.pkp(), calc.pkpRounded(), calc.totalRevenue(), calc.pphTerutang(),
                 calc.calculationMethod(),
                 calc.kreditPajakPPh23(), calc.kreditPajakPPh25(),
                 calc.totalKreditPajak(), calc.pph29());
@@ -599,6 +652,7 @@ public class TaxExportApiController {
 
     public record PPhBadanData(
             BigDecimal pkp,
+            BigDecimal pkpRounded,
             BigDecimal totalRevenue,
             BigDecimal pphTerutang,
             String calculationMethod,
