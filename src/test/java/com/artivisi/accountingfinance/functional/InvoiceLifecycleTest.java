@@ -44,6 +44,12 @@ class InvoiceLifecycleTest extends PlaywrightTestBase {
     private ClientRepository clientRepository;
 
     @Autowired
+    private com.artivisi.accountingfinance.repository.ProductRepository productRepository;
+
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
+    @Autowired
     private VendorService vendorService;
 
     @Autowired
@@ -61,6 +67,18 @@ class InvoiceLifecycleTest extends PlaywrightTestBase {
         try {
             testClient = clientRepository.findByCode("TELKOM").orElseThrow();
 
+            // Service product whose sales account drives revenue recognition on send
+            com.artivisi.accountingfinance.entity.Product service = productRepository
+                    .findByCode("SVC-LIFECYCLE").orElseGet(() -> {
+                        var p = new com.artivisi.accountingfinance.entity.Product();
+                        p.setCode("SVC-LIFECYCLE");
+                        p.setName("Jasa IT");
+                        p.setUnit("paket");
+                        p.setTrackInventory(false);
+                        p.setSalesAccount(chartOfAccountRepository.findByAccountCode("4.1.01").orElseThrow());
+                        return productRepository.save(p);
+                    });
+
             // Create invoice with line items
             Invoice invoice = new Invoice();
             invoice.setClient(testClient);
@@ -69,12 +87,14 @@ class InvoiceLifecycleTest extends PlaywrightTestBase {
             invoice.setAmount(new BigDecimal("15000000"));
 
             InvoiceLine line1 = new InvoiceLine();
+            line1.setProduct(service);
             line1.setDescription("Jasa Pengembangan Aplikasi");
             line1.setQuantity(BigDecimal.ONE);
             line1.setUnitPrice(new BigDecimal("10000000"));
             line1.calculateAmounts();
 
             InvoiceLine line2 = new InvoiceLine();
+            line2.setProduct(service);
             line2.setDescription("Jasa Maintenance Bulanan");
             line2.setQuantity(new BigDecimal("5"));
             line2.setUnitPrice(new BigDecimal("1000000"));
