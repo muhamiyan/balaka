@@ -4,6 +4,7 @@ import com.artivisi.accountingfinance.entity.Bill;
 import com.artivisi.accountingfinance.entity.BillLine;
 import com.artivisi.accountingfinance.entity.BillPayment;
 import com.artivisi.accountingfinance.entity.ChartOfAccount;
+import com.artivisi.accountingfinance.entity.CompanyConfig;
 import com.artivisi.accountingfinance.entity.Product;
 import com.artivisi.accountingfinance.entity.Vendor;
 import com.artivisi.accountingfinance.enums.BillStatus;
@@ -24,7 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -37,6 +41,8 @@ public class BillService {
     private final VendorRepository vendorRepository;
     private final ChartOfAccountRepository chartOfAccountRepository;
     private final ProductRepository productRepository;
+    private final DocumentPostingService documentPostingService;
+    private final CompanyConfigService companyConfigService;
 
     public Bill findById(UUID id) {
         return billRepository.findById(id)
@@ -161,10 +167,77 @@ public class BillService {
             throw new IllegalStateException("Hanya tagihan draf yang dapat disetujui");
         }
 
+        // Recognize expense & payable: one DRAFT transaction per distinct expense
+        // account (R2) via the template engine. Accounting approves the DRAFT(s) to post.
+        recognizeBillExpense(bill);
+
         bill.setStatus(BillStatus.APPROVED);
         bill.setApprovedAt(LocalDateTime.now());
         bill.setApprovedBy(SecurityContextHolder.getContext().getAuthentication().getName());
         return billRepository.save(bill);
+    }
+
+    /**
+     * Groups bill lines by their expense account and, per group, composes a DRAFT
+     * transaction via the "Tagihan Vendor" template. Amounts come from the bill's own
+     * line figures; the payable and input-tax accounts come from CompanyConfig. Throws
+     * (no fallback) if any required account is unconfigured.
+     */
+    private void recognizeBillExpense(Bill bill) {
+        CompanyConfig config = companyConfigService.getConfig();
+        UUID payableAccountId = requireAccountId(config.getPayableAccount(),
+                "Akun Hutang Usaha belum dikonfigurasi di Pengaturan Perusahaan");
+        UUID inputTaxAccountId = requireAccountId(config.getInputTaxAccount(),
+                "Akun PPN Masukan belum dikonfigurasi di Pengaturan Perusahaan");
+
+        Map<UUID, ChartOfAccount> expenseAccounts = new LinkedHashMap<>();
+        Map<UUID, BigDecimal> expenseByAccount = new LinkedHashMap<>();
+        Map<UUID, BigDecimal> taxByAccount = new LinkedHashMap<>();
+
+        for (BillLine line : bill.getLines()) {
+            ChartOfAccount expenseAccount = line.getExpenseAccount();
+            if (expenseAccount == null) {
+                throw new IllegalStateException("Baris tagihan '" + line.getDescription()
+                        + "' belum memiliki Akun Beban");
+            }
+            UUID key = expenseAccount.getId();
+            expenseAccounts.putIfAbsent(key, expenseAccount);
+            expenseByAccount.merge(key, nz(line.getAmount()), BigDecimal::add);
+            taxByAccount.merge(key, nz(line.getTaxAmount()), BigDecimal::add);
+        }
+
+        for (Map.Entry<UUID, ChartOfAccount> group : expenseAccounts.entrySet()) {
+            UUID expenseAccountId = group.getKey();
+            BigDecimal expenseAmount = expenseByAccount.get(expenseAccountId);
+            BigDecimal ppnAmount = taxByAccount.getOrDefault(expenseAccountId, BigDecimal.ZERO);
+            BigDecimal apAmount = expenseAmount.add(ppnAmount);
+
+            Map<String, UUID> hints = new HashMap<>();
+            hints.put("BEBAN", expenseAccountId);
+            hints.put("PPN_MASUKAN", inputTaxAccountId);
+            hints.put("HUTANG", payableAccountId);
+
+            Map<String, BigDecimal> variables = new HashMap<>();
+            variables.put("expenseAmount", expenseAmount);
+            variables.put("ppnAmount", ppnAmount);
+            variables.put("apAmount", apAmount);
+
+            documentPostingService.createDraftFromTemplate(
+                    null, "Tagihan Vendor", bill.getBillDate(),
+                    "Tagihan " + bill.getBillNumber() + " - " + group.getValue().getAccountName(),
+                    apAmount, hints, variables, "system", "BILL", bill.getId());
+        }
+    }
+
+    private UUID requireAccountId(ChartOfAccount account, String message) {
+        if (account == null || account.getId() == null) {
+            throw new IllegalStateException(message);
+        }
+        return account.getId();
+    }
+
+    private BigDecimal nz(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     @Transactional

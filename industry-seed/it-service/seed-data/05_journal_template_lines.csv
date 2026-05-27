@@ -22,6 +22,9 @@ Terima Pelunasan Piutang,2,1.1.10,,CREDIT,amount,Piutang usaha
 Pengakuan Pendapatan Invoice,1,,PIUTANG,DEBIT,arAmount,Piutang usaha
 Pengakuan Pendapatan Invoice,2,,PENDAPATAN,CREDIT,revenueAmount,Pendapatan
 Pengakuan Pendapatan Invoice,3,,PPN_KELUARAN,CREDIT,ppnAmount,PPN Keluaran
+Tagihan Vendor,1,,BEBAN,DEBIT,expenseAmount,Beban
+Tagihan Vendor,2,,PPN_MASUKAN,DEBIT,ppnAmount,PPN Masukan
+Tagihan Vendor,3,,HUTANG,CREDIT,apAmount,Hutang usaha
 Bayar Beban Gaji,1,5.1.01,,DEBIT,amount,Beban gaji
 Bayar Beban Gaji,2,,BANK,CREDIT,amount,Pembayaran dari bank
 Accrual Gaji Bulan Berjalan,1,5.1.01,,DEBIT,amount,Beban gaji

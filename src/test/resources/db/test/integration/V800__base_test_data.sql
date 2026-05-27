@@ -325,6 +325,15 @@ INSERT INTO journal_template_lines (id, id_journal_template, id_account, positio
 ('e1000000-0000-0000-0000-000000000042', 'e0000000-0000-0000-0000-000000000018', NULL, 'CREDIT', 'revenueAmount', 2, 'Pendapatan', 'PENDAPATAN'),
 ('e1000000-0000-0000-0000-000000000043', 'e0000000-0000-0000-0000-000000000018', NULL, 'CREDIT', 'ppnAmount', 3, 'PPN Keluaran', 'PPN_KELUARAN');
 
+-- Template: Tagihan Vendor (DRAFT expense/payable recognition bridge on bill approval)
+INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active) VALUES
+('e0000000-0000-0000-0000-000000000019', 'Tagihan Vendor', 'EXPENSE', 'OPERATING', 'DETAILED', 'Pengakuan beban & hutang saat tagihan vendor disetujui. Variabel: expenseAmount, ppnAmount, apAmount', TRUE, TRUE);
+
+INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description, account_hint) VALUES
+('e1000000-0000-0000-0000-000000000044', 'e0000000-0000-0000-0000-000000000019', NULL, 'DEBIT', 'expenseAmount', 1, 'Beban', 'BEBAN'),
+('e1000000-0000-0000-0000-000000000045', 'e0000000-0000-0000-0000-000000000019', NULL, 'DEBIT', 'ppnAmount', 2, 'PPN Masukan', 'PPN_MASUKAN'),
+('e1000000-0000-0000-0000-000000000046', 'e0000000-0000-0000-0000-000000000019', NULL, 'CREDIT', 'apAmount', 3, 'Hutang usaha', 'HUTANG');
+
 -- ============================================
 -- Inventory Chart of Accounts (Phase 5)
 -- ============================================

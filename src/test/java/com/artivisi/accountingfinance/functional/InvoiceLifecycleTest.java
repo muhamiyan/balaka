@@ -124,6 +124,7 @@ class InvoiceLifecycleTest extends PlaywrightTestBase {
             bill.setAmount(new BigDecimal("6000000"));
 
             BillLine billLine = new BillLine();
+            billLine.setExpenseAccount(chartOfAccountRepository.findByAccountCode("5.1.20").orElseThrow());
             billLine.setDescription("Sewa Server Cloud 6 Bulan");
             billLine.setQuantity(new BigDecimal("6"));
             billLine.setUnitPrice(new BigDecimal("1000000"));
