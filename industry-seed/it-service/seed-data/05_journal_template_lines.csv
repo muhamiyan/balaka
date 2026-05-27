@@ -19,6 +19,9 @@ Pengakuan Pendapatan Proyek,1,2.1.04,,DEBIT,amount,Pendapatan diterima dimuka
 Pengakuan Pendapatan Proyek,2,,PENDAPATAN,CREDIT,amount,Pendapatan jasa
 Terima Pelunasan Piutang,1,,BANK,DEBIT,amount,Penerimaan kas/bank
 Terima Pelunasan Piutang,2,1.1.10,,CREDIT,amount,Piutang usaha
+Pengakuan Pendapatan Invoice,1,,PIUTANG,DEBIT,arAmount,Piutang usaha
+Pengakuan Pendapatan Invoice,2,,PENDAPATAN,CREDIT,revenueAmount,Pendapatan
+Pengakuan Pendapatan Invoice,3,,PPN_KELUARAN,CREDIT,ppnAmount,PPN Keluaran
 Bayar Beban Gaji,1,5.1.01,,DEBIT,amount,Beban gaji
 Bayar Beban Gaji,2,,BANK,CREDIT,amount,Pembayaran dari bank
 Accrual Gaji Bulan Berjalan,1,5.1.01,,DEBIT,amount,Beban gaji
