@@ -26,6 +26,12 @@ CREATE TABLE company_config (
     established_date DATE,
     is_pkp BOOLEAN,
     pkp_since DATE,
+    -- Posting bridge accounts: resolve the document-level slots (AR/AP/PPN)
+    -- when invoices/bills compose their DRAFT journal via the template engine
+    id_receivable_account UUID REFERENCES chart_of_accounts(id),
+    id_payable_account UUID REFERENCES chart_of_accounts(id),
+    id_output_tax_account UUID REFERENCES chart_of_accounts(id),
+    id_input_tax_account UUID REFERENCES chart_of_accounts(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     created_by VARCHAR(100),
