@@ -61,6 +61,7 @@ public class FixedAssetController {
 
     private final FixedAssetService fixedAssetService;
     private final AssetCategoryService assetCategoryService;
+    private final com.artivisi.accountingfinance.service.ChartOfAccountService chartOfAccountService;
 
     @Getter
     @Setter
@@ -116,24 +117,36 @@ public class FixedAssetController {
         private String serialNumber;
 
         private String notes;
+
+        // Bank/AP credited when the acquisition DRAFT posts (required at create time).
+        private UUID fundingAccount;
+
+        // When true, the depreciation scheduler posts entries directly; else PENDING.
+        private boolean autoPost;
     }
 
     private FixedAsset toEntity(FixedAssetForm form) {
         FixedAsset entity = new FixedAsset();
-        BeanUtils.copyProperties(form, entity, "id", "category");
+        BeanUtils.copyProperties(form, entity, "id", "category", "fundingAccount");
         if (form.getCategory() != null) {
             AssetCategory cat = new AssetCategory();
             cat.setId(form.getCategory());
             entity.setCategory(cat);
+        }
+        if (form.getFundingAccount() != null) {
+            entity.setFundingAccount(chartOfAccountService.findById(form.getFundingAccount()));
         }
         return entity;
     }
 
     private FixedAssetForm toForm(FixedAsset entity) {
         FixedAssetForm form = new FixedAssetForm();
-        BeanUtils.copyProperties(entity, form, "category");
+        BeanUtils.copyProperties(entity, form, "category", "fundingAccount");
         if (entity.getCategory() != null) {
             form.setCategory(entity.getCategory().getId());
+        }
+        if (entity.getFundingAccount() != null) {
+            form.setFundingAccount(entity.getFundingAccount().getId());
         }
         return form;
     }
@@ -397,6 +410,7 @@ public class FixedAssetController {
     private void addFormAttributes(Model model) {
         model.addAttribute("categories", assetCategoryService.findAllActive());
         model.addAttribute("depreciationMethods", DepreciationMethod.values());
+        model.addAttribute("fundingAccounts", chartOfAccountService.findTransactableAccounts());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_ASSETS);
     }
 }
