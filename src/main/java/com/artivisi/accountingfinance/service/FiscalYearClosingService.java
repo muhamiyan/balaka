@@ -321,16 +321,18 @@ public class FiscalYearClosingService {
     private Transaction createClosingTransaction(JournalTemplate template, LocalDate date, int year,
             String description, String referenceNumber, BigDecimal amount, String username) {
         Transaction transaction = new Transaction();
-        // DRAFT-by-default: closing entries land in the accounting approval queue.
-        // The accountant reviews and posts them; transactionNumber is generated at post.
-        transaction.setTransactionNumber(null);
+        // Closing is an explicit accountant action with period-review as the verification
+        // (same exception class as depreciation manual-post and autoPost). POSTED inline.
+        transaction.setTransactionNumber(generateTransactionNumber(year));
         transaction.setTransactionDate(date);
         transaction.setJournalTemplate(template);
         transaction.setAmount(amount);
         transaction.setDescription(description);
         transaction.setReferenceNumber(referenceNumber);
         transaction.setClosingEntry(true);
-        transaction.setStatus(TransactionStatus.DRAFT);
+        transaction.setStatus(TransactionStatus.POSTED);
+        transaction.setPostedAt(LocalDateTime.now());
+        transaction.setPostedBy(username);
         transaction.setCreatedBy(username);
         return transaction;
     }

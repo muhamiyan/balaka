@@ -52,6 +52,12 @@ class StatementTest extends PlaywrightTestBase {
     @Autowired
     private VendorRepository vendorRepository;
 
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ProductRepository productRepository;
+
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
     private Client testClient;
     private Vendor testVendor;
 
@@ -70,7 +76,19 @@ class StatementTest extends PlaywrightTestBase {
             invoice.setDueDate(LocalDate.of(2026, 3, 10));
             invoice.setAmount(new BigDecimal("8000000"));
 
+            com.artivisi.accountingfinance.entity.Product service = productRepository
+                    .findByCode("SVC-STMT").orElseGet(() -> {
+                        var p = new com.artivisi.accountingfinance.entity.Product();
+                        p.setCode("SVC-STMT");
+                        p.setName("Jasa Konsultasi");
+                        p.setUnit("paket");
+                        p.setTrackInventory(false);
+                        p.setSalesAccount(chartOfAccountRepository.findByAccountCode("4.1.01").orElseThrow());
+                        return productRepository.save(p);
+                    });
+
             InvoiceLine line = new InvoiceLine();
+            line.setProduct(service);
             line.setDescription("Jasa Konsultasi Statement Test");
             line.setQuantity(BigDecimal.ONE);
             line.setUnitPrice(new BigDecimal("8000000"));
@@ -107,6 +125,7 @@ class StatementTest extends PlaywrightTestBase {
             bill.setAmount(new BigDecimal("4000000"));
 
             BillLine billLine = new BillLine();
+            billLine.setExpenseAccount(chartOfAccountRepository.findByAccountCode("5.1.20").orElseThrow());
             billLine.setDescription("Pembelian Peralatan Statement Test");
             billLine.setQuantity(BigDecimal.ONE);
             billLine.setUnitPrice(new BigDecimal("4000000"));

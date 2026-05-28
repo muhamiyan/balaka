@@ -52,6 +52,12 @@ class PaymentTrackingTest extends PlaywrightTestBase {
     @Autowired
     private VendorRepository vendorRepository;
 
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ProductRepository productRepository;
+
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
     private static final AtomicInteger COUNTER = new AtomicInteger(0);
 
     private String sentInvoiceNumber;
@@ -75,7 +81,19 @@ class PaymentTrackingTest extends PlaywrightTestBase {
             invoice.setDueDate(LocalDate.of(2026, 3, 1));
             invoice.setAmount(new BigDecimal("10000000"));
 
+            com.artivisi.accountingfinance.entity.Product service = productRepository
+                    .findByCode("SVC-PMT").orElseGet(() -> {
+                        var p = new com.artivisi.accountingfinance.entity.Product();
+                        p.setCode("SVC-PMT");
+                        p.setName("Jasa Konsultasi");
+                        p.setUnit("paket");
+                        p.setTrackInventory(false);
+                        p.setSalesAccount(chartOfAccountRepository.findByAccountCode("4.1.01").orElseThrow());
+                        return productRepository.save(p);
+                    });
+
             InvoiceLine line = new InvoiceLine();
+            line.setProduct(service);
             line.setDescription("Jasa Konsultasi IT");
             line.setQuantity(BigDecimal.ONE);
             line.setUnitPrice(new BigDecimal("10000000"));
@@ -106,6 +124,7 @@ class PaymentTrackingTest extends PlaywrightTestBase {
             bill.setAmount(new BigDecimal("5000000"));
 
             BillLine billLine = new BillLine();
+            billLine.setExpenseAccount(chartOfAccountRepository.findByAccountCode("5.1.20").orElseThrow());
             billLine.setDescription("Pembelian Server");
             billLine.setQuantity(BigDecimal.ONE);
             billLine.setUnitPrice(new BigDecimal("5000000"));
