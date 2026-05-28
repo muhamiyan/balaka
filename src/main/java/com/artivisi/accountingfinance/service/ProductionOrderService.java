@@ -30,6 +30,7 @@ public class ProductionOrderService {
     private final ProductionOrderRepository orderRepository;
     private final BillOfMaterialRepository bomRepository;
     private final InventoryService inventoryService;
+    private final DocumentPostingService documentPostingService;
 
     @Transactional(readOnly = true)
     public List<ProductionOrder> findAll() {
@@ -152,6 +153,13 @@ public class ProductionOrderService {
         BigDecimal totalCost = BigDecimal.ZERO;
         String referenceNumber = order.getOrderNumber();
 
+        // Finished good's inventory account is the debit side for every produced-DRAFT.
+        var finishedGoodAccount = bom.getProduct().getInventoryAccount();
+        if (finishedGoodAccount == null) {
+            throw new IllegalStateException("Produk jadi '" + bom.getProduct().getName()
+                    + "' belum memiliki Akun Persediaan");
+        }
+
         for (BillOfMaterialLine line : bom.getLines()) {
             BigDecimal requiredQty = line.getQuantity().multiply(multiplier);
 
@@ -165,6 +173,24 @@ public class ProductionOrderService {
             );
 
             totalCost = totalCost.add(outTx.getTotalCost());
+
+            // Compose a DRAFT journal per component: Dr finished-goods / Cr raw-material
+            // (skips a transient WIP for simplicity; one DRAFT per BOM line — R2 pattern).
+            var rawMaterialAccount = line.getComponent().getInventoryAccount();
+            if (rawMaterialAccount == null) {
+                throw new IllegalStateException("Bahan baku '" + line.getComponent().getName()
+                        + "' belum memiliki Akun Persediaan");
+            }
+            java.util.Map<String, java.util.UUID> hints = new java.util.HashMap<>();
+            hints.put("PERSEDIAAN_JADI", finishedGoodAccount.getId());
+            hints.put("PERSEDIAAN_BAHAN", rawMaterialAccount.getId());
+            java.util.Map<String, BigDecimal> vars = new java.util.HashMap<>();
+            vars.put("componentCost", outTx.getTotalCost());
+            documentPostingService.createDraftFromTemplate(
+                    null, "Penyelesaian Produksi", order.getOrderDate(),
+                    "Produksi " + order.getOrderNumber() + " - " + line.getComponent().getName(),
+                    outTx.getTotalCost(), hints, vars, getCurrentUsername(),
+                    "PRODUCTION_ORDER", order.getId());
         }
 
         // Calculate unit cost for finished goods
