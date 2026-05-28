@@ -55,6 +55,9 @@ class FixedAssetServiceTest {
     @Autowired
     private DepreciationEntryRepository depreciationEntryRepository;
 
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
     private AssetCategory getOrCreateCategory() {
         return assetCategoryRepository.findAll().stream().findFirst()
                 .orElseGet(() -> {
@@ -77,7 +80,9 @@ class FixedAssetServiceTest {
         asset.setResidualValue(BigDecimal.ZERO);
         asset.setUsefulLifeMonths(24);
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setDepreciationStartDate(LocalDate.now().withDayOfMonth(1));
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         return fixedAssetService.create(asset);
     }
 
@@ -188,6 +193,7 @@ class FixedAssetServiceTest {
             asset.setPurchaseCost(new BigDecimal("5000000"));
             asset.setUsefulLifeMonths(24);
             asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
 
             FixedAsset saved = fixedAssetService.create(asset);
 
@@ -229,6 +235,7 @@ class FixedAssetServiceTest {
             asset.setPurchaseCost(new BigDecimal("10000000"));
             asset.setUsefulLifeMonths(60);
             asset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationRate(null); // Missing rate
 
             assertThatThrownBy(() -> fixedAssetService.create(asset))
@@ -250,6 +257,7 @@ class FixedAssetServiceTest {
             asset.setResidualValue(new BigDecimal("2000000")); // Greater than cost
             asset.setUsefulLifeMonths(24);
             asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
 
             assertThatThrownBy(() -> fixedAssetService.create(asset))
                     .isInstanceOf(IllegalArgumentException.class)
@@ -379,6 +387,7 @@ class FixedAssetServiceTest {
             asset.setPurchaseCost(new BigDecimal("12000000"));
             asset.setUsefulLifeMonths(12);
             asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
             fixedAssetService.create(asset);
 
@@ -402,6 +411,7 @@ class FixedAssetServiceTest {
             asset.setPurchaseCost(new BigDecimal("12000000"));
             asset.setUsefulLifeMonths(12);
             asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
             FixedAsset savedAsset = fixedAssetService.create(asset);
 
@@ -438,6 +448,7 @@ class FixedAssetServiceTest {
             asset.setPurchaseCost(new BigDecimal("12000000"));
             asset.setUsefulLifeMonths(12);
             asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
             FixedAsset savedAsset = fixedAssetService.create(asset);
 
@@ -552,6 +563,7 @@ class FixedAssetServiceTest {
             asset.setResidualValue(BigDecimal.ZERO);
             asset.setUsefulLifeMonths(48);
             asset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationRate(new BigDecimal("25.00")); // 25% per year
             asset.setDepreciationStartDate(LocalDate.now().withDayOfMonth(1));
             FixedAsset saved = fixedAssetService.create(asset);
@@ -576,6 +588,7 @@ class FixedAssetServiceTest {
             asset.setResidualValue(BigDecimal.ZERO);
             asset.setUsefulLifeMonths(48);
             asset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+            asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             asset.setDepreciationRate(new BigDecimal("25.00"));
             asset.setDepreciationStartDate(LocalDate.now().withDayOfMonth(1));
             FixedAsset saved = fixedAssetService.create(asset);
