@@ -162,6 +162,12 @@ public class FixedAsset extends TimestampedEntity {
     @JoinColumn(name = "id_funding_account")
     private ChartOfAccount fundingAccount;
 
+    // When true, the monthly depreciation scheduler posts generated entries
+    // immediately (skipping accounting approval). Default false — entries are
+    // left PENDING for manual review (mirrors AmortizationSchedule.autoPost).
+    @Column(name = "auto_post", nullable = false)
+    private boolean autoPost = false;
+
     // Reference to purchase transaction (optional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_purchase_transaction")

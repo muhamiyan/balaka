@@ -78,6 +78,7 @@ class MonthlyJournalSchedulerTest {
         asset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
         asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
+        asset.setAutoPost(true);
         // Category defaults will be used (48 months from KOMPUTER category)
         asset.setResidualValue(BigDecimal.ZERO);
 
@@ -179,6 +180,7 @@ class MonthlyJournalSchedulerTest {
             dbAsset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
             dbAsset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
             dbAsset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
+            dbAsset.setAutoPost(true);
             // Note: usefulLifeMonths will be overridden from category (48 months)
             dbAsset.setResidualValue(new BigDecimal("10000000"));
             dbAsset.setDepreciationRate(new BigDecimal("25")); // 25% annual rate

@@ -61,11 +61,17 @@ public class MonthlyJournalScheduler {
                 return;
             }
 
-            // Step 2: Post all generated entries
+            // Step 2: Post only auto-post-enabled assets' entries; others stay PENDING
+            // for manual accounting review (mirrors AmortizationSchedule.autoPost).
             int postedCount = 0;
+            int pendingCount = 0;
             int errorCount = 0;
 
             for (DepreciationEntry entry : generatedEntries) {
+                if (!entry.getFixedAsset().isAutoPost()) {
+                    pendingCount++;
+                    continue;
+                }
                 if (tryPostDepreciationEntry(entry)) {
                     postedCount++;
                 } else {
@@ -73,8 +79,8 @@ public class MonthlyJournalScheduler {
                 }
             }
 
-            log.info("Scheduled depreciation batch completed: {} generated, {} posted, {} errors",
-                    generatedEntries.size(), postedCount, errorCount);
+            log.info("Scheduled depreciation batch completed: {} generated, {} posted, {} left PENDING, {} errors",
+                    generatedEntries.size(), postedCount, pendingCount, errorCount);
         } catch (Exception e) {
             log.error("Scheduled depreciation batch failed", e);
         }

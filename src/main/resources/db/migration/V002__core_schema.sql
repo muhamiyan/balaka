@@ -1104,6 +1104,7 @@ CREATE TABLE fixed_assets (
     id_accumulated_depreciation_account UUID NOT NULL REFERENCES chart_of_accounts(id),
     id_depreciation_expense_account UUID NOT NULL REFERENCES chart_of_accounts(id),
     id_funding_account UUID REFERENCES chart_of_accounts(id),  -- Bank/AP credited on acquisition
+    auto_post BOOLEAN NOT NULL DEFAULT FALSE,  -- If true, scheduler posts depreciation directly
 
     -- Transaction references
     id_purchase_transaction UUID REFERENCES transactions(id),
