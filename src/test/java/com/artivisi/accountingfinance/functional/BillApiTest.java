@@ -205,7 +205,8 @@ class BillApiTest extends PlaywrightTestBase {
     void testApproveBill() throws Exception {
         JsonNode created = createBill("PT Approve Vendor", "2026-02-01", "2026-03-01",
                 null, List.of(
-                        Map.of("description", "Approve item", "unitPrice", 500000, "quantity", 1)
+                        Map.of("description", "Approve item", "unitPrice", 500000, "quantity", 1,
+                                "expenseAccountCode", "5.1.20")
                 ));
 
         String billId = created.get("id").asText();
@@ -226,7 +227,8 @@ class BillApiTest extends PlaywrightTestBase {
     void testMarkBillPaid() throws Exception {
         JsonNode created = createBill("PT Paid Vendor", "2026-02-01", "2026-03-01",
                 null, List.of(
-                        Map.of("description", "Paid item", "unitPrice", 1000000, "quantity", 1)
+                        Map.of("description", "Paid item", "unitPrice", 1000000, "quantity", 1,
+                                "expenseAccountCode", "5.1.20")
                 ));
 
         String billId = created.get("id").asText();
