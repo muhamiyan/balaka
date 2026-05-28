@@ -49,6 +49,9 @@ class MonthlyJournalSchedulerTest {
     private FixedAssetRepository fixedAssetRepository;
 
     @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
+    @Autowired
     private AssetCategoryRepository assetCategoryRepository;
 
     @Autowired
@@ -74,6 +77,7 @@ class MonthlyJournalSchedulerTest {
         asset.setPurchaseCost(new BigDecimal("12000000"));
         asset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         // Category defaults will be used (48 months from KOMPUTER category)
         asset.setResidualValue(BigDecimal.ZERO);
 
@@ -174,6 +178,7 @@ class MonthlyJournalSchedulerTest {
             dbAsset.setPurchaseCost(new BigDecimal("100000000"));
             dbAsset.setDepreciationStartDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
             dbAsset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+            dbAsset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
             // Note: usefulLifeMonths will be overridden from category (48 months)
             dbAsset.setResidualValue(new BigDecimal("10000000"));
             dbAsset.setDepreciationRate(new BigDecimal("25")); // 25% annual rate

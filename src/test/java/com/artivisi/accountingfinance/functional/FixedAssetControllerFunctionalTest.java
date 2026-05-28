@@ -39,6 +39,9 @@ class FixedAssetControllerFunctionalTest extends PlaywrightTestBase {
     @Autowired
     private FixedAssetService fixedAssetService;
 
+    @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
     @BeforeEach
     void setupAndLogin() {
         ensureActiveAssetExists();
@@ -73,6 +76,7 @@ class FixedAssetControllerFunctionalTest extends PlaywrightTestBase {
         asset.setPurchaseCost(BigDecimal.valueOf(5000000));
         asset.setDepreciationStartDate(LocalDate.now().withDayOfMonth(1));
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setUsefulLifeMonths(24);
         asset.setResidualValue(BigDecimal.ZERO);
 

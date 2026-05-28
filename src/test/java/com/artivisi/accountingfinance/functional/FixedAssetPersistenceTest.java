@@ -40,6 +40,9 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
     private FixedAssetService fixedAssetService;
 
     @Autowired
+    private com.artivisi.accountingfinance.repository.ChartOfAccountRepository chartOfAccountRepository;
+
+    @Autowired
     private FixedAssetRepository fixedAssetRepository;
 
     @Autowired
@@ -76,6 +79,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset.setResidualValue(new BigDecimal("1000000"));
         asset.setUsefulLifeMonths(60);
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setCategory(category);
 
         FixedAsset saved = fixedAssetService.create(asset);
@@ -120,6 +124,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset.setResidualValue(new BigDecimal("0")); // No residual
         asset.setUsefulLifeMonths(12); // 12 months
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setCategory(categories.get(0));
 
         FixedAsset saved = fixedAssetService.create(asset);
@@ -159,6 +164,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset.setPurchaseCost(new BigDecimal("1000000"));
         asset.setUsefulLifeMonths(24);
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setCategory(categories.get(0));
 
         fixedAssetService.create(asset);
@@ -186,6 +192,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset1.setPurchaseCost(new BigDecimal("1000000"));
         asset1.setUsefulLifeMonths(24);
         asset1.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset1.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset1.setCategory(categories.get(0));
         fixedAssetService.create(asset1);
 
@@ -197,6 +204,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset2.setPurchaseCost(new BigDecimal("2000000"));
         asset2.setUsefulLifeMonths(24);
         asset2.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset2.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset2.setCategory(categories.get(0));
 
         assertThatThrownBy(() -> fixedAssetService.create(asset2))
@@ -251,6 +259,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset.setPurchaseCost(new BigDecimal("10000000"));
         asset.setUsefulLifeMonths(60);
         asset.setDepreciationMethod(DepreciationMethod.DECLINING_BALANCE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setDepreciationRate(null); // Missing rate
         asset.setCategory(categories.get(0));
 
@@ -276,6 +285,7 @@ class FixedAssetPersistenceTest extends PlaywrightTestBase {
         asset.setResidualValue(new BigDecimal("2000000")); // Greater than cost
         asset.setUsefulLifeMonths(24);
         asset.setDepreciationMethod(DepreciationMethod.STRAIGHT_LINE);
+        asset.setFundingAccount(chartOfAccountRepository.findByAccountCode("1.1.02").orElseThrow());
         asset.setCategory(categories.get(0));
 
         assertThatThrownBy(() -> fixedAssetService.create(asset))
