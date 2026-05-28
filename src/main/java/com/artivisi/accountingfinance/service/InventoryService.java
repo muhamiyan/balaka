@@ -470,13 +470,14 @@ public class InventoryService {
         transaction.setDescription(description);
         transaction.setReferenceNumber(invTransaction.getReferenceNumber());
 
-        Transaction savedTransaction = transactionService.create(transaction, accountMappings);
-        Transaction postedTransaction = transactionService.post(savedTransaction.getId(), getCurrentUsername(), context);
+        // DRAFT-by-default: persist context variables so post can compute the journal,
+        // then leave the transaction as DRAFT for accounting approval. The InventoryTransaction
+        // record itself is the operational truth; accounting approves the resulting journal.
+        Transaction savedTransaction = transactionService.create(transaction, accountMappings, context.variables());
 
-        log.info("Created journal entry {} for inventory transaction {}",
-                postedTransaction.getTransactionNumber(), invTransaction.getId());
+        log.info("Created DRAFT journal voucher for inventory transaction {}", invTransaction.getId());
 
-        return postedTransaction;
+        return savedTransaction;
     }
 
     private FormulaContext buildFormulaContext(InventoryTransaction invTransaction) {
