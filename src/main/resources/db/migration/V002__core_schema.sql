@@ -1103,6 +1103,7 @@ CREATE TABLE fixed_assets (
     id_asset_account UUID NOT NULL REFERENCES chart_of_accounts(id),
     id_accumulated_depreciation_account UUID NOT NULL REFERENCES chart_of_accounts(id),
     id_depreciation_expense_account UUID NOT NULL REFERENCES chart_of_accounts(id),
+    id_funding_account UUID REFERENCES chart_of_accounts(id),  -- Bank/AP credited on acquisition
 
     -- Transaction references
     id_purchase_transaction UUID REFERENCES transactions(id),

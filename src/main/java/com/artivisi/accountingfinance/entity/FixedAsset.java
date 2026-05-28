@@ -157,6 +157,11 @@ public class FixedAsset extends TimestampedEntity {
     @JoinColumn(name = "id_depreciation_expense_account", nullable = false)
     private ChartOfAccount depreciationExpenseAccount;
 
+    // Funding source (bank/payable) credited when the acquisition DRAFT posts.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_funding_account")
+    private ChartOfAccount fundingAccount;
+
     // Reference to purchase transaction (optional)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_purchase_transaction")

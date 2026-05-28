@@ -297,7 +297,7 @@ INSERT INTO journal_templates (id, template_name, category, cash_flow_category, 
 
 INSERT INTO journal_template_lines (id, id_journal_template, id_account, position, formula, line_order, description, account_hint) VALUES
 ('e1000000-0000-0000-0000-000000000032', 'e0000000-0000-0000-0000-000000000015', NULL, 'DEBIT', 'assetCost', 1, 'Aset tetap yang dibeli', 'ASET_TETAP'),
-('e1000000-0000-0000-0000-000000000033', 'e0000000-0000-0000-0000-000000000015', '10000000-0000-0000-0000-000000000102', 'CREDIT', 'assetCost', 2, 'Pembayaran dari bank', NULL);
+('e1000000-0000-0000-0000-000000000033', 'e0000000-0000-0000-0000-000000000015', NULL, 'CREDIT', 'assetCost', 2, 'Pembayaran dari bank/hutang', 'BANK');
 
 INSERT INTO journal_templates (id, template_name, category, cash_flow_category, template_type, description, is_system, active) VALUES
 ('e0000000-0000-0000-0000-000000000016', 'Penyusutan Aset Tetap', 'EXPENSE', 'OPERATING', 'SIMPLE', 'Template untuk mencatat penyusutan aset tetap bulanan. Variabel: depreciationAmount', TRUE, TRUE);

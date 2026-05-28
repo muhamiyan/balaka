@@ -54,6 +54,7 @@ public class FixedAssetService {
     private final JournalTemplateService journalTemplateService;
     private final com.artivisi.accountingfinance.repository.JournalTemplateRepository journalTemplateRepository;
     private final TransactionService transactionService;
+    private final DocumentPostingService documentPostingService;
 
     // ============================================
     // Asset CRUD Operations
@@ -112,6 +113,23 @@ public class FixedAssetService {
         }
 
         FixedAsset saved = fixedAssetRepository.save(asset);
+
+        // Compose acquisition DRAFT via the template engine (Dr asset / Cr funding).
+        // Funding account is required — error if unset (no fallback).
+        if (saved.getFundingAccount() == null || saved.getFundingAccount().getId() == null) {
+            throw new IllegalStateException(
+                    "Akun pendanaan aset belum dipilih (bank/hutang yang dipakai untuk pembelian)");
+        }
+        Map<String, UUID> hints = new HashMap<>();
+        hints.put("ASET_TETAP", saved.getAssetAccount().getId());
+        hints.put("BANK", saved.getFundingAccount().getId());
+        Map<String, BigDecimal> variables = new HashMap<>();
+        variables.put("assetCost", saved.getPurchaseCost());
+        documentPostingService.createDraftFromTemplate(
+                null, "Pembelian Aset Tetap", saved.getPurchaseDate(),
+                "Pembelian " + saved.getAssetCode() + " - " + saved.getName(),
+                saved.getPurchaseCost(), hints, variables, "system", "ASSET", saved.getId());
+
         log.info("Created fixed asset: {} - {}", LogSanitizer.sanitize(saved.getAssetCode()), LogSanitizer.sanitize(saved.getName()));
         return saved;
     }
