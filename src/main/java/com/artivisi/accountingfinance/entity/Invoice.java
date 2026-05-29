@@ -161,6 +161,21 @@ public class Invoice {
         return getTotalAmount().subtract(getPaidAmount());
     }
 
+    /**
+     * Combobox label for the bound client. Used by the invoice form combobox
+     * (clientPicker) so the data-initial-label can be rendered uniformly whether
+     * the model attribute is the entity (GET) or the InvoiceForm (POST re-render).
+     */
+    public String getClientLabel() {
+        if (client == null) return "";
+        String code = client.getCode() == null ? "" : client.getCode();
+        String name = client.getName() == null ? "" : client.getName();
+        if (code.isEmpty() && name.isEmpty()) return "";
+        if (code.isEmpty()) return name;
+        if (name.isEmpty()) return code;
+        return code + " - " + name;
+    }
+
     public void recalculateFromLines() {
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;

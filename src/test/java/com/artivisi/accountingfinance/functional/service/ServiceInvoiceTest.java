@@ -37,6 +37,22 @@ class ServiceInvoiceTest extends PlaywrightTestBase {
         loginAsAdmin();
     }
 
+    /**
+     * Drives the clientPicker combobox: types the client code and clicks the
+     * first matching result. The form has no <select>; #client is now a search
+     * input named #clientLabel and a hidden input named client.id.
+     */
+    private void selectClientViaCombobox(String clientCode) {
+        var input = page.locator("#clientLabel");
+        input.click();
+        input.fill(clientCode);
+        page.waitForTimeout(400);
+        var results = page.locator("[data-testid='client-picker-result']");
+        if (results.count() > 0) {
+            results.first().click();
+        }
+    }
+
     // ==================== Invoice List ====================
 
     @Test
@@ -90,7 +106,7 @@ class ServiceInvoiceTest extends PlaywrightTestBase {
 
         // Verify form elements
         assertThat(page.locator("#invoiceNumber")).isVisible();
-        assertThat(page.locator("#client")).isVisible();
+        assertThat(page.locator("#clientLabel")).isVisible();
         assertThat(page.locator("#invoiceDate")).isVisible();
         assertThat(page.locator("#dueDate")).isVisible();
         assertThat(page.locator("#amount")).isVisible();
@@ -112,7 +128,7 @@ class ServiceInvoiceTest extends PlaywrightTestBase {
         LocalDate dueDate = today.plusDays(30);
 
         page.locator("#invoiceNumber").fill(invoiceNumber);
-        page.locator("#client").selectOption(client.get().getId().toString());
+        selectClientViaCombobox(client.get().getCode());
         page.locator("#invoiceDate").fill(today.toString());
         page.locator("#dueDate").fill(dueDate.toString());
         page.locator("#amount").fill("5000000");
@@ -140,7 +156,7 @@ class ServiceInvoiceTest extends PlaywrightTestBase {
         LocalDate dueDate = today.plusDays(30);
 
         // Leave invoice number empty for auto-generation
-        page.locator("#client").selectOption(client.get().getId().toString());
+        selectClientViaCombobox(client.get().getCode());
         page.locator("#invoiceDate").fill(today.toString());
         page.locator("#dueDate").fill(dueDate.toString());
         page.locator("#amount").fill("7500000");
@@ -160,7 +176,7 @@ class ServiceInvoiceTest extends PlaywrightTestBase {
             waitForPageLoad();
 
             // Verify form loads with client pre-selected
-            assertThat(page.locator("#client")).isVisible();
+            assertThat(page.locator("#clientLabel")).isVisible();
         }
     }
 

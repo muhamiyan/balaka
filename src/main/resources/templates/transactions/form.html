@@ -193,29 +193,49 @@
                             <!-- Dynamic Account Selection (for template lines with null accounts) -->
                             <th:block th:if="${selectedTemplate != null and selectedTemplate.lines != null}">
                                 <th:block th:each="line, lineStat : ${selectedTemplate.lines}">
-                                    <div th:if="${line.account == null}" class="md:col-span-2">
-                                        <label for="accountMapping_placeholder" th:for="${'accountMapping_' + line.id}"
+                                    <div th:if="${line.account == null}" class="md:col-span-2"
+                                         x-data="accountPicker"
+                                         th:with="existingMapping=${isEdit and transaction != null ? #lists.toList(transaction.accountMappings).?[templateLine.id == #vars.line.id] : null},
+                                                  initialAcc=${existingMapping != null and existingMapping.size() > 0 ? existingMapping[0].account : null}"
+                                         th:data-initial-id="${initialAcc != null ? initialAcc.id : ''}"
+                                         th:data-initial-label="${initialAcc != null ? initialAcc.accountCode + ' - ' + initialAcc.accountName : ''}">
+                                        <label th:for="${'accountMapping_' + line.id}"
                                                class="block text-sm font-medium text-gray-700 mb-1">
                                             <span th:text="${line.accountHint != null and !#strings.isEmpty(line.accountHint)} ? ${line.accountHint} : 'Akun ' + (${line.position.name() == 'DEBIT'} ? 'Debit' : 'Kredit')">
                                                 Akun
                                             </span>
                                             <span class="text-red-500">*</span>
-                                            <span class="inline-flex items-center justify-center w-5 h-5 ml-1 rounded-full bg-blue-100 text-blue-700 font-bold text-xs" 
+                                            <span class="inline-flex items-center justify-center w-5 h-5 ml-1 rounded-full bg-blue-100 text-blue-700 font-bold text-xs"
                                                   title="Akun dipilih saat input transaksi">?</span>
                                         </label>
-                                        <select th:id="${'accountMapping_' + line.id}"
-                                                th:name="${'accountMapping[' + line.id + ']'}"
-                                                @change="dispatchAccountChanged"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-                                                required>
-                                            <option value="">Pilih akun</option>
-                                            <option th:each="acc : ${accounts}"
-                                                    th:value="${acc.id}"
-                                                    th:text="${acc.accountCode + ' - ' + acc.accountName}"
-                                                    th:selected="${isEdit and transaction != null and #lists.toList(transaction.accountMappings).?[templateLine.id == #vars.line.id and account.id == #vars.acc.id].size() > 0}">Account</option>
-                                        </select>
-                                        <p th:if="${line.description != null and !#strings.isEmpty(line.description)}" 
-                                           class="text-xs text-gray-500 mt-1" 
+                                        <div class="relative">
+                                            <input type="text" th:id="${'accountMapping_' + line.id}"
+                                                   x-model="label"
+                                                   @input.debounce.300ms="search()"
+                                                   @focus="focusPicker()"
+                                                   @click.away="open = false"
+                                                   autocomplete="off"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                                                   placeholder="Ketik kode/nama akun..." required>
+                                            <input type="hidden" th:name="${'accountMapping[' + line.id + ']'}"
+                                                   :value="selectedId"
+                                                   @change="$dispatch('account-changed')"
+                                                   x-effect="$dispatch('account-changed')">
+                                            <div x-show="open &amp;&amp; results.length > 0"
+                                                 class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                                <template x-for="a in results" :key="a.id">
+                                                    <button type="button" @click="select(a)"
+                                                            data-testid="account-picker-result"
+                                                            class="block w-full text-left px-3 py-2 text-sm hover:bg-primary-50">
+                                                        <span class="font-medium" x-text="a.code"></span>
+                                                        <span class="text-gray-500"> — </span>
+                                                        <span x-text="a.name"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <p th:if="${line.description != null and !#strings.isEmpty(line.description)}"
+                                           class="text-xs text-gray-500 mt-1"
                                            th:text="${line.description}">Deskripsi</p>
                                     </div>
                                 </th:block>
@@ -451,13 +471,14 @@
                     const projectSelect = document.getElementById('project');
                     const projectId = projectSelect?.value || null;
 
-                    // Collect account mappings for dynamic template lines
+                    // Collect account mappings for dynamic template lines.
+                    // Picker emits a hidden input named "accountMapping[<line.id>]"; the
+                    // legacy <select> form posted the same name, so selector covers both.
                     const accountMappings = {};
-                    document.querySelectorAll('select[name^="accountMapping"]').forEach(select => {
-                        // Extract template line ID from name like "accountMapping[uuid]"
-                        const match = select.name.match(/accountMapping\[([^\]]+)\]/);
-                        if (match && select.value) {
-                            accountMappings[match[1]] = select.value;
+                    document.querySelectorAll('[name^="accountMapping"]').forEach(el => {
+                        const match = el.name.match(/accountMapping\[([^\]]+)\]/);
+                        if (match && el.value) {
+                            accountMappings[match[1]] = el.value;
                         }
                     });
 

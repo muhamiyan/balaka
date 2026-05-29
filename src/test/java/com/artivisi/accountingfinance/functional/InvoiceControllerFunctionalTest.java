@@ -133,10 +133,17 @@ class InvoiceControllerFunctionalTest extends PlaywrightTestBase {
         navigateTo("/invoices/new");
         waitForPageLoad();
 
-        // Fill client
-        var clientSelect = page.locator("select[name='client.id'], select[name='clientId']").first();
-        if (clientSelect.isVisible()) {
-            clientSelect.selectOption(client.get().getId().toString());
+        // Fill client via combobox (clientPicker). The hidden input is not
+        // visible; drive the search input + result list instead.
+        var clientInput = page.locator("#clientLabel");
+        if (clientInput.isVisible()) {
+            clientInput.click();
+            clientInput.fill(client.get().getCode());
+            page.waitForTimeout(400);
+            var results = page.locator("[data-testid='client-picker-result']");
+            if (results.count() > 0) {
+                results.first().click();
+            }
         }
 
         // Fill invoice date

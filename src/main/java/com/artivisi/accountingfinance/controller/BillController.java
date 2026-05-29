@@ -8,8 +8,6 @@ import com.artivisi.accountingfinance.entity.Vendor;
 import com.artivisi.accountingfinance.enums.BillStatus;
 import com.artivisi.accountingfinance.enums.PaymentMethod;
 import com.artivisi.accountingfinance.service.BillService;
-import com.artivisi.accountingfinance.service.ChartOfAccountService;
-import com.artivisi.accountingfinance.service.ProductService;
 import com.artivisi.accountingfinance.service.VendorService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -43,8 +41,6 @@ import java.util.UUID;
 import static com.artivisi.accountingfinance.controller.ViewConstants.*;
 import static com.artivisi.accountingfinance.security.Permission.BILL_VIEW;
 
-import com.artivisi.accountingfinance.enums.AccountType;
-
 @Controller
 @RequestMapping("/bills")
 @RequiredArgsConstructor
@@ -55,13 +51,10 @@ public class BillController {
     private static final String ATTR_SUCCESS_MESSAGE = "successMessage";
     private static final String ATTR_ERROR_MESSAGE = "errorMessage";
     private static final String ATTR_VENDORS = "vendors";
-    private static final String ATTR_EXPENSE_ACCOUNTS = "expenseAccounts";
     private static final String VIEW_FORM = "bills/form";
 
     private final BillService billService;
     private final VendorService vendorService;
-    private final ChartOfAccountService chartOfAccountService;
-    private final ProductService productService;
 
     @Getter
     @Setter
@@ -78,6 +71,9 @@ public class BillController {
         private String billNumber;
 
         private EntityRef vendor = new EntityRef();
+        // Carries the human label across POST validation re-renders so the combobox
+        // can re-display the selected vendor without re-fetching.
+        private String vendorLabel;
 
         @Size(max = 100, message = "Nomor faktur vendor maksimal 100 karakter")
         private String vendorInvoiceNumber;
@@ -318,9 +314,9 @@ public class BillController {
     }
 
     private void populateFormModel(Model model) {
-        model.addAttribute(ATTR_VENDORS, vendorService.findActiveVendors());
-        model.addAttribute(ATTR_EXPENSE_ACCOUNTS, chartOfAccountService.findByAccountType(AccountType.EXPENSE));
-        model.addAttribute(ATTR_PRODUCTS, productService.findAllActive());
+        // Vendors fetched on-demand via GET /vendors/search by the combobox.
+        // Expense accounts fetched on-demand via GET /accounts/search per line.
+        // Products fetched on-demand via GET /products/search if/when used.
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_BILLS);
     }
 

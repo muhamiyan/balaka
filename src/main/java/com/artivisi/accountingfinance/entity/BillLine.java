@@ -27,4 +27,20 @@ public class BillLine extends DocumentLine {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_expense_account")
     private ChartOfAccount expenseAccount;
+
+    /** Transient JSON shape consumed by the bill form combobox hydration. */
+    public String getExpenseAccountId() {
+        return expenseAccount == null ? "" : expenseAccount.getId().toString();
+    }
+
+    /** Combobox label for the bound expense account: "code - name". */
+    public String getExpenseAccountLabel() {
+        if (expenseAccount == null) return "";
+        String code = expenseAccount.getAccountCode() == null ? "" : expenseAccount.getAccountCode();
+        String name = expenseAccount.getAccountName() == null ? "" : expenseAccount.getAccountName();
+        if (code.isEmpty() && name.isEmpty()) return "";
+        if (code.isEmpty()) return name;
+        if (name.isEmpty()) return code;
+        return code + " - " + name;
+    }
 }

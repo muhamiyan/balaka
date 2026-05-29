@@ -47,6 +47,30 @@ public class VendorController {
     private final VendorService vendorService;
     private final ChartOfAccountService chartOfAccountService;
 
+    /**
+     * Typeahead search for vendor pickers. Returns at most 10 active vendors
+     * matching q (by code or name). Used by every form that picks a vendor so
+     * the picker never grows past a usable size.
+     */
+    @GetMapping("/search")
+    @org.springframework.web.bind.annotation.ResponseBody
+    @PreAuthorize("isAuthenticated()")
+    public java.util.List<java.util.Map<String, Object>> search(
+            @RequestParam(value = "q", required = false) String q) {
+        Page<Vendor> page = vendorService.findByFilters(
+                Boolean.TRUE,
+                q == null ? "" : q,
+                org.springframework.data.domain.PageRequest.of(0, 10));
+        java.util.List<java.util.Map<String, Object>> results = new java.util.ArrayList<>();
+        for (Vendor v : page.getContent()) {
+            results.add(java.util.Map.of(
+                    "id", v.getId().toString(),
+                    "code", v.getCode() == null ? "" : v.getCode(),
+                    "name", v.getName() == null ? "" : v.getName()));
+        }
+        return results;
+    }
+
     @Getter
     @Setter
     static class DefaultExpenseAccountRef {

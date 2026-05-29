@@ -40,14 +40,31 @@
                                placeholder="Auto-generated jika kosong">
                         <p class="mt-1 text-xs text-gray-500">Kosongkan untuk nomor otomatis (format: BILL-YYYYMM-XXXX)</p>
                     </div>
-                    <div>
-                        <label for="vendor" class="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
-                        <select id="vendor" th:field="*{vendor.id}"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
-                                required>
-                            <option value="">-- Pilih Vendor --</option>
-                            <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}">Vendor</option>
-                        </select>
+                    <!-- Vendor (combobox) -->
+                    <div x-data="vendorPicker"
+                         th:data-initial-id="${bill.vendor != null ? bill.vendor.id : ''}"
+                         th:data-initial-label="${bill.vendorLabel}">
+                        <label for="vendorLabel" class="block text-sm font-medium text-gray-700 mb-1">Vendor *</label>
+                        <div class="relative">
+                            <input type="text" id="vendorLabel" name="vendorLabel" x-model="label"
+                                   @input.debounce.300ms="search()" @focus="focusPicker()" @click.away="open = false"
+                                   autocomplete="off"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500"
+                                   placeholder="Ketik kode atau nama vendor..." required>
+                            <input type="hidden" name="vendor.id" :value="selectedId">
+                            <div x-show="open &amp;&amp; results.length > 0"
+                                 class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                                <template x-for="v in results" :key="v.id">
+                                    <button type="button" @click="select(v)"
+                                            data-testid="vendor-picker-result"
+                                            class="block w-full text-left px-3 py-2 text-sm hover:bg-primary-50">
+                                        <span class="font-medium" x-text="v.code"></span>
+                                        <span class="text-gray-500"> — </span>
+                                        <span x-text="v.name"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -91,13 +108,30 @@
                                     <input type="text" :id="'bill-lineDescription-' + index" :name="'lineDescription'" x-model="line.description"
                                            class="w-full px-3 py-2 border border-gray-300 rounded text-sm" required>
                                 </div>
-                                <div class="col-span-2">
-                                    <label :for="'bill-lineExpenseAccountId-' + index" class="block text-xs text-gray-500 mb-1">Akun Beban</label>
-                                    <select :id="'bill-lineExpenseAccountId-' + index" :name="'lineExpenseAccountId'" x-model="line.expenseAccountId"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                        <option value="">--</option>
-                                        <option th:each="a : ${expenseAccounts}" th:value="${a.id}" th:text="${a.accountCode + ' - ' + a.accountName}">Account</option>
-                                    </select>
+                                <div class="col-span-2 relative">
+                                    <label :for="'bill-lineExpenseAccountLabel-' + index" class="block text-xs text-gray-500 mb-1">Akun Beban</label>
+                                    <input type="text" :id="'bill-lineExpenseAccountLabel-' + index"
+                                           x-model="line.expenseAccountLabel"
+                                           @input.debounce.300ms="searchExpenseAccounts(line)"
+                                           @focus="line.pickerOpen = true; searchExpenseAccounts(line)"
+                                           @click.away="line.pickerOpen = false"
+                                           autocomplete="off"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                           placeholder="Ketik kode/nama...">
+                                    <input type="hidden" :name="'lineExpenseAccountId'" :value="line.expenseAccountId">
+                                    <div x-show="line.pickerOpen &amp;&amp; line.expenseAccountResults.length > 0"
+                                         class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-auto">
+                                        <template x-for="a in line.expenseAccountResults" :key="a.id">
+                                            <button type="button"
+                                                    @click="selectExpenseAccount(line, a)"
+                                                    data-testid="line-account-picker-result"
+                                                    class="block w-full text-left px-3 py-2 text-sm hover:bg-primary-50">
+                                                <span class="font-medium" x-text="a.code"></span>
+                                                <span class="text-gray-500"> — </span>
+                                                <span x-text="a.name"></span>
+                                            </button>
+                                        </template>
+                                    </div>
                                 </div>
                                 <div class="col-span-1">
                                     <label :for="'bill-lineQuantity-' + index" class="block text-xs text-gray-500 mb-1">Qty</label>
@@ -178,24 +212,49 @@
             document.addEventListener('alpine:init', function() {
                 var existingLines = /*[[${bill.lines}]]*/ [];
                 Alpine.data('billForm', function() {
+                    function blankLine() {
+                        return {
+                            description: '',
+                            expenseAccountId: '',
+                            expenseAccountLabel: '',
+                            expenseAccountResults: [],
+                            pickerOpen: false,
+                            quantity: 1, unitPrice: 0, taxRate: '', amount: 0
+                        };
+                    }
                     return {
                         lines: existingLines.length > 0
                             ? existingLines.map(function(l) {
                                 return {
                                     description: l.description || '',
-                                    expenseAccountId: l.expenseAccount ? l.expenseAccount.id : '',
+                                    expenseAccountId: l.expenseAccountId || (l.expenseAccount ? l.expenseAccount.id : ''),
+                                    expenseAccountLabel: l.expenseAccountLabel || '',
+                                    expenseAccountResults: [],
+                                    pickerOpen: false,
                                     quantity: l.quantity || 1,
                                     unitPrice: l.unitPrice || 0,
                                     taxRate: l.taxRate || '',
                                     amount: l.amount || 0
                                 };
                             })
-                            : [{ description: '', expenseAccountId: '', quantity: 1, unitPrice: 0, taxRate: '', amount: 0 }],
+                            : [blankLine()],
                         addLine: function() {
-                            this.lines.push({ description: '', expenseAccountId: '', quantity: 1, unitPrice: 0, taxRate: '', amount: 0 });
+                            this.lines.push(blankLine());
                         },
                         removeLine: function(index) {
                             this.lines.splice(index, 1);
+                        },
+                        searchExpenseAccounts: function(line) {
+                            var q = encodeURIComponent(line.expenseAccountLabel || '');
+                            fetch('/accounts/search?q=' + q, { headers: { 'Accept': 'application/json' } })
+                                .then(function(r) { return r.ok ? r.json() : []; })
+                                .then(function(data) { line.expenseAccountResults = data; });
+                        },
+                        selectExpenseAccount: function(line, a) {
+                            line.expenseAccountId = a.id;
+                            line.expenseAccountLabel = a.code + ' - ' + a.name;
+                            line.expenseAccountResults = [];
+                            line.pickerOpen = false;
                         },
                         calcLine: function(line) {
                             var qty = Number.parseFloat(line.quantity) || 0;

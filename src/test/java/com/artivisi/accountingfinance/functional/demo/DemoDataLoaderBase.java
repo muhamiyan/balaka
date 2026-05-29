@@ -374,55 +374,57 @@ public abstract class DemoDataLoaderBase extends PlaywrightTestBase {
             page.locator("#amount").dispatchEvent("input");
         }
 
-        // Auto-select dynamic account mappings based on hint type
-        var accountSelects = page.locator("select[id^='accountMapping_']").all();
-        Set<String> usedValues = new java.util.HashSet<>();
-        for (var select : accountSelects) {
-            String selectId = select.getAttribute("id");
-            var label = page.locator("label[for='" + selectId + "']");
+        // Auto-pick accounts for dynamic template-line accountPickers.
+        // Each picker is a search input id=accountMapping_<lineId>; the matching
+        // hidden input that Spring binds is name=accountMapping[<lineId>].
+        var accountInputs = page.locator("input[id^='accountMapping_']").all();
+        Set<String> usedCodes = new java.util.HashSet<>();
+        for (var input : accountInputs) {
+            String inputId = input.getAttribute("id");
+            var label = page.locator("label[for='" + inputId + "']");
             String hint = label.count() > 0 ? label.textContent().trim() : "";
-            // Strip trailing asterisk and whitespace from label
             hint = hint.replaceAll("[*?\\s]+$", "").trim();
 
-            var options = select.locator("option").all();
-            String selectedValue = null;
+            // Pick a code prefix to drive the search.
+            String codePrefix;
+            String upper = hint.toUpperCase();
+            if (upper.contains("BANK")) {
+                codePrefix = usedCodes.contains("1.1.02") ? "1.1." : "1.1.02";
+            } else if (upper.contains("PENDAPATAN")) {
+                codePrefix = "4.1.";
+            } else if (upper.contains("BEBAN")) {
+                codePrefix = "5.";
+            } else if (upper.contains("FIXED") || upper.contains("ASET")) {
+                codePrefix = "1.2.";
+            } else if (upper.contains("DEBIT") || upper.contains("CREDIT")) {
+                // Free-form journal hint; leave unset.
+                continue;
+            } else {
+                codePrefix = "1.";
+            }
 
-            for (var option : options) {
-                String val = option.getAttribute("value");
-                String text = option.textContent();
-                if (val == null || val.isEmpty() || text == null) continue;
-
-                // Match by hint type, skip already-used values
-                // Prefer Bank BCA (1.1.02) first, then Kas/Mandiri
-                if (hint.toUpperCase().contains("BANK") && !usedValues.contains(val)) {
-                    if (text.startsWith("1.1.02")) { selectedValue = val; break; }
-                    else if (text.startsWith("1.1.0") && selectedValue == null) { selectedValue = val; }
-                } else if (hint.toUpperCase().contains("PENDAPATAN") && text.startsWith("4.1.")) {
-                    selectedValue = val; break;
-                } else if (hint.toUpperCase().contains("BEBAN") && text.startsWith("5.")) {
-                    selectedValue = val; break;
-                } else if ((hint.toUpperCase().contains("FIXED") || hint.toUpperCase().contains("ASET")) && text.startsWith("1.2.")) {
-                    selectedValue = val; break;
-                } else if (hint.toUpperCase().contains("DEBIT") || hint.toUpperCase().contains("CREDIT")) {
-                    // Manual journal — skip auto-select
+            input.click();
+            input.fill(codePrefix);
+            page.waitForTimeout(400); // debounce + fetch
+            var results = page.locator("[data-testid='account-picker-result']");
+            int n = Math.min(results.count(), 10);
+            String pickedCode = null;
+            for (int i = 0; i < n; i++) {
+                String code = results.nth(i).locator(".font-medium").textContent();
+                if (code == null) continue;
+                if (!usedCodes.contains(code)) {
+                    results.nth(i).click();
+                    pickedCode = code;
                     break;
                 }
             }
-
-            // Fallback: if no match found, pick first non-empty option
-            if (selectedValue == null) {
-                for (var option : options) {
-                    String val = option.getAttribute("value");
-                    if (val != null && !val.isEmpty()) {
-                        selectedValue = val; break;
-                    }
-                }
+            if (pickedCode == null && n > 0) {
+                String code = results.first().locator(".font-medium").textContent();
+                results.first().click();
+                pickedCode = code;
             }
-
-            if (selectedValue != null) {
-                select.selectOption(selectedValue);
-                usedValues.add(selectedValue);
-            }
+            if (pickedCode != null) usedCodes.add(pickedCode);
+            page.waitForTimeout(100);
         }
 
         // Fill description
@@ -672,15 +674,14 @@ public abstract class DemoDataLoaderBase extends PlaywrightTestBase {
         waitForPageLoad();
         page.waitForTimeout(500);
 
-        // Select client
-        var clientSelect = page.locator("#client");
-        var options = clientSelect.locator("option").all();
-        for (var option : options) {
-            String text = option.textContent();
-            if (text != null && text.contains(parts[0])) {
-                clientSelect.selectOption(option.getAttribute("value"));
-                break;
-            }
+        // Select client via combobox: type substring, click first match.
+        var clientInput = page.locator("#clientLabel");
+        clientInput.click();
+        clientInput.fill(parts[0]);
+        page.waitForTimeout(400);
+        var clientResults = page.locator("[data-testid='client-picker-result']");
+        if (clientResults.count() > 0) {
+            clientResults.first().click();
         }
 
         page.locator("#invoiceDate").fill(action.date.toString());
@@ -812,21 +813,29 @@ public abstract class DemoDataLoaderBase extends PlaywrightTestBase {
     }
 
     private void selectAccountByHint(String hint, String accountCode) {
-        var selects = page.locator("select[id^='accountMapping_']").all();
-        for (var select : selects) {
-            String selectId = select.getAttribute("id");
-            var label = page.locator("label[for='" + selectId + "']");
+        var inputs = page.locator("input[id^='accountMapping_']").all();
+        for (var input : inputs) {
+            String inputId = input.getAttribute("id");
+            var label = page.locator("label[for='" + inputId + "']");
             String labelText = label.textContent();
-            if (labelText != null && labelText.contains(hint)) {
-                var options = select.locator("option").all();
-                for (var option : options) {
-                    String optionText = option.textContent();
-                    if (optionText != null && optionText.startsWith(accountCode)) {
-                        select.selectOption(option.getAttribute("value"));
-                        return;
-                    }
+            if (labelText == null || !labelText.contains(hint)) continue;
+
+            input.click();
+            input.fill(accountCode);
+            page.waitForTimeout(400); // debounce + fetch
+            var results = page.locator("[data-testid='account-picker-result']");
+            int n = Math.min(results.count(), 10);
+            for (int i = 0; i < n; i++) {
+                String code = results.nth(i).locator(".font-medium").textContent();
+                if (code != null && code.startsWith(accountCode)) {
+                    results.nth(i).click();
+                    return;
                 }
             }
+            if (n > 0) {
+                results.first().click();
+            }
+            return;
         }
     }
 

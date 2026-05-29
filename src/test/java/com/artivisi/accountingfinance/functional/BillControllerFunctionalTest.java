@@ -48,18 +48,18 @@ class BillControllerFunctionalTest extends PlaywrightTestBase {
     }
 
     /**
-     * Selects a vendor from the dropdown by matching option text.
+     * Selects a vendor from the combobox by typing part of its name and clicking
+     * the first matching result. The form uses vendorPicker (Alpine) backed by
+     * GET /vendors/search; the legacy <select> is gone.
      */
     private void selectVendor(String vendorName) {
-        var vendorSelect = page.locator("select#vendor");
-        var vendorOptions = vendorSelect.locator("option");
-        int optionCount = vendorOptions.count();
-        for (int i = 0; i < optionCount; i++) {
-            String text = vendorOptions.nth(i).textContent();
-            if (text.contains(vendorName)) {
-                vendorSelect.selectOption(vendorOptions.nth(i).getAttribute("value"));
-                return;
-            }
+        var input = page.locator("#vendorLabel");
+        input.click();
+        input.fill(vendorName);
+        page.waitForTimeout(400); // debounce + fetch
+        var results = page.locator("[data-testid='vendor-picker-result']");
+        if (results.count() > 0) {
+            results.first().click();
         }
     }
 
@@ -88,7 +88,7 @@ class BillControllerFunctionalTest extends PlaywrightTestBase {
         waitForPageLoad();
 
         assertThat(page.locator("#btn-simpan")).isVisible();
-        assertThat(page.locator("select#vendor")).isVisible();
+        assertThat(page.locator("#vendorLabel")).isVisible();
         assertThat(page.locator("#billDate")).isVisible();
         assertThat(page.locator("#dueDate")).isVisible();
     }

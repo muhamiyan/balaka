@@ -73,6 +73,68 @@ function registerBasicStates() {
         }
     }))
 
+    // CSP-safe combobox for picking a Client. Same shape as accountPicker, hits
+    // GET /clients/search?q=... which returns at most 10 results. Used by invoice
+    // forms where the client list is unbounded in production.
+    Alpine.data('clientPicker', () => ({
+        open: false,
+        results: [],
+        label: '',
+        selectedId: '',
+        init() {
+            this.label = this.$el.dataset.initialLabel || ''
+            this.selectedId = this.$el.dataset.initialId || ''
+        },
+        focusPicker() {
+            this.open = true
+            if (this.results.length === 0) this.search()
+        },
+        search() {
+            const q = encodeURIComponent(this.label || '')
+            const self = this
+            fetch('/clients/search?q=' + q, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.ok ? r.json() : [])
+                .then(data => { self.results = data })
+        },
+        select(c) {
+            this.selectedId = c.id
+            this.label = c.code + ' - ' + c.name
+            this.results = []
+            this.open = false
+        }
+    }))
+
+    // CSP-safe combobox for picking a Vendor. Same shape as clientPicker, hits
+    // GET /vendors/search?q=... which returns at most 10 results. Used by bill
+    // forms where the vendor list is unbounded in production.
+    Alpine.data('vendorPicker', () => ({
+        open: false,
+        results: [],
+        label: '',
+        selectedId: '',
+        init() {
+            this.label = this.$el.dataset.initialLabel || ''
+            this.selectedId = this.$el.dataset.initialId || ''
+        },
+        focusPicker() {
+            this.open = true
+            if (this.results.length === 0) this.search()
+        },
+        search() {
+            const q = encodeURIComponent(this.label || '')
+            const self = this
+            fetch('/vendors/search?q=' + q, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.ok ? r.json() : [])
+                .then(data => { self.results = data })
+        },
+        select(v) {
+            this.selectedId = v.id
+            this.label = v.code + ' - ' + v.name
+            this.results = []
+            this.open = false
+        }
+    }))
+
     // Toggle state with hasQuery flag (for search filters)
     Alpine.data('searchFilterState', () => ({
         open: false,

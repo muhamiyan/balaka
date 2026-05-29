@@ -51,6 +51,30 @@ public class ClientController {
     private final InvoiceRepository invoiceRepository;
     private final TaxTransactionDetailRepository taxTransactionDetailRepository;
 
+    /**
+     * Typeahead search for client pickers. Returns at most 10 active clients
+     * matching q (by code or name). Used by every form that picks a client so
+     * the picker never grows past a usable size.
+     */
+    @GetMapping("/search")
+    @org.springframework.web.bind.annotation.ResponseBody
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public List<java.util.Map<String, Object>> search(
+            @RequestParam(value = "q", required = false) String q) {
+        Page<Client> page = clientService.findByFilters(
+                Boolean.TRUE,
+                q == null ? "" : q,
+                org.springframework.data.domain.PageRequest.of(0, 10));
+        List<java.util.Map<String, Object>> results = new java.util.ArrayList<>();
+        for (Client c : page.getContent()) {
+            results.add(java.util.Map.of(
+                    "id", c.getId().toString(),
+                    "code", c.getCode() == null ? "" : c.getCode(),
+                    "name", c.getName() == null ? "" : c.getName()));
+        }
+        return results;
+    }
+
     @Getter
     @Setter
     static class ClientForm {

@@ -83,6 +83,9 @@ public class InvoiceController {
         private String invoiceNumber;
 
         private EntityRef client = new EntityRef();
+        // Carries the human label across POST validation re-renders so the combobox
+        // can re-display the selected client without re-fetching.
+        private String clientLabel;
 
         private EntityRef project = new EntityRef();
 
@@ -370,10 +373,11 @@ public class InvoiceController {
     }
 
     private void populateFormModel(Model model, List<InvoiceLine> lines) {
-        model.addAttribute(ATTR_CLIENTS, clientService.findActiveClients());
-        model.addAttribute(ATTR_PROJECTS, projectService.findActiveProjects());
+        // Clients fetched on-demand via GET /clients/search by the combobox; we no
+        // longer dump the full client list into the form.
         // Products fetched on-demand via GET /products/search by the line picker;
         // we no longer dump the full catalog into the form (kept dropdowns ≤ 10 items).
+        model.addAttribute(ATTR_PROJECTS, projectService.findActiveProjects());
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_INVOICES);
         model.addAttribute(ATTR_LINES, lines);
     }

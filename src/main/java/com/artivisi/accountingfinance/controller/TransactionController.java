@@ -167,7 +167,7 @@ public class TransactionController {
         model.addAttribute(ATTR_CURRENT_PAGE, PAGE_TRANSACTIONS);
         model.addAttribute(ATTR_IS_EDIT, false);
         model.addAttribute(ATTR_TEMPLATES, journalTemplateService.findAllWithLines());
-        model.addAttribute(ATTR_ACCOUNTS, chartOfAccountService.findTransactableAccounts());
+        // Account list fetched on-demand via GET /accounts/search by per-line picker.
         model.addAttribute(ATTR_PROJECTS, projectService.findActiveProjects());
         model.addAttribute(ATTR_TAGS_BY_TYPE, tagService.findAllActiveGroupedByType());
 
@@ -234,7 +234,7 @@ public class TransactionController {
         model.addAttribute(ATTR_TRANSACTION, transaction);
         model.addAttribute(ATTR_SELECTED_TEMPLATE, template);
         model.addAttribute(ATTR_TEMPLATES, journalTemplateService.findAll());
-        model.addAttribute(ATTR_ACCOUNTS, chartOfAccountService.findTransactableAccounts());
+        // Account list fetched on-demand via GET /accounts/search by per-line picker.
         model.addAttribute(ATTR_PROJECTS, projectService.findActiveProjects());
         model.addAttribute(ATTR_TAGS_BY_TYPE, tagService.findAllActiveGroupedByType());
         model.addAttribute("selectedTagIds", transaction.getTransactionTags().stream()

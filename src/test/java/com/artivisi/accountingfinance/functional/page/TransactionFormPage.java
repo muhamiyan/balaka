@@ -91,10 +91,20 @@ public class TransactionFormPage {
     }
 
     /**
-     * Select dynamic account mapping by ID.
+     * Drive the accountPicker combobox for a template-line account mapping. The
+     * picker input id is accountMapping_<lineId>; we type the accountId (treated
+     * as a code substring) and click the first result. Callers that pass a real
+     * UUID won't match — server search returns accounts by code/name, not id.
      */
-    public TransactionFormPage selectAccountMapping(String mappingId, String accountId) {
-        page.locator("#" + mappingId).selectOption(accountId);
+    public TransactionFormPage selectAccountMapping(String mappingId, String search) {
+        var input = page.locator("#" + mappingId);
+        input.click();
+        input.fill(search);
+        page.waitForTimeout(400);
+        var results = page.locator("[data-testid='account-picker-result']");
+        if (results.count() > 0) {
+            results.first().click();
+        }
         return this;
     }
 
@@ -110,7 +120,15 @@ public class TransactionFormPage {
             String value = entry.getValue();
 
             if (fieldId.startsWith("accountMapping")) {
-                page.locator("#" + fieldId).selectOption(value);
+                // Combobox: type the value (account code) and pick the first match.
+                var input = page.locator("#" + fieldId);
+                input.click();
+                input.fill(value);
+                page.waitForTimeout(400);
+                var results = page.locator("[data-testid='account-picker-result']");
+                if (results.count() > 0) {
+                    results.first().click();
+                }
             } else if (fieldId.equals("amount")) {
                 fillAmount(value);
             } else if (fieldId.startsWith("var_")) {
@@ -137,27 +155,31 @@ public class TransactionFormPage {
      * Finds the select element whose label contains the hint text.
      */
     private void selectAccountByHint(String hint, String accountCode) {
-        // Find all select elements that start with accountMapping_
-        var selects = page.locator("select[id^='accountMapping_']").all();
-
-        for (var select : selects) {
-            String selectId = select.getAttribute("id");
-            // Find the label for this select
-            var label = page.locator("label[for='" + selectId + "']");
+        // Each template-line picker is an input id=accountMapping_<lineId>. Find
+        // the one whose label contains the hint and drive its combobox.
+        var inputs = page.locator("input[id^='accountMapping_']").all();
+        for (var input : inputs) {
+            String inputId = input.getAttribute("id");
+            var label = page.locator("label[for='" + inputId + "']");
             String labelText = label.textContent();
+            if (labelText == null || !labelText.contains(hint)) continue;
 
-            // Check if label contains the hint
-            if (labelText != null && labelText.contains(hint)) {
-                // Select the option with the matching account code
-                var options = select.locator("option").all();
-                for (var option : options) {
-                    String optionText = option.textContent();
-                    if (optionText != null && optionText.startsWith(accountCode)) {
-                        select.selectOption(option.getAttribute("value"));
-                        return;
-                    }
+            input.click();
+            input.fill(accountCode);
+            page.waitForTimeout(400);
+            var results = page.locator("[data-testid='account-picker-result']");
+            int n = Math.min(results.count(), 10);
+            for (int i = 0; i < n; i++) {
+                String code = results.nth(i).locator(".font-medium").textContent();
+                if (code != null && code.startsWith(accountCode)) {
+                    results.nth(i).click();
+                    return;
                 }
             }
+            if (n > 0) {
+                results.first().click();
+            }
+            return;
         }
     }
 

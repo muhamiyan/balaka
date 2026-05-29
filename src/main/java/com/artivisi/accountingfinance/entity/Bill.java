@@ -154,6 +154,21 @@ public class Bill {
         return getTotalAmount().subtract(getPaidAmount());
     }
 
+    /**
+     * Combobox label for the bound vendor. Used by the bill form combobox
+     * (vendorPicker) so data-initial-label renders uniformly whether the model
+     * attribute is the entity (GET) or BillForm (POST re-render).
+     */
+    public String getVendorLabel() {
+        if (vendor == null) return "";
+        String code = vendor.getCode() == null ? "" : vendor.getCode();
+        String name = vendor.getName() == null ? "" : vendor.getName();
+        if (code.isEmpty() && name.isEmpty()) return "";
+        if (code.isEmpty()) return name;
+        if (name.isEmpty()) return code;
+        return code + " - " + name;
+    }
+
     public void recalculateFromLines() {
         BigDecimal totalAmount = BigDecimal.ZERO;
         BigDecimal totalTax = BigDecimal.ZERO;
