@@ -12,7 +12,7 @@
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" th:href="@{${theme.themeCssPath}}">
-    <script th:src="@{/js/htmx-2.0.7.min.js}"></script>
+    <script th:src="@{/js/htmx-2.0.10.min.js}"></script>
     <script th:attr="nonce=${cspNonce}">
         // Configure HTMX to include CSRF token in requests
         document.addEventListener('htmx:configRequest', function(evt) {
@@ -21,12 +21,12 @@
             evt.detail.headers[csrfHeader] = csrfToken;
         });
     </script>
-    <!-- Alpine.js CSP build v3.15.3 - includes expression parser for operators/ternary -->
+    <!-- Alpine.js CSP build v3.15.12 - includes expression parser for operators/ternary -->
     <!-- IMPORTANT: alpine-components.js must load BEFORE alpine-csp.js so the alpine:init
          listener is attached before Alpine fires it and processes the DOM -->
-    <script defer th:src="@{/js/alpine-persist-3.15.3.min.js}"></script>
+    <script defer th:src="@{/js/alpine-persist-3.15.12.min.js}"></script>
     <script defer th:src="@{/js/alpine-components.js}"></script>
-    <script defer th:src="@{/js/alpine-csp-3.15.3.min.js}"></script>
+    <script defer th:src="@{/js/alpine-csp-3.15.12.min.js}"></script>
     <style th:attr="nonce=${cspNonce}">
         /* Style details/summary for sidebar navigation */
         nav details > summary {
